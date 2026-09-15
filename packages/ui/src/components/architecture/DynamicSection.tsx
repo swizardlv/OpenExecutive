@@ -49,8 +49,7 @@ interface Props {
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
 export default function DynamicSection({ id, title, sub, basePath = 'architecture' }: Props) {
-  const { locale } = useI18n();
-  const isZh = locale === 'zh';
+  const { t } = useI18n();
   const [content, setContent] = useState<SectionContent | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -95,20 +94,20 @@ export default function DynamicSection({ id, title, sub, basePath = 'architectur
 
       {status === 'loading' && !content && (
         <div className="rounded-lg bg-surface border border-line px-4 py-8 text-center text-xs text-fg-muted animate-pulse">
-          {isZh ? '加载中…' : 'Loading…'}
+          {t('DynamicSection.loading')}
         </div>
       )}
 
       {status === 'error' && (
         <div className="rounded-lg bg-red-950/40 border border-red-900 px-4 py-3 text-xs text-red-300">
-          <div className="font-medium mb-1">{isZh ? '加载失败' : 'Failed to load'}</div>
+          <div className="font-medium mb-1">{t('DynamicSection.failed_to_load')}</div>
           <div className="font-mono">{error}</div>
           <button
             type="button"
             onClick={load}
             className="mt-2 underline text-red-200 hover:text-red-100"
           >
-            {isZh ? '重试' : 'Retry'}
+            {t('DynamicSection.retry')}
           </button>
         </div>
       )}

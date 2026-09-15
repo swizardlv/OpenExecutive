@@ -37,8 +37,7 @@ interface HeaderData {
 }
 
 export default function PulseHeader() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
   const [data, setData] = useState<HeaderData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -75,16 +74,14 @@ export default function PulseHeader() {
     };
   }, []);
 
-  const stats = useMemo(() => (data ? deriveStats(data, isZh) : null), [data, isZh]);
+  const stats = useMemo(() => (data ? deriveStats(data, t) : null), [data, t]);
 
   return (
     <header className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-fg">{isZh ? "状态脉搏" : "Pulse"}</h1>
+        <h1 className="text-2xl font-semibold text-fg">{t("memories.PulseHeader.pulse")}</h1>
         <p className="text-sm text-fg-muted mt-1 max-w-2xl">
-          {isZh
-            ? "执行团队长期记忆与运营脉搏 — 了解已知事实，并查看在您离开时自主执行的每日简报、反思与部门巡检。"
-            : "What the Executive knows, and the rhythm it runs on — the briefs, reflections, and check-ins that fire on their own while you're away."}
+          {t("memories.PulseHeader.what_the_executive_knows_and")}
         </p>
       </div>
 
@@ -112,15 +109,15 @@ export default function PulseHeader() {
       <section className="rounded-xl border border-line bg-surface-elevated p-4">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-fg">{isZh ? "执行心跳" : "Heartbeat"}</h2>
-            <span className="text-xs text-fg-subtle">{isZh ? `最近 ${HEATMAP_DAYS} 天` : `last ${HEATMAP_DAYS} days`}</span>
+            <h2 className="text-sm font-semibold text-fg">{t("memories.PulseHeader.heartbeat")}</h2>
+            <span className="text-xs text-fg-subtle">{t("memories.PulseHeader.last_heatmap_days_days", { HEATMAP_DAYS })}</span>
           </div>
           <LivePulse />
         </div>
         {loading || !data ? (
           <Skeleton className="h-24 w-full" />
         ) : (
-          <Heatmap days={data.heatmap} isZh={isZh} />
+          <Heatmap days={data.heatmap} />
         )}
       </section>
     </header>
@@ -138,7 +135,7 @@ interface Stat {
   tone?: "default" | "accent" | "emerald" | "amber";
 }
 
-function deriveStats({ pending, memoriesTotal, heatmap }: HeaderData, isZh: boolean): Stat[] {
+function deriveStats({ pending, memoriesTotal, heatmap }: HeaderData, t: (k: string, p?: any) => string): Stat[] {
   const groups = groupByRhythm(pending);
   const followups = pending.filter((a) => a.kind === "ad_hoc").length;
 
@@ -148,19 +145,19 @@ function deriveStats({ pending, memoriesTotal, heatmap }: HeaderData, isZh: bool
     return a.run_at.localeCompare(best.run_at) < 0 ? a : best;
   }, null);
   const nextBeat = soonest
-    ? { value: formatRunAt(soonest.run_at).relative || (isZh ? "即将" : "soon"), hint: metaFor(soonest).label }
-    : { value: "—", hint: isZh ? "暂无排期" : "nothing scheduled" };
+    ? { value: formatRunAt(soonest.run_at).relative || (t("memories.PulseHeader.soon")), hint: metaFor(soonest).label }
+    : { value: "—", hint: t("memories.PulseHeader.nothing_scheduled") };
 
   // The heatmap is oldest → newest, so the last entry is today.
   const beatsToday = heatmap.length > 0 ? heatmap[heatmap.length - 1].count : 0;
 
   return [
-    { label: isZh ? "今日心跳" : "Beats today", value: beatsToday, tone: "emerald", hint: isZh ? "已执行动作" : "actions fired" },
-    { label: isZh ? "下次心跳" : "Next beat", value: nextBeat.value, tone: "accent", hint: nextBeat.hint },
-    { label: isZh ? "日常节律" : "Daily rhythms", value: groups.daily.length },
-    { label: isZh ? "部门巡检" : "Dept check-ins", value: groups.departments.length },
-    { label: isZh ? "待跟进项" : "Follow-ups", value: followups },
-    { label: isZh ? "记忆条目" : "Memories", value: memoriesTotal },
+    { label: t("memories.PulseHeader.beats_today"), value: beatsToday, tone: "emerald", hint: t("memories.PulseHeader.actions_fired") },
+    { label: t("memories.PulseHeader.next_beat"), value: nextBeat.value, tone: "accent", hint: nextBeat.hint },
+    { label: t("memories.PulseHeader.daily_rhythms"), value: groups.daily.length },
+    { label: t("memories.PulseHeader.dept_checkins"), value: groups.departments.length },
+    { label: t("memories.PulseHeader.followups"), value: followups },
+    { label: t("memories.PulseHeader.memories"), value: memoriesTotal },
   ];
 }
 
@@ -207,7 +204,8 @@ function toWeeks(days: DailyActivityCount[]): (DailyActivityCount | null)[][] {
   return weeks;
 }
 
-function Heatmap({ days, isZh = false }: { days: DailyActivityCount[]; isZh?: boolean }) {
+function Heatmap({ days }: { days: DailyActivityCount[] }) {
+  const { t } = useI18n();
   const weeks = useMemo(() => toWeeks(days), [days]);
   const total = useMemo(() => days.reduce((n, d) => n + d.count, 0), [days]);
 
@@ -238,11 +236,11 @@ function Heatmap({ days, isZh = false }: { days: DailyActivityCount[]; isZh?: bo
 
       {/* Legend */}
       <div className="flex items-center justify-end gap-1.5 mt-2 text-[11px] text-fg-subtle">
-        <span>{isZh ? "较少" : "less"}</span>
+        <span>{t("memories.PulseHeader.less")}</span>
         {LEVEL_BG.map((bg, i) => (
           <span key={i} className={`h-3 w-3 rounded-[3px] ${bg}`} aria-hidden="true" />
         ))}
-        <span>{isZh ? "较多" : "more"}</span>
+        <span>{t("memories.PulseHeader.more")}</span>
       </div>
     </div>
   );

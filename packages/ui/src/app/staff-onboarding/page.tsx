@@ -10,7 +10,7 @@ import {
   listOnboardingPlans,
   listOnboardingTemplates,
 } from "@/lib/api";
-import { PHASE_LABEL, PHASE_LABEL_ZH, STATUS_META, STATUS_ORDER } from "@/components/onboarding/meta";
+import { phaseLabel, statusLabel, STATUS_META, STATUS_ORDER } from "@/components/onboarding/meta";
 import { useI18n } from "@/lib/i18n";
 
 function ProgressBar({ pct }: { pct: number }) {
@@ -25,8 +25,7 @@ function ProgressBar({ pct }: { pct: number }) {
 }
 
 export default function StaffOnboardingPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
 
   const [plans, setPlans] = useState<OnboardingPlan[]>([]);
   const [templates, setTemplates] = useState<OnboardingTemplate[]>([]);
@@ -47,7 +46,7 @@ export default function StaffOnboardingPage() {
         setPlans(p);
         setTemplates(t);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : (isZh ? "加载失败" : "Failed to load")))
+      .catch((err) => setError(err instanceof Error ? err.message : (t("staff_onboarding.page.failed_to_load"))))
       .finally(() => setLoading(false));
   }
 
@@ -84,7 +83,7 @@ export default function StaffOnboardingPage() {
       setShowCreate(false);
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : (isZh ? "创建方案失败" : "Failed to create plan"));
+      setError(err instanceof Error ? err.message : (t("staff_onboarding.page.failed_to_create_plan")));
     } finally {
       setSaving(false);
     }
@@ -97,19 +96,17 @@ export default function StaffOnboardingPage() {
           <div className="flex items-baseline justify-between mb-6 gap-4 flex-wrap">
             <div>
               <h1 className="text-xl font-semibold text-fg">
-                {isZh ? "员工入职引导" : "Staff Onboarding"}
+                {t("staff_onboarding.page.staff_onboarding")}
               </h1>
               <p className="text-sm text-fg-muted mt-0.5">
-                {isZh
-                  ? "新员工入职方案 — 进度、待办任务以及生成的定制欢迎简报。"
-                  : "Onboarding plans for new hires — progress, tasks, and the generated welcome brief."}
+                {t("staff_onboarding.page.onboarding_plans_for_new_hires")}
               </p>
             </div>
             <button
               onClick={() => setShowCreate((s) => !s)}
               className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium"
             >
-              {showCreate ? (isZh ? "取消" : "Cancel") : (isZh ? "新建方案" : "New plan")}
+              {showCreate ? (t("staff_onboarding.page.cancel")) : (t("staff_onboarding.page.new_plan"))}
             </button>
           </div>
 
@@ -119,7 +116,7 @@ export default function StaffOnboardingPage() {
               className="mb-6 rounded-xl border border-line bg-surface-elevated p-4 grid gap-3 sm:grid-cols-2"
             >
               <label className="flex flex-col gap-1 text-sm">
-                <span className="text-fg-muted">{isZh ? "员工姓名 *" : "Full name *"}</span>
+                <span className="text-fg-muted">{t("staff_onboarding.page.full_name")}</span>
                 <input
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -128,7 +125,7 @@ export default function StaffOnboardingPage() {
                 />
               </label>
               <label className="flex flex-col gap-1 text-sm">
-                <span className="text-fg-muted">{isZh ? "入职日期 *" : "Start date *"}</span>
+                <span className="text-fg-muted">{t("staff_onboarding.page.start_date")}</span>
                 <input
                   type="date"
                   value={startDate}
@@ -138,22 +135,22 @@ export default function StaffOnboardingPage() {
                 />
               </label>
               <label className="flex flex-col gap-1 text-sm">
-                <span className="text-fg-muted">{isZh ? "岗位角色" : "Role"}</span>
+                <span className="text-fg-muted">{t("staff_onboarding.page.role")}</span>
                 <input
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  placeholder={isZh ? "例如：兼职 CFO" : "e.g. Fractional CFO"}
+                  placeholder={t("staff_onboarding.page.eg_fractional_cfo")}
                   className="px-3 py-2 rounded-lg bg-surface-input border border-line focus:outline-none focus:border-indigo-500"
                 />
               </label>
               <label className="flex flex-col gap-1 text-sm">
-                <span className="text-fg-muted">{isZh ? "流程模板" : "Template"}</span>
+                <span className="text-fg-muted">{t("staff_onboarding.page.template")}</span>
                 <select
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
                   className="px-3 py-2 rounded-lg bg-surface-input border border-line focus:outline-none focus:border-indigo-500"
                 >
-                  <option value="">{isZh ? "不使用模板（空白方案）" : "No template (blank plan)"}</option>
+                  <option value="">{t("staff_onboarding.page.no_template_blank_plan")}</option>
                   {templates.map((t) => (
                     <option key={t.name} value={t.name}>
                       {t.title}
@@ -167,13 +164,13 @@ export default function StaffOnboardingPage() {
                   disabled={saving || !fullName.trim() || !startDate}
                   className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium"
                 >
-                  {saving ? (isZh ? "创建中…" : "Creating…") : (isZh ? "创建入职方案" : "Create plan")}
+                  {saving ? (t("staff_onboarding.page.creating")) : (t("staff_onboarding.page.create_plan"))}
                 </button>
               </div>
             </form>
           )}
 
-          {loading && <p className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</p>}
+          {loading && <p className="text-fg-muted text-sm">{t("staff_onboarding.page.loading")}</p>}
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm mb-4">
               {error}
@@ -182,9 +179,7 @@ export default function StaffOnboardingPage() {
           {!loading && !error && plans.length === 0 && (
             <div className="rounded-xl border border-line bg-surface-elevated p-8 text-center">
               <p className="text-fg-muted text-sm">
-                {isZh
-                  ? "暂无入职方案。可在上方新建，或在聊天中让 Executive 协助办理新员工入职。"
-                  : "No onboarding plans yet. Create one above, or ask the Executive to onboard a new hire in chat."}
+                {t("staff_onboarding.page.no_onboarding_plans_yet_create")}
               </p>
             </div>
           )}
@@ -209,10 +204,10 @@ export default function StaffOnboardingPage() {
                       <span
                         className={`px-2 py-0.5 text-[11px] rounded-full border ${meta.cls}`}
                       >
-                        {isZh ? meta.labelZh : meta.label}
+                        {statusLabel(plan.status, locale)}
                       </span>
                       <span className="text-[11px] text-fg-subtle">
-                        {isZh ? (PHASE_LABEL_ZH[plan.current_phase] ?? plan.current_phase) : (PHASE_LABEL[plan.current_phase] ?? plan.current_phase)}
+                        {phaseLabel(plan.current_phase, locale)}
                       </span>
                     </div>
                   </div>
@@ -223,7 +218,7 @@ export default function StaffOnboardingPage() {
                     </span>
                   </div>
                   <div className="mt-1.5 text-[11px] text-fg-subtle">
-                    {isZh ? `入职日期 ${plan.start_date}` : `Starts ${plan.start_date}`}
+                    {t("staff_onboarding.page.starts_plan_start_date", { plan_start_date: plan.start_date })}
                   </div>
                 </Link>
               );

@@ -77,16 +77,19 @@ function isStatus(v: string | null): v is RunStatus {
   return v === "active" || v === "done" || v === "error";
 }
 
-function statusBadge(status: string, isZh?: boolean) {
+function statusBadge(status: string, t: (k: string, f?: string) => string) {
   const color =
     status === "done"
       ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/30"
       : status === "error"
       ? "bg-red-500/10 text-red-400 ring-red-500/30"
       : "bg-amber-500/10 text-amber-400 ring-amber-500/30";
-  const label = isZh
-    ? (status === "done" ? "已完成" : status === "error" ? "失败" : "进行中")
-    : status;
+  const label =
+    status === "done"
+      ? t("common.completed")
+      : status === "error"
+      ? t("common.failed")
+      : t("common.running");
   return (
     <span
       className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ring-1 ${color}`}
@@ -197,32 +200,29 @@ function JobsPageInner() {
     [workflows]
   );
 
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
 
   const handleDelete = useCallback(
     async (runId: string) => {
-      if (!confirm(isZh ? "确定删除此执行记录吗？" : "Delete this run?")) return;
+      if (!confirm(t("jobs.page.delete_this_run"))) return;
       await deleteWorkflowRun(runId);
       refresh();
     },
-    [refresh, isZh]
+    [refresh, t]
   );
 
   const handleDeleteCustom = useCallback(
     async (name: string) => {
       if (
         !confirm(
-          isZh
-            ? `确定删除自定义工作流 “${name}” 吗？此操作无法撤销。`
-            : `Delete the custom workflow “${name}”? This cannot be undone.`
+          t("jobs.page.delete_the_custom_workflow_name", { name })
         )
       )
         return;
       await deleteCustomWorkflow(name);
       refresh();
     },
-    [refresh, isZh]
+    [refresh, t]
   );
 
   return (
@@ -231,25 +231,25 @@ function JobsPageInner() {
         <TabButton
           active={tab === "catalog"}
           onClick={() => setParam({ tab: "catalog" })}
-          label={isZh ? "工作流目录" : "Catalog"}
+          label={t("jobs.page.catalog")}
           count={workflows.length}
         />
         <TabButton
           active={tab === "runs"}
           onClick={() => setParam({ tab: "runs" })}
-          label={isZh ? "执行记录" : "Runs"}
+          label={t("jobs.page.runs")}
           count={runs.length}
         />
       </div>
 
       {loading && (
         <div className="text-sm text-fg-muted">
-          {isZh ? "正在加载任务流…" : "Loading jobs…"}
+          {t("jobs.page.loading_jobs")}
         </div>
       )}
       {error && (
         <div className="text-sm text-red-400 mb-4">
-          {isZh ? "错误: " : "Error: "}{error}
+          {t("jobs.page.error_2")}{error}
         </div>
       )}
 
@@ -340,8 +340,7 @@ function CatalogView({
   onQueryChange: (v: string) => void;
   onDeleteCustom: (name: string) => void;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
 
   const filtered = workflows.filter((w) => {
     const title = getWorkflowTitle(w.name, w.title, locale);
@@ -370,8 +369,8 @@ function CatalogView({
           {desc}
         </p>
         <div className="flex items-center justify-between text-xs text-fg-muted">
-          <span>{w.steps.length} {isZh ? "个步骤" : "steps"}</span>
-          <span>~{w.estimated_minutes} {isZh ? "分钟" : "min"}</span>
+          <span>{w.steps.length} {t("jobs.page.steps")}</span>
+          <span>~{w.estimated_minutes} {t("jobs.page.min")}</span>
         </div>
       </Link>
     );
@@ -391,8 +390,8 @@ function CatalogView({
             {desc}
           </p>
           <div className="flex items-center justify-between text-xs text-fg-muted">
-            <span>{w.steps.length} {isZh ? "个步骤" : "steps"}</span>
-            <span>~{w.estimated_minutes} {isZh ? "分钟" : "min"}</span>
+            <span>{w.steps.length} {t("jobs.page.steps")}</span>
+            <span>~{w.estimated_minutes} {t("jobs.page.min")}</span>
           </div>
         </Link>
         <div className="mt-3 flex items-center gap-3 border-t border-line pt-3 text-xs">
@@ -400,14 +399,14 @@ function CatalogView({
             href={`/jobs/new?edit=${encodeURIComponent(w.name)}`}
             className="text-indigo-400 hover:text-indigo-300"
           >
-            {isZh ? "编辑" : "Edit"}
+            {t("jobs.page.edit")}
           </Link>
           <button
             type="button"
             onClick={() => onDeleteCustom(w.name)}
             className="text-fg-muted hover:text-red-400 transition"
           >
-            {isZh ? "删除" : "Delete"}
+            {t("jobs.page.delete")}
           </button>
         </div>
       </div>
@@ -420,19 +419,17 @@ function CatalogView({
     items: WorkflowMeta[],
     card: (w: WorkflowMeta) => React.ReactNode = renderCard
   ) => {
-    const displayTitle = isZh
-      ? (SECTION_ORDER_ZH[section as WorkflowSection] ?? (section === "Custom" ? "自定义工作流" : section === "Other" ? "其他" : section))
-      : section;
-    const displayBlurb = isZh
-      ? (SECTION_BLURB_ZH[section as WorkflowSection] ?? blurb)
-      : blurb;
+    const displayTitle =
+      t(`jobs.new.section.${section.toLowerCase()}`, section);
+    const displayBlurb =
+      t(`jobs.sectionBlurb.${section.toLowerCase()}`, blurb);
 
     return (
       <div key={section}>
         <div className="mb-3 flex items-baseline gap-3">
           <h2 className="text-base font-semibold text-fg">{displayTitle}</h2>
           <span className="text-xs text-fg-muted">
-            {items.length} {isZh ? "个工作流" : (items.length === 1 ? "job" : "jobs")}
+            {t("jobs.page.jobCount", { count: items.length })}
           </span>
         </div>
         <p className="text-xs text-fg-muted mb-3 leading-relaxed">{displayBlurb}</p>
@@ -447,30 +444,30 @@ function CatalogView({
         <SearchInput
           value={query}
           onChange={onQueryChange}
-          placeholder={isZh ? "搜索工作流标题或描述…" : "Search workflows by title or description…"}
+          placeholder={t("jobs.page.search_workflows_by_title_or")}
         />
         <Link
           href="/jobs/new"
           className="shrink-0 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 transition"
         >
-          {isZh ? "+ 新建工作流" : "+ New workflow"}
+          {t("jobs.page.new_workflow")}
         </Link>
       </div>
 
       {workflows.length === 0 ? (
         <div className="text-sm text-fg-muted">
-          {isZh ? "暂未注册任何工作流。" : "No jobs registered yet."}
+          {t("jobs.page.no_jobs_registered_yet")}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-sm text-fg-muted">
-          {isZh ? `未找到与 “${query}” 匹配的工作流。` : `No jobs match “${query}”.`}
+          {t("jobs.page.no_jobs_match_query", { query })}
         </div>
       ) : (
         <div className="space-y-10">
           {custom.length > 0 &&
             renderSection(
               "Custom",
-              isZh ? "您创建的专属工作流，可随时编辑或删除。" : "Workflows you created. Edit or delete them anytime.",
+              t("jobs.page.workflows_you_created_edit_or"),
               custom,
               renderCustomCard
             )}
@@ -482,7 +479,7 @@ function CatalogView({
           {others.length > 0 &&
             renderSection(
               "Other",
-              isZh ? "尚未归入特定分组的工作流。" : "Workflows not yet assigned to a known section.",
+              t("jobs.page.workflows_not_yet_assigned_to"),
               others
             )}
         </div>
@@ -514,8 +511,7 @@ function RunsView({
   onToggleCollapsed: (key: string) => void;
   onDelete: (runId: string) => void;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
 
   const visible = runs.filter(
     (r) =>
@@ -533,17 +529,7 @@ function RunsView({
     [visible]
   );
 
-  const emptyMsg = isZh
-    ? status === "active"
-      ? "暂无进行中的执行记录。"
-      : status === "done"
-      ? "暂无已完成的执行记录。"
-      : "暂无执行失败记录。"
-    : status === "active"
-    ? "No active runs."
-    : status === "done"
-    ? "No completed runs yet."
-    : "No errors.";
+  const emptyMsg = t(`jobs.runs.empty.${status}`);
 
   return (
     <div>
@@ -551,21 +537,21 @@ function RunsView({
         <StatusSegment
           active={status === "active"}
           onClick={() => onStatusChange("active")}
-          label={isZh ? "进行中" : "Active"}
+          label={t("jobs.page.active")}
           count={counts.active}
           tone="amber"
         />
         <StatusSegment
           active={status === "done"}
           onClick={() => onStatusChange("done")}
-          label={isZh ? "已完成" : "Done"}
+          label={t("jobs.page.done")}
           count={counts.done}
           tone="emerald"
         />
         <StatusSegment
           active={status === "error"}
           onClick={() => onStatusChange("error")}
-          label={isZh ? "失败" : "Error"}
+          label={t("jobs.page.error")}
           count={counts.error}
           tone="red"
         />
@@ -575,16 +561,14 @@ function RunsView({
         <SearchInput
           value={query}
           onChange={onQueryChange}
-          placeholder={isZh ? "按标题或工作流搜索执行记录…" : "Search runs by title or workflow…"}
+          placeholder={t("jobs.page.search_runs_by_title_or")}
         />
       </div>
 
       {visible.length === 0 ? (
         <div className="text-sm text-fg-muted">
           {query
-            ? isZh
-              ? `未找到与 “${query}” 匹配的记录。`
-              : `No runs match “${query}”.`
+            ? t("jobs.page.no_runs_match_query", { query })
             : emptyMsg}
         </div>
       ) : (
@@ -611,7 +595,7 @@ function RunsView({
                     {title}
                   </span>
                   <span className="text-xs text-fg-muted">
-                    {items.length} {isZh ? "次执行" : items.length === 1 ? "run" : "runs"}
+                    {t("jobs.page.runCount", { count: items.length })}
                   </span>
                 </button>
                 {!isCollapsed && (
@@ -629,21 +613,19 @@ function RunsView({
                             <span className="text-sm font-medium text-fg truncate">
                               {r.title}
                             </span>
-                            {statusBadge(r.status, isZh)}
+                            {statusBadge(r.status, t)}
                           </div>
                           <div className="text-xs text-fg-muted">
-                            {isZh
-                              ? `更新于 ${formatRelativeTime(r.updated_at, "zh")}`
-                              : `updated ${formatRelativeTime(r.updated_at, "en")}`}
+                            {t("jobs.page.updated", { time: formatRelativeTime(r.updated_at, locale) })}
                           </div>
                         </Link>
                         <button
                           type="button"
                           onClick={() => onDelete(r.run_id)}
                           className="text-xs text-fg-muted hover:text-red-400 transition"
-                          aria-label={isZh ? "删除记录" : "Delete run"}
+                          aria-label={t("jobs.page.delete_run")}
                         >
-                          {isZh ? "删除" : "Delete"}
+                          {t("jobs.page.delete")}
                         </button>
                       </div>
                     ))}
@@ -694,8 +676,7 @@ function StatusSegment({
 }
 
 export default function JobsPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
 
   return (
     <div className="flex flex-col h-full bg-surface text-fg">
@@ -703,12 +684,10 @@ export default function JobsPage() {
         <div className="max-w-5xl mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-fg mb-1">
-              {isZh ? "高管工作流 (Jobs)" : "Executive Jobs"}
+              {t("jobs.page.executive_jobs")}
             </h1>
             <p className="text-sm text-fg-muted">
-              {isZh
-                ? "以业务交付为导向的结构化高管工作流 — 直接起草并输出完整成果物，而非简单的对话交流。每个工作流自动协调相关专业角色与知识库，高效产出专业方案。"
-                : "Structured executive workflows that produce a deliverable — not a conversation. Each job orchestrates the relevant specialists and knowledge to draft a complete artifact."}
+              {t("jobs.page.structured_executive_workflows_that_produce")}
             </p>
           </div>
           <Suspense fallback={null}>

@@ -9,13 +9,12 @@ import { WorkflowRunDetail, getWorkflowRun } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { getWorkflowTitle } from "@/lib/workflowI18n";
 
-function formatTimestamp(iso: string, isZh?: boolean): string {
-  return new Date(iso).toLocaleString(isZh ? "zh-CN" : undefined);
+function formatTimestamp(iso: string, locale?: string): string {
+  return new Date(iso).toLocaleString(locale);
 }
 
 export default function RunDetailPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
 
   const params = useParams<{ id: string }>();
   const runId = params?.id;
@@ -57,9 +56,9 @@ export default function RunDetailPage() {
   if (error) {
     return (
       <div className="flex flex-col h-full bg-surface text-fg items-center justify-center">
-        <div className="text-sm text-red-400 mb-4">{isZh ? "出错了" : "Error"}: {error}</div>
+        <div className="text-sm text-red-400 mb-4">{t("jobs.runs.id.page.error")}: {error}</div>
         <Link href="/jobs" className="text-sm text-fg-muted hover:text-fg">
-          {isZh ? "← 返回任务流列表" : "← Back to jobs"}
+          {t("jobs.runs.id.page.back_to_jobs")}
         </Link>
       </div>
     );
@@ -68,7 +67,7 @@ export default function RunDetailPage() {
   if (!run) {
     return (
       <div className="flex flex-col h-full bg-surface text-fg-muted items-center justify-center text-sm">
-        {isZh ? "加载中…" : "Loading…"}
+        {t("jobs.runs.id.page.loading")}
       </div>
     );
   }
@@ -84,11 +83,9 @@ export default function RunDetailPage() {
               </h1>
               <div className="text-xs text-fg-muted">
                 {getWorkflowTitle(run.workflow_name, run.workflow_name, locale)} ·{" "}
-                {isZh
-                  ? `创建于 ${formatTimestamp(run.created_at, true)}`
-                  : `created ${formatTimestamp(run.created_at)}`}{" "}
-                · {isZh ? "状态 " : "status "}
-                <StatusPill status={run.status} isZh={isZh} />
+                {t("jobs.runs.createdAt", { time: formatTimestamp(run.created_at, locale) })} ·{" "}
+                {t("jobs.runs.statusLabel")}{" "}
+                <StatusPill status={run.status} />
               </div>
             </div>
             {run.artifact && (
@@ -98,14 +95,14 @@ export default function RunDetailPage() {
                   onClick={handleCopy}
                   className="text-xs text-fg-muted hover:text-fg transition px-3 py-1.5 rounded-md border border-line hover:bg-surface-overlay min-h-touch"
                 >
-                  {copied ? (isZh ? "已复制！" : "Copied!") : (isZh ? "复制" : "Copy")}
+                  {copied ? (t("jobs.runs.id.page.copied")) : (t("jobs.runs.id.page.copy"))}
                 </button>
                 <button
                   type="button"
                   onClick={handleDownload}
                   className="text-xs text-fg-muted hover:text-fg transition px-3 py-1.5 rounded-md border border-line hover:bg-surface-overlay min-h-touch"
                 >
-                  {isZh ? "下载 .md" : "Download .md"}
+                  {t("jobs.runs.id.page.download_md")}
                 </button>
               </div>
             )}
@@ -113,13 +110,13 @@ export default function RunDetailPage() {
 
           {run.status === "running" && (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-300">
-              {isZh ? "此任务正在执行中，请稍后刷新。" : "This run is still in progress. Refresh in a moment."}
+              {t("jobs.runs.id.page.this_run_is_still_in")}
             </div>
           )}
 
           {run.status === "error" && (
             <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-300">
-              <div className="font-medium mb-1">{isZh ? "执行失败" : "Run failed"}</div>
+              <div className="font-medium mb-1">{t("jobs.runs.id.page.run_failed")}</div>
               <div className="text-xs">{run.error}</div>
             </div>
           )}
@@ -152,7 +149,7 @@ export default function RunDetailPage() {
 
           <details className="rounded-md border border-line bg-surface/30 px-4 py-3 text-sm">
             <summary className="text-xs text-fg-muted cursor-pointer">
-              {isZh ? "输入参数" : "Inputs"}
+              {t("jobs.runs.id.page.inputs")}
             </summary>
             <pre className="mt-3 text-xs text-fg whitespace-pre-wrap font-mono">
               {JSON.stringify(run.inputs, null, 2)}
@@ -164,15 +161,19 @@ export default function RunDetailPage() {
   );
 }
 
-function StatusPill({ status, isZh }: { status: string; isZh?: boolean }) {
+function StatusPill({ status }: { status: string }) {
+  const { t } = useI18n();
   const color =
     status === "done"
       ? "text-emerald-400"
       : status === "error"
       ? "text-red-400"
       : "text-amber-400";
-  const label = isZh
-    ? (status === "done" ? "已完成" : status === "error" ? "失败" : "执行中")
-    : status;
+  const label =
+    status === "done"
+      ? t("common.completed")
+      : status === "error"
+      ? t("common.failed")
+      : t("common.running");
   return <span className={`${color} font-medium`}>{label}</span>;
 }

@@ -39,8 +39,8 @@ const FETCH_LIMIT = 500;
 // ---------------------------------------------------------------------------
 
 export default function CadenceSection() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
+  
   const [rows, setRows] = useState<ScheduledAction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,30 +90,24 @@ export default function CadenceSection() {
           </div>
         ) : !hasRhythm ? (
           <div className="rounded-lg border border-line bg-surface-elevated/40 px-4 py-6 text-sm text-fg-muted">
-            {isZh
-              ? "尚未安排周期性节律任务。当调度服务运行且已设置企业画像后，节拍将自动启动。"
-              : "No recurring cadence is scheduled yet. The heartbeat starts once the scheduler is running and a company profile is set."}
+            {t("memories.CadenceSection.no_recurring_cadence_is_scheduled")}
           </div>
         ) : (
           <div className="max-h-[32rem] overflow-y-auto pr-1 space-y-6">
             <RhythmBlock
-              title={isZh ? "日常节律" : "Daily rhythm"}
+              title={t("memories.CadenceSection.daily_rhythm")}
               subtitle={
-                isZh
-                  ? "每日简报执行闭环 — 晨间简报与日终摘要，反思复盘将用于生成次日简报。"
-                  : "Your daily briefing cycle — the morning brief and end-of-day digest land in your inbox; the reflection sets up the morning brief."
+                t("memories.CadenceSection.your_daily_briefing_cycle_the")
               }
               icon="clipboard"
-              tag={isZh ? "每日一次 · 呈报给您" : "Once a day · for you"}
+              tag={t("memories.CadenceSection.once_a_day_for_you")}
               tagTone="info"
               actions={groups.daily}
             />
             <RhythmBlock
-              title={isZh ? "部门巡检" : "Department check-ins"}
+              title={t("memories.CadenceSection.department_checkins")}
               subtitle={
-                isZh
-                  ? "各业务团队巡检节奏 — 各部门下一次预定检查时间。"
-                  : "Each team's cadence — the next scheduled check-in per department."
+                t("memories.CadenceSection.each_teams_cadence_the_next")
               }
               icon="grid"
               actions={groups.departments}
@@ -121,11 +115,9 @@ export default function CadenceSection() {
             />
 
             <RhythmBlock
-              title={isZh ? "等待人员回复" : "Awaiting people"}
+              title={t("memories.CadenceSection.awaiting_people")}
               subtitle={
-                isZh
-                  ? "处于暂停状态、正等待人员回复的工作流与提醒。"
-                  : "Paused workflows and nudges waiting on a reply."
+                t("memories.CadenceSection.paused_workflows_and_nudges_waiting")
               }
               icon="bell"
               actions={groups.awaiting}
@@ -243,15 +235,15 @@ function RecentActivity() {
       </div>
     );
   }
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
+  
 
   return (
     <div className="rounded-xl border border-line bg-surface-elevated p-4">
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <Icon name="activity" size="w-4 h-4" className="text-emerald-400" />
-          <h3 className="text-sm font-semibold text-fg">{isZh ? "近期动态" : "Recent activity"}</h3>
+          <h3 className="text-sm font-semibold text-fg">{t("memories.CadenceSection.recent_activity")}</h3>
         </div>
         <LivePulse />
       </div>
@@ -348,8 +340,8 @@ function RhythmCard({
   action: ScheduledAction;
   showDepartment: boolean;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
+  
   const meta = metaFor(action);
   const { absolute, relative } = formatRunAt(action.run_at);
   const isPending = action.status === "pending";
@@ -378,7 +370,7 @@ function RhythmCard({
       <div className="text-right whitespace-nowrap shrink-0">
         {isPending ? (
           <div className="text-xs text-sky-300" title={absolute}>
-            {relative ? (isZh ? `下次: ${relative}` : `next ${relative}`) : absolute}
+            {relative ? (t("memories.CadenceSection.next_relative", { relative })) : absolute}
           </div>
         ) : (
           <div className="flex flex-col items-end gap-1">
@@ -409,23 +401,21 @@ function RhythmCard({
 const SYSTEM_PULSE_CAP = 50;
 
 function SystemPulse({ actions }: { actions: ScheduledAction[] }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
+  
   if (actions.length === 0) return null;
   const shown = actions.slice(0, SYSTEM_PULSE_CAP);
   const hidden = actions.length - shown.length;
   return (
     <section>
       <SectionHeading
-        title={isZh ? "系统脉搏" : "System pulse"}
+        title={t("memories.CadenceSection.system_pulse")}
         count={actions.length}
         icon="activity"
-        tag={isZh ? "内部机制 · 持续运行" : "Internal · continuous"}
+        tag={t("memories.CadenceSection.internal_continuous")}
         tagTone="muted"
         subtitle={
-          isZh
-            ? "每隔几分钟在后台执行的环境变动扫描，让执行团队随时感知外部变化。扫描结果不会直接打扰您，而是转化为后续的提案或提醒。"
-            : "Background scans that run every few minutes to keep the Executive aware of change. Nothing here is sent to you — findings surface later as proposals or nudges."
+          t("memories.CadenceSection.background_scans_that_run_every")
         }
       />
       <div className="divide-y divide-line">
@@ -435,7 +425,7 @@ function SystemPulse({ actions }: { actions: ScheduledAction[] }) {
       </div>
       {hidden > 0 && (
         <div className="text-xs text-fg-subtle mt-2">
-          {isZh ? `+还有 ${hidden} 项未展开` : `+${hidden} more not shown`}
+          {t("memories.CadenceSection.hidden_more_not_shown", { hidden })}
         </div>
       )}
     </section>
@@ -449,8 +439,8 @@ function SystemPulse({ actions }: { actions: ScheduledAction[] }) {
 // there are no pending follow-ups, like the rhythm blocks.
 // ---------------------------------------------------------------------------
 export function FollowUpsCard() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
+  
   const [rows, setRows] = useState<ScheduledAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
@@ -480,18 +470,18 @@ export function FollowUpsCard() {
   }, [refresh, reloadNonce]);
 
   const handleCancel = useCallback(async (id: number) => {
-    if (!window.confirm(isZh ? "确认取消该跟进事项？取消后将不再触发。" : "Cancel this follow-up? It won't fire.")) return;
+    if (!window.confirm(t("memories.CadenceSection.cancel_this_followup_it_wont"))) return;
     setCancellingId(id);
     try {
       await cancelScheduledAction(id);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : (isZh ? "取消失败。" : "Failed to cancel."));
+      window.alert(err instanceof Error ? err.message : (t("memories.CadenceSection.failed_to_cancel")));
       setCancellingId(null);
       return;
     }
     setCancellingId(null);
     setReloadNonce((n) => n + 1);
-  }, [isZh]);
+  }, [t]);
 
   // ad_hoc one-offs, soonest-first (groupByRhythm deliberately drops these).
   const followups = useMemo(() => {
@@ -513,10 +503,10 @@ export function FollowUpsCard() {
   return (
     <div className="rounded-xl border border-line bg-surface-elevated p-4">
       <SectionHeading
-        title={isZh ? "待跟进事项" : "Follow-ups"}
+        title={t("memories.CadenceSection.followups")}
         count={followups.length}
         icon="flag"
-        subtitle={isZh ? "执行团队为您安排的单次承诺与跟进事项。" : "One-off commitments the Executive scheduled for you."}
+        subtitle={t("memories.CadenceSection.oneoff_commitments_the_executive_scheduled")}
       />
       <div className="max-h-[32rem] overflow-y-auto pr-1 divide-y divide-line">
         {followups.map((a) => (
@@ -541,8 +531,8 @@ function FollowUpRow({
   cancelling: boolean;
   onCancel: () => void;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
+  
   const { absolute, relative } = formatRunAt(action.run_at);
   const pill = STATUS_PILL[action.status] ?? STATUS_PILL.cancelled;
   return (
@@ -560,7 +550,7 @@ function FollowUpRow({
           <span title={absolute}>{relative || absolute}</span>
           {action.attempts > 0 && (
             <span className="text-amber-400">
-              {isZh ? `已尝试 ${action.attempts} 次` : `${action.attempts} attempt${action.attempts === 1 ? "" : "s"}`}
+              {t("memories.CadenceSection.action_attempts_attemptaction_attempts_____1_________s", { action_attempts: action.attempts, action_attempts_____1_________s: action.attempts === 1 ? "" : "s" })}
             </span>
           )}
         </div>
@@ -570,7 +560,7 @@ function FollowUpRow({
             disabled={cancelling}
             className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0"
           >
-            {cancelling ? (isZh ? "正在取消…" : "Cancelling…") : (isZh ? "取消" : "Cancel")}
+            {cancelling ? (t("memories.CadenceSection.cancelling")) : (t("memories.CadenceSection.cancel"))}
           </button>
         )}
       </div>

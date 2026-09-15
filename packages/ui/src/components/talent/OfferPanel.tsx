@@ -16,16 +16,16 @@ import { workflowLink } from "@/components/talent/workflowLink";
 import { useI18n } from "@/lib/i18n";
 
 /** Days-until-expiry copy for an extended offer; null when not applicable. */
-function expiryCountdown(offer: Offer, isZh?: boolean): { text: string; urgent: boolean } | null {
+function expiryCountdown(offer: Offer, t: (k: string, p?: any) => string): { text: string; urgent: boolean } | null {
   if (offer.status !== "extended" || !offer.expires_at) return null;
   const ms = new Date(offer.expires_at).getTime() - Date.now();
   if (Number.isNaN(ms)) return null;
   const days = ms / 86_400_000;
-  if (days < 0) return { text: isZh ? "已过期 — 请记录结果" : "expired — record a decision", urgent: true };
-  if (days < 1) return { text: isZh ? "今日到期" : "expires today", urgent: true };
+  if (days < 0) return { text: t("talent.OfferPanel.expired_record_a_decision"), urgent: true };
+  if (days < 1) return { text: t("talent.OfferPanel.expires_today"), urgent: true };
   const whole = Math.floor(days);
   return {
-    text: isZh ? `${whole} 天后到期` : `expires in ${whole} day${whole === 1 ? "" : "s"}`,
+    text: t("talent.OfferPanel.expires_in_whole_daywhole_____1_________s", { whole, whole_____1_________s: whole === 1 ? "" : "s" }),
     urgent: days <= 3,
   };
 }
@@ -46,8 +46,7 @@ export function OfferPanel({
    *  (accepting an offer moves them to `placed` server-side). */
   onChanged?: () => void;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
 
   const [offers, setOffers] = useState<Offer[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -59,8 +58,8 @@ export function OfferPanel({
   const load = useCallback(() => {
     listOffers({ candidateId: candidate.id })
       .then(setOffers)
-      .catch((e) => setError(e instanceof Error ? e.message : (isZh ? "加载录用函失败" : "Failed to load offers")));
-  }, [candidate.id, isZh]);
+      .catch((e) => setError(e instanceof Error ? e.message : (t("talent.OfferPanel.failed_to_load_offers"))));
+  }, [candidate.id, t]);
 
   useEffect(() => {
     load();
@@ -69,7 +68,7 @@ export function OfferPanel({
   const open = offers.find((o) => OPEN_OFFER_STATUSES.includes(o.status));
   // With no open offer, show the latest decided one as history.
   const offer = open ?? offers[offers.length - 1];
-  const countdown = offer ? expiryCountdown(offer, isZh) : null;
+  const countdown = offer ? expiryCountdown(offer, t) : null;
   const hireReady = candidate.stage === "placed" || offers.some((o) => o.status === "accepted");
 
   async function act(fn: () => Promise<{ warnings?: string[]; side_effects?: string[] }>) {
@@ -83,7 +82,7 @@ export function OfferPanel({
       load();
       onChanged?.();
     } catch (e) {
-      setError(e instanceof Error ? e.message : (isZh ? "录用函操作失败" : "Offer action failed"));
+      setError(e instanceof Error ? e.message : (t("talent.OfferPanel.offer_action_failed")));
     } finally {
       setBusy(false);
     }
@@ -94,7 +93,7 @@ export function OfferPanel({
   return (
     <div className="mb-6">
       <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-2">
-        {isZh ? "录用函 (Offer)" : "Offer"}
+        {t("talent.OfferPanel.offer")}
       </div>
       <div className="rounded-xl border border-line bg-surface-elevated p-4 space-y-3">
         {error && (
@@ -111,15 +110,13 @@ export function OfferPanel({
         {!offer ? (
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-fg-subtle">
-              {isZh
-                ? "暂无录用函。工作流将根据薪酬范围起草条款并请求招聘审批。"
-                : "No offer yet. The workflow drafts terms against the comp band and requests hiring sign-off."}
+              {t("talent.OfferPanel.no_offer_yet_the_workflow")}
             </p>
             <Link
               href={workflowLink("offer_approval", { candidate_id: String(candidate.id) })}
               className="shrink-0 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium"
             >
-              {isZh ? "起草录用函" : "Draft offer"}
+              {t("talent.OfferPanel.draft_offer")}
             </Link>
           </div>
         ) : (
@@ -127,7 +124,7 @@ export function OfferPanel({
             <div className="flex items-center gap-2 flex-wrap">
               {meta && (
                 <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${meta.pill}`}>
-                  {isZh ? meta.labelZh : meta.label}
+                  {t(`talent.offer.${offer.status}`, meta.label)}
                 </span>
               )}
               {countdown && (
@@ -148,7 +145,7 @@ export function OfferPanel({
                   onClick={() => setShowPackage((v) => !v)}
                   className="text-xs text-indigo-300 hover:text-indigo-200"
                 >
-                  {showPackage ? (isZh ? "收起录用方案" : "Hide offer package") : (isZh ? "查看录用方案" : "Show offer package")}
+                  {showPackage ? (t("talent.OfferPanel.hide_offer_package")) : (t("talent.OfferPanel.show_offer_package"))}
                 </button>
                 {showPackage && (
                   <pre className="mt-2 p-3 rounded-lg bg-surface-input border border-line text-xs text-fg-muted whitespace-pre-wrap overflow-x-auto">
@@ -162,13 +159,13 @@ export function OfferPanel({
               {(offer.status === "draft" || offer.status === "pending_approval") && (
                 <>
                   <label className="flex items-center gap-1 text-xs text-fg-muted">
-                    {isZh ? "有效期" : "Expires in"}
+                    {t("talent.OfferPanel.expires_in")}
                     <input
                       value={expiresInDays}
                       onChange={(e) => setExpiresInDays(e.target.value)}
                       className="w-12 px-2 py-1 rounded-lg bg-surface-input border border-line text-xs text-fg focus:outline-none focus:border-indigo-500"
                     />
-                    {isZh ? "天" : "days"}
+                    {t("talent.OfferPanel.days")}
                   </label>
                   <button
                     disabled={busy}
@@ -180,9 +177,9 @@ export function OfferPanel({
                       )
                     }
                     className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium disabled:opacity-50"
-                    title={isZh ? "您已自行发送录用函 — 此操作将记录并设置过期提醒。" : "You sent the offer yourself — this records it and schedules expiry reminders."}
+                    title={t("talent.OfferPanel.you_sent_the_offer_yourself")}
                   >
-                    {isZh ? "标记为已发送" : "Mark extended"}
+                    {t("talent.OfferPanel.mark_extended")}
                   </button>
                 </>
               )}
@@ -193,21 +190,21 @@ export function OfferPanel({
                     onClick={() => act(() => recordOfferDecision(offer.id, "accepted"))}
                     className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium disabled:opacity-50"
                   >
-                    {isZh ? "已接受" : "Accepted"}
+                    {t("talent.OfferPanel.accepted")}
                   </button>
                   <button
                     disabled={busy}
                     onClick={() => act(() => recordOfferDecision(offer.id, "declined"))}
                     className="px-3 py-1.5 rounded-lg border border-rose-500/40 text-rose-300 hover:bg-rose-500/10 text-xs font-medium disabled:opacity-50"
                   >
-                    {isZh ? "已谢绝" : "Declined"}
+                    {t("talent.OfferPanel.declined")}
                   </button>
                   <button
                     disabled={busy}
                     onClick={() => act(() => recordOfferDecision(offer.id, "expired"))}
                     className="px-3 py-1.5 rounded-lg border border-line text-fg-muted hover:bg-surface-overlay text-xs font-medium disabled:opacity-50"
                   >
-                    {isZh ? "已过期" : "Expired"}
+                    {t("talent.OfferPanel.expired")}
                   </button>
                 </>
               )}
@@ -217,7 +214,7 @@ export function OfferPanel({
                   onClick={() => act(() => recordOfferDecision(offer.id, "rescinded"))}
                   className="px-3 py-1.5 rounded-lg border border-line text-fg-muted hover:bg-surface-overlay text-xs font-medium disabled:opacity-50"
                 >
-                  {isZh ? "撤回" : "Rescind"}
+                  {t("talent.OfferPanel.rescind")}
                 </button>
               )}
               {!open && !hireReady && (
@@ -225,7 +222,7 @@ export function OfferPanel({
                   href={workflowLink("offer_approval", { candidate_id: String(candidate.id) })}
                   className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium"
                 >
-                  {isZh ? "起草新录用函" : "Draft new offer"}
+                  {t("talent.OfferPanel.draft_new_offer")}
                 </Link>
               )}
             </div>
@@ -235,15 +232,13 @@ export function OfferPanel({
         {hireReady && (
           <div className="flex items-center justify-between gap-3 pt-2 border-t border-line">
             <p className="text-xs text-fg-muted">
-              {isZh
-                ? "已录用 — 将其加入花名册并安排 30/60/90 天跟进检查。"
-                : "Hired — add them to the roster and schedule 30/60/90 check-ins."}
+              {t("talent.OfferPanel.hired_add_them_to_the")}
             </p>
             <Link
               href={workflowLink("new_hire_onboarding", { candidate_id: String(candidate.id) })}
               className="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium"
             >
-              {isZh ? "开始入职引导" : "Start onboarding"}
+              {t("talent.OfferPanel.start_onboarding")}
             </Link>
           </div>
         )}

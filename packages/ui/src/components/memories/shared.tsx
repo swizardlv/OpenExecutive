@@ -260,8 +260,8 @@ export function SectionHeading({
   tagTone?: TagTone;
   subtitle?: string;
 }) {
-  const { locale } = useI18n();
-  const displayTitle = locale === "zh" ? (TITLE_MAP_ZH[title] ?? title) : title;
+  const { t } = useI18n();
+  const displayTitle = t(`memories.section.${title}`, title);
 
   return (
     <div className="mb-3">

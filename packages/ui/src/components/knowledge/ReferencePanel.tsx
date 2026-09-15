@@ -10,8 +10,7 @@ import {
 import { useI18n } from "@/lib/i18n";
 
 export default function ReferencePanel() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
   const [sources, setSources] = useState<ExternalSourceInfo[] | null>(null);
   const [totalChunks, setTotalChunks] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -25,8 +24,8 @@ export default function ReferencePanel() {
         setSources(data.sources);
         setTotalChunks(data.total_chunks);
       })
-      .catch(() => setError(isZh ? "加载参考资料库失败" : "Failed to load reference library"));
-  }, [isZh]);
+      .catch(() => setError(t("knowledge.ReferencePanel.failed_to_load_reference_library")));
+  }, [t]);
 
   async function handlePeek(id: string) {
     setPeeking(id);
@@ -37,13 +36,11 @@ export default function ReferencePanel() {
       setPeekChunks(data.chunks);
       if (data.chunks.length === 0) {
         setPeekError(
-          isZh
-            ? "尚无已索引片段 — 运行 `openexecutive ingest-oer` 以填充该数据源。"
-            : "No indexed chunks yet — run `openexecutive ingest-oer` to populate this source."
+          t("knowledge.ReferencePanel.no_indexed_chunks_yet_run")
         );
       }
     } catch {
-      setPeekError(isZh ? "加载片段失败" : "Failed to load chunks");
+      setPeekError(t("knowledge.ReferencePanel.failed_to_load_chunks"));
     }
   }
 
@@ -55,7 +52,7 @@ export default function ReferencePanel() {
     );
   }
   if (sources === null) {
-    return <p className="text-sm text-fg-muted">{isZh ? "加载中…" : "Loading…"}</p>;
+    return <p className="text-sm text-fg-muted">{t("knowledge.ReferencePanel.loading")}</p>;
   }
 
   const ingested = sources.filter((s) => s.is_ingested);
@@ -64,24 +61,12 @@ export default function ReferencePanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-semibold text-fg">{isZh ? "参考资料库" : "Reference Library"}</h2>
+        <h2 className="text-base font-semibold text-fg">{t("knowledge.ReferencePanel.reference_library")}</h2>
         <p className="text-sm text-fg-muted mt-1">
-          {isZh ? (
-            <>
-              Executive 汲取的开源教材与行业权威手册。在 <code className="text-fg">knowledge/sources.yaml</code> 中声明。如需添加或刷新：运行 <code className="text-fg">openexecutive ingest-oer</code>。
-            </>
-          ) : (
-            <>
-              Open-licensed textbooks and handbooks the Executive draws on. Declared in{" "}
-              <code className="text-fg">knowledge/sources.yaml</code>. To add or
-              refresh: run <code className="text-fg">openexecutive ingest-oer</code>.
-            </>
-          )}
+          {t("knowledge.ReferencePanel.oer_desc")}
         </p>
         <p className="text-xs text-fg-muted mt-2">
-          {isZh
-            ? `${ingested.length} 个已导入 · ${pending.length} 个待导入 · ${totalChunks.toLocaleString()} 条已索引片段`
-            : `${ingested.length} ingested · ${pending.length} pending · ${totalChunks.toLocaleString()} indexed chunks`}
+          {t("knowledge.ReferencePanel.ingested_length_ingested_pending_length_pending_totalchunks_tolocalestring", { ingested_length: ingested.length, pending_length: pending.length, totalChunks_toLocaleString: totalChunks.toLocaleString() })}
         </p>
       </div>
 
@@ -121,11 +106,10 @@ function SourceCard({
   onPeek: () => void;
   onCollapse: () => void;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
   const fetchedLabel = source.last_fetched_at
-    ? new Date(source.last_fetched_at * 1000).toLocaleString(isZh ? "zh-CN" : undefined)
-    : (isZh ? "从不" : "never");
+    ? new Date(source.last_fetched_at * 1000).toLocaleString(locale)
+    : (t("knowledge.ReferencePanel.never"));
 
   return (
     <div className="rounded-xl bg-surface-overlay/60 border border-line-strong/50 overflow-hidden">
@@ -140,10 +124,10 @@ function SourceCard({
                   : "bg-surface-input/60 text-fg-muted border border-line-strong/60"
               }`}
             >
-              {source.is_ingested ? (isZh ? "已导入" : "ingested") : (isZh ? "待导入" : "pending")}
+              {source.is_ingested ? (t("knowledge.ReferencePanel.ingested")) : (t("knowledge.ReferencePanel.pending"))}
             </span>
             <span className="text-[10px] uppercase tracking-wide text-fg-muted border border-line-strong px-1.5 py-0.5 rounded">
-              {isZh ? `阶段 ${source.phase}` : `phase ${source.phase}`}
+              {t("knowledge.ReferencePanel.phase_source_phase", { source_phase: source.phase })}
             </span>
           </div>
           <p className="text-xs text-fg-muted mt-1">
@@ -154,7 +138,7 @@ function SourceCard({
               rel="noopener noreferrer"
               className="text-fg-muted hover:text-fg underline-offset-2 hover:underline"
             >
-              {isZh ? "数据源 ↗" : "source ↗"}
+              {t("knowledge.ReferencePanel.source")}
             </a>
           </p>
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
@@ -168,9 +152,7 @@ function SourceCard({
             ))}
           </div>
           <p className="text-xs text-fg-muted mt-2">
-            {isZh
-              ? `${source.chunks.toLocaleString()} 个片段 · ${source.files} 个文件 · 获取于 ${fetchedLabel}`
-              : `${source.chunks.toLocaleString()} chunks · ${source.files} file${source.files === 1 ? "" : "s"} · fetched ${fetchedLabel}`}
+            {t("knowledge.ReferencePanel.source_chunks_tolocalestring_chunks_source_files_filesource_files_____1_________s_fetched", { source_chunks_toLocaleString: source.chunks.toLocaleString(), source_files: source.files, source_files_____1_________s: source.files === 1 ? "" : "s", fetchedLabel })}
           </p>
         </div>
         <button
@@ -178,7 +160,7 @@ function SourceCard({
           disabled={!source.is_ingested}
           className="text-xs px-3 py-1.5 rounded-lg bg-surface-input/60 border border-line-strong/60 text-fg hover:bg-surface-input disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
         >
-          {isExpanded ? (isZh ? "收起" : "Hide") : (isZh ? "预览" : "Peek")}
+          {isExpanded ? (t("knowledge.ReferencePanel.hide")) : (t("knowledge.ReferencePanel.peek"))}
         </button>
       </div>
       {isExpanded && (
@@ -190,7 +172,7 @@ function SourceCard({
               className="text-xs text-fg bg-surface-overlay/60 border border-line-strong/50 rounded-lg px-3 py-2"
             >
               <p className="text-[10px] text-fg-muted mb-1">
-                {c.domain} · {c.filename} · {isZh ? `片段 #${c.chunk_index}` : `chunk #${c.chunk_index}`}
+                {c.domain} · {c.filename} · {t("knowledge.ReferencePanel.chunk_c_chunk_index", { c_chunk_index: c.chunk_index })}
               </p>
               <p className="whitespace-pre-wrap leading-relaxed">
                 {c.text.length > 600 ? c.text.slice(0, 600) + "…" : c.text}

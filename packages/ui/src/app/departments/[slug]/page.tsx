@@ -58,25 +58,19 @@ const AUTHORITY_OPTS: DepartmentConfig["authority_level"][] = [
   "escalate",
 ];
 
-function getAuthorityMeta(level: DepartmentConfig["authority_level"], isZh: boolean) {
+function getAuthorityMeta(level: DepartmentConfig["authority_level"], t: (k: string) => string) {
   const meta = {
     auto_execute: {
-      label: isZh ? "自主执行" : "Acts on its own",
-      hint: isZh
-        ? "专员在职责范围内自主执行操作，无需提前请示。所有操作记录在审计日志中。"
-        : "The specialist runs actions in its scope without asking. You'll see them in the audit log.",
+      label: t("departments.slug.page.acts_on_its_own"),
+      hint: t("departments.slug.page.the_specialist_runs_actions_in"),
     },
     propose_only: {
-      label: isZh ? "提议方案，人工审批" : "Proposes, you approve",
-      hint: isZh
-        ? "专员拟定行动计划，并在执行前提交指定责任人审批。"
-        : "The specialist drafts actions and routes them to a person for approval before anything happens.",
+      label: t("departments.slug.page.proposes_you_approve"),
+      hint: t("departments.slug.page.the_specialist_drafts_actions_and"),
     },
     escalate: {
-      label: isZh ? "移交人工处理" : "Escalates to a human",
-      hint: isZh
-        ? "专员不会自主行动 — 将所有事项转交人工负责。"
-        : "The specialist will not act — it forwards everything to a human.",
+      label: t("departments.slug.page.escalates_to_a_human"),
+      hint: t("departments.slug.page.the_specialist_will_not_act"),
     },
   };
   return meta[level];
@@ -101,24 +95,14 @@ interface GoalRowProps {
   onEditingChange?: (editing: boolean) => void;
 }
 
-function _formatPeriodLabel(g: Goal, isZh: boolean): string {
-  const typeMap: Record<string, string> = {
-    ongoing: "持续推进",
-    quarter: "季度",
-    half: "半年度",
-    year: "年度",
-    month: "月度",
-  };
-  if (g.period_type === "ongoing") return isZh ? (g.period_value || "持续推进") : (g.period_value || "Ongoing");
-  const typeLabel = isZh
-    ? (typeMap[g.period_type] ?? g.period_type)
-    : `${g.period_type.charAt(0).toUpperCase() + g.period_type.slice(1)}`;
+function _formatPeriodLabel(g: Goal, t: (k: string, f?: string) => string): string {
+  if (g.period_type === "ongoing") return g.period_value || t("departments.slug.page.ongoing", "持续推进");
+  const typeLabel = t(`departments.slug.page.period_${g.period_type}`, g.period_type);
   return `${typeLabel}: ${g.period_value}`;
 }
 
 function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowProps) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -133,9 +117,9 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
   });
 
   const statusLabels: Record<GoalStatus, string> = {
-    on_track: isZh ? "正常推进" : "on track",
-    at_risk: isZh ? "存在风险" : "at risk",
-    off_track: isZh ? "偏离目标" : "off track",
+    on_track: t("departments.slug.page.on_track"),
+    at_risk: t("departments.slug.page.at_risk"),
+    off_track: t("departments.slug.page.off_track"),
   };
 
   // Centralise the editing transition so save/cancel/enter all notify
@@ -177,20 +161,18 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
         <div className="flex-1 min-w-0">
           <div className="text-sm text-fg font-medium">{goal.key_result}</div>
           <div className="text-xs text-fg-muted mt-0.5">
-            {isZh ? "预期目标：" : "Target: "}{goal.target}
-            {goal.current ? ` — ${isZh ? "当前进展：" : "Current: "}${goal.current}` : ""}
+            {t("departments.slug.page.target_2")}{goal.target}
+            {goal.current ? ` — ${t("departments.slug.page.current_2")}${goal.current}` : ""}
           </div>
           <div className="text-xs text-fg-subtle mt-0.5 flex items-center gap-2 flex-wrap">
-            <span>{_formatPeriodLabel(goal, isZh)}</span>
+            <span>{_formatPeriodLabel(goal, t)}</span>
             <span aria-hidden="true">·</span>
             {goal.last_reviewed_at ? (
               <span className={cls(stale && "text-amber-400")}>
-                {isZh
-                  ? `最近审查于 ${formatRelativeTime(goal.last_reviewed_at, locale)}`
-                  : `Last reviewed ${formatRelativeTime(goal.last_reviewed_at)}`}
+                {t("departments.slug.page.last_reviewed_formatrelativetime_goal_last_reviewed_at", { formatRelativeTime_goal_last_reviewed_at: formatRelativeTime(goal.last_reviewed_at), formatRelativeTime_goal_last_reviewed_at__locale: formatRelativeTime(goal.last_reviewed_at, locale) })}
               </span>
             ) : (
-              <span className="italic">{isZh ? "尚未审查" : "Never reviewed"}</span>
+              <span className="italic">{t("departments.slug.page.never_reviewed")}</span>
             )}
           </div>
         </div>
@@ -200,25 +182,25 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
               onClick={() => setEditingAndNotify(true)}
               className="px-2 py-1 text-xs rounded bg-surface-overlay hover:bg-surface-input border border-line"
             >
-              {isZh ? "编辑" : "Edit"}
+              {t("departments.slug.page.edit")}
             </button>
             <button
               disabled={deleting}
               onClick={async () => {
-                if (!window.confirm(isZh ? "确定删除此目标？" : "Delete this Goal?")) return;
+                if (!window.confirm(t("departments.slug.page.delete_this_goal"))) return;
                 setDeleting(true);
                 setErr(null);
                 try {
                   await deleteGoal(slug, goal.id!);
                   onDeleted(goal.id!);
                 } catch (e) {
-                  setErr(e instanceof Error ? e.message : (isZh ? "删除失败" : "Delete failed"));
+                  setErr(e instanceof Error ? e.message : (t("departments.slug.page.delete_failed")));
                   setDeleting(false);
                 }
               }}
               className="px-2 py-1 text-xs rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 disabled:opacity-50"
             >
-              {deleting ? "…" : (isZh ? "删除" : "Delete")}
+              {deleting ? "…" : (t("departments.slug.page.delete"))}
             </button>
           </div>
           {err && <span className="text-[10px] text-rose-300">{err}</span>}
@@ -236,7 +218,7 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
         size="compact"
       />
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        {isZh ? "状态" : "Status"}
+        {t("departments.slug.page.status")}
         <select
           value={form.status}
           onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as GoalStatus }))}
@@ -250,30 +232,30 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
         </select>
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        {isZh ? "关键结果" : "Key result"}
+        {t("departments.slug.page.key_result")}
         <input
           value={form.key_result}
           onChange={(e) => setForm((f) => ({ ...f, key_result: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder={isZh ? "例如：在 6 月 30 日前完成 A 轮融资" : "Close Series A by Jun 30"}
+          placeholder={t("departments.slug.page.close_series_a_by_jun")}
         />
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        {isZh ? "预期目标" : "Target"}
+        {t("departments.slug.page.target")}
         <input
           value={form.target}
           onChange={(e) => setForm((f) => ({ ...f, target: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder={isZh ? "完成的目标标准是什么？" : "What does done look like?"}
+          placeholder={t("departments.slug.page.what_does_done_look_like")}
         />
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        {isZh ? "当前进展" : "Current"}
+        {t("departments.slug.page.current")}
         <input
           value={form.current}
           onChange={(e) => setForm((f) => ({ ...f, current: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder={isZh ? "目前进展如何？" : "Where are we now?"}
+          placeholder={t("departments.slug.page.where_are_we_now")}
         />
       </label>
       {err && <p className="text-xs text-rose-300">{err}</p>}
@@ -288,14 +270,14 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
               onSaved(updated);
               setEditingAndNotify(false);
             } catch (e) {
-              setErr(e instanceof Error ? e.message : (isZh ? "保存失败" : "Save failed"));
+              setErr(e instanceof Error ? e.message : (t("departments.slug.page.save_failed")));
             } finally {
               setSaving(false);
             }
           }}
           className="px-3 py-1.5 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50"
         >
-          {saving ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存" : "Save")}
+          {saving ? (t("departments.slug.page.saving")) : (t("departments.slug.page.save"))}
         </button>
         <button
           disabled={saving}
@@ -313,7 +295,7 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
           }}
           className="px-3 py-1.5 text-xs rounded-lg border border-line hover:bg-surface-overlay disabled:opacity-50"
         >
-          {isZh ? "取消" : "Cancel"}
+          {t("departments.slug.page.cancel")}
         </button>
       </div>
     </div>
@@ -331,8 +313,7 @@ interface AddGoalFormProps {
 }
 
 function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const [form, setForm] = useState<{
     period_type: PeriodType;
     period_value: string;
@@ -353,9 +334,9 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
   const firstRef = useRef<HTMLInputElement>(null);
 
   const statusLabels: Record<GoalStatus, string> = {
-    on_track: isZh ? "正常推进" : "on track",
-    at_risk: isZh ? "存在风险" : "at risk",
-    off_track: isZh ? "偏离目标" : "off track",
+    on_track: t("departments.slug.page.on_track"),
+    at_risk: t("departments.slug.page.at_risk"),
+    off_track: t("departments.slug.page.off_track"),
   };
 
   useEffect(() => {
@@ -365,7 +346,7 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
   return (
     <div className="py-3 border-b border-line space-y-2 bg-surface-overlay/30 px-4 -mx-4 rounded-lg">
       <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-1">
-        {isZh ? "新建目标" : "New Goal"}
+        {t("departments.slug.page.new_goal")}
       </div>
       <TimeframePicker
         periodType={form.period_type}
@@ -374,7 +355,7 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
         size="compact"
       />
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        {isZh ? "状态" : "Status"}
+        {t("departments.slug.page.status")}
         <select
           value={form.status}
           onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as GoalStatus }))}
@@ -388,31 +369,31 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
         </select>
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        {isZh ? "关键结果" : "Key result"}
+        {t("departments.slug.page.key_result")}
         <input
           ref={firstRef}
           value={form.key_result}
           onChange={(e) => setForm((f) => ({ ...f, key_result: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder={isZh ? "我们想要达成什么？" : "What do we want to achieve?"}
+          placeholder={t("departments.slug.page.what_do_we_want_to")}
         />
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        {isZh ? "预期目标" : "Target"}
+        {t("departments.slug.page.target")}
         <input
           value={form.target}
           onChange={(e) => setForm((f) => ({ ...f, target: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder={isZh ? "可量化的目标指标" : "Measurable target"}
+          placeholder={t("departments.slug.page.measurable_target")}
         />
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        {isZh ? "当前进展（可选）" : "Current (optional)"}
+        {t("departments.slug.page.current_optional")}
         <input
           value={form.current}
           onChange={(e) => setForm((f) => ({ ...f, current: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder={isZh ? "当前进展情况" : "Current progress"}
+          placeholder={t("departments.slug.page.current_progress")}
         />
       </label>
       {err && <p className="text-xs text-rose-300">{err}</p>}
@@ -426,21 +407,21 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
               const goal = await createGoal(slug, form);
               onCreated(goal);
             } catch (e) {
-              setErr(e instanceof Error ? e.message : (isZh ? "创建失败" : "Create failed"));
+              setErr(e instanceof Error ? e.message : (t("departments.slug.page.create_failed")));
             } finally {
               setSaving(false);
             }
           }}
           className="px-3 py-1.5 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50"
         >
-          {saving ? (isZh ? "创建中…" : "Creating…") : (isZh ? "添加目标" : "Add Goal")}
+          {saving ? (t("departments.slug.page.creating")) : (t("departments.slug.page.add_goal_2"))}
         </button>
         <button
           disabled={saving}
           onClick={onCancel}
           className="px-3 py-1.5 text-xs rounded-lg border border-line hover:bg-surface-overlay disabled:opacity-50"
         >
-          {isZh ? "取消" : "Cancel"}
+          {t("departments.slug.page.cancel")}
         </button>
       </div>
     </div>
@@ -452,8 +433,7 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
 // ---------------------------------------------------------------------------
 
 export default function DepartmentDetailPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
   const params = useParams();
   const slug = params?.slug as string;
   const router = useRouter();
@@ -537,7 +517,7 @@ export default function DepartmentDetailPage() {
     getDepartment(slug)
       .then((d) => applyDept(d, /* isInitial */ true))
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : (isZh ? "加载失败" : "Failed to load"));
+        if (!cancelled) setError(e instanceof Error ? e.message : (t("departments.slug.page.failed_to_load")));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -560,7 +540,7 @@ export default function DepartmentDetailPage() {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [slug, isZh]);
+  }, [slug]);
 
   useEffect(() => {
     if (editingSettings && people.length === 0) {
@@ -597,7 +577,7 @@ export default function DepartmentDetailPage() {
       setDept(updated);
       setEditingSettings(false);
     } catch (e) {
-      setSettingsErr(e instanceof Error ? e.message : (isZh ? "保存设置失败" : "Save failed"));
+      setSettingsErr(e instanceof Error ? e.message : (t("departments.slug.page.save_failed")));
     } finally {
       setSavingSettings(false);
     }
@@ -607,7 +587,7 @@ export default function DepartmentDetailPage() {
     <div className="flex flex-col h-full bg-surface">
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-6 py-6">
-          {loading && <p className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</p>}
+          {loading && <p className="text-fg-muted text-sm">{t("departments.slug.page.loading")}</p>}
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm">
               {error}
@@ -621,9 +601,9 @@ export default function DepartmentDetailPage() {
                   <h1 className="text-xl font-semibold text-fg">{dept.config.title}</h1>
                   <div className="text-xs text-fg-muted mt-1">
                     {dept.config.specialist_key ? (
-                      <>{isZh ? "专员智能体：" : "Specialist: "}<code className="font-mono text-fg">{dept.config.specialist_key}</code></>
+                      <>{t("departments.slug.page.specialist")}<code className="font-mono text-fg">{dept.config.specialist_key}</code></>
                     ) : (
-                      <span className="italic">{isZh ? "信息类部门（未配置专属专员智能体）" : "Informational department (no specialist agent)"}</span>
+                      <span className="italic">{t("departments.slug.page.informational_department_no_specialist_agent")}</span>
                     )}
                   </div>
                 </div>
@@ -649,14 +629,12 @@ export default function DepartmentDetailPage() {
                     }}
                     className="px-3 py-1.5 text-xs rounded-lg border border-line hover:bg-surface-overlay transition-colors"
                   >
-                    {editingSettings ? (isZh ? "取消编辑" : "Cancel") : (isZh ? "编辑设置" : "Edit settings")}
+                    {editingSettings ? (t("departments.slug.page.cancel")) : (t("departments.slug.page.edit_settings"))}
                   </button>
                   <button
                     disabled={deleting}
                     onClick={async () => {
-                      const confirmMsg = isZh
-                        ? `确定删除 "${dept.config.title}"？这也将删除其所有目标，且无法撤销。`
-                        : `Delete "${dept.config.title}"? This will also remove all its Goals and cannot be undone.`;
+                      const confirmMsg = t("departments.slug.page.delete_dept_config_title_this_will_also", { dept_config_title: dept.config.title });
                       if (!window.confirm(confirmMsg)) return;
                       setDeleting(true);
                       setDeleteErr(null);
@@ -664,13 +642,13 @@ export default function DepartmentDetailPage() {
                         await deleteDepartment(slug);
                         router.push("/departments");
                       } catch (e) {
-                        setDeleteErr(e instanceof Error ? e.message : (isZh ? "删除失败" : "Delete failed"));
+                        setDeleteErr(e instanceof Error ? e.message : (t("departments.slug.page.delete_failed")));
                         setDeleting(false);
                       }
                     }}
                     className="px-3 py-1.5 text-xs rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 disabled:opacity-50 transition-colors"
                   >
-                    {deleting ? (isZh ? "删除中…" : "Deleting…") : (isZh ? "删除部门" : "Delete department")}
+                    {deleting ? (t("departments.slug.page.deleting")) : (t("departments.slug.page.delete_department"))}
                   </button>
                 </div>
               </div>
@@ -686,10 +664,10 @@ export default function DepartmentDetailPage() {
                   {/* Card 1: Charter */}
                   <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4">
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">
-                      {isZh ? "部门章程" : "Charter"}
+                      {t("departments.slug.page.charter")}
                     </h3>
                     <label className="text-xs text-fg-muted flex flex-col gap-1">
-                      {isZh ? "使命愿景" : "Mission"}
+                      {t("departments.slug.page.mission")}
                       <textarea
                         value={settingsForm.mission}
                         onChange={(e) =>
@@ -704,11 +682,11 @@ export default function DepartmentDetailPage() {
                   {/* Card 2: How it acts */}
                   <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4">
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">
-                      {isZh ? "行动准则与授权" : "How it acts"}
+                      {t("departments.slug.page.how_it_acts")}
                     </h3>
                     <div className="space-y-3">
                       <label className="text-xs text-fg-muted flex flex-col gap-1">
-                        {isZh ? "部门负责人" : "Department head"}
+                        {t("departments.slug.page.department_head")}
                         <select
                           value={settingsForm.head_person_id ?? ""}
                           onChange={(e) =>
@@ -719,22 +697,20 @@ export default function DepartmentDetailPage() {
                           }
                           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
                         >
-                          <option value="">{isZh ? "— 未设置 —" : "— None —"}</option>
+                          <option value="">{t("departments.slug.page.none")}</option>
                           {people.map((p) => (
                             <option key={p.id} value={p.id}>
-                              {p.full_name}{p.role ? ` — ${p.role}` : ""}{p.is_principal ? (isZh ? " (您)" : " (you)") : ""}
+                              {p.full_name}{p.role ? ` — ${p.role}` : ""}{p.is_principal ? (t("departments.slug.page.you")) : ""}
                             </option>
                           ))}
                         </select>
                         <span className="text-[10px] text-fg-muted">
-                          {isZh
-                            ? "Executive 会在路由决策中将该成员视作部门负责人。"
-                            : "The Executive surfaces this person as the department owner in routing decisions."}
+                          {t("departments.slug.page.the_executive_surfaces_this_person")}
                         </span>
                       </label>
                       <div className="space-y-1.5">
                         {AUTHORITY_OPTS.map((a) => {
-                          const meta = getAuthorityMeta(a, isZh);
+                          const meta = getAuthorityMeta(a, t);
                           const checked = settingsForm.authority_level === a;
                           return (
                             <label
@@ -766,7 +742,7 @@ export default function DepartmentDetailPage() {
                       </div>
 
                       <div>
-                        <div className="text-xs text-fg-muted mb-1">{isZh ? "日常定时汇报" : "Recurring check-in"}</div>
+                        <div className="text-xs text-fg-muted mb-1">{t("departments.slug.page.recurring_checkin")}</div>
                         {Object.entries(settingsForm.cadences).map(([name, spec]) => (
                           <div key={name} className="flex items-center gap-2 mb-1.5">
                             <input
@@ -788,9 +764,7 @@ export default function DepartmentDetailPage() {
                           </div>
                         ))}
                         <p className="text-[10px] text-fg-muted mt-1">
-                          {isZh
-                            ? "设置后，专员将按此日程定期发布汇报，呈现在“今日聚焦”中。例如：daily@09:00、mondays@09:00。"
-                            : "When set, the specialist posts a check-in on this schedule. You'll see it in Today. Example: daily@09:00, mondays@09:00."}
+                          {t("departments.slug.page.when_set_the_specialist_posts")}
                         </p>
                       </div>
                     </div>
@@ -799,11 +773,11 @@ export default function DepartmentDetailPage() {
                   {/* Card 3: Numbers */}
                   <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4">
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">
-                      {isZh ? "编制与预算" : "Numbers"}
+                      {t("departments.slug.page.numbers")}
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
                       <label className="text-xs text-fg-muted flex flex-col gap-1">
-                        {isZh ? "团队编制" : "Headcount"}
+                        {t("departments.slug.page.headcount")}
                         <input
                           type="number"
                           min={0}
@@ -815,7 +789,7 @@ export default function DepartmentDetailPage() {
                         />
                       </label>
                       <label className="text-xs text-fg-muted flex flex-col gap-1">
-                        {isZh ? "预算 (USD)" : "Budget (USD)"}
+                        {t("departments.slug.page.budget_usd")}
                         <input
                           type="number"
                           min={0}
@@ -832,12 +806,10 @@ export default function DepartmentDetailPage() {
                   {/* Card 4: Broadcast channels — OE can post to these team rooms */}
                   <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4">
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-1">
-                      {isZh ? "团队协同频道" : "Team channels"}
+                      {t("departments.slug.page.team_channels")}
                     </h3>
                     <p className="text-[10px] text-fg-muted mb-3">
-                      {isZh
-                        ? "设置后，Executive 可通过 send_department_message 向这些频道广播部门级更新。留空则私信部门负责人。"
-                        : "When set, the Executive can post department-scoped updates to these rooms via send_department_message. Leave blank to have OE fall back to DMing the department head."}
+                      {t("departments.slug.page.when_set_the_executive_can")}
                     </p>
                     <div className="space-y-2">
                       <label className="text-xs text-fg-muted flex flex-col gap-1">
@@ -882,15 +854,13 @@ export default function DepartmentDetailPage() {
                   {/* Card 5: Watched entities */}
                   <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4">
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-1">
-                      {isZh ? "关注实体" : "Watched entities"}
+                      {t("departments.slug.page.watched_entities")}
                     </h3>
                     <p className="text-[10px] text-fg-muted mb-3">
-                      {isZh
-                        ? "该部门关心的供应商、竞争对手或股票代码，每行一个。在此设置后，Executive 将自主监控其状态页、申报文件与资讯，并汇总推送给该部门及负责人。"
-                        : "Vendors, competitors or tickers this department cares about, one per line. Named here, the Executive will start watching their status pages, filings and feeds on its own and route what it finds to this department and its head."}
+                      {t("departments.slug.page.vendors_competitors_or_tickers_this")}
                     </p>
                     <label className="text-xs text-fg-muted flex flex-col gap-1">
-                      {isZh ? "关注实体（每行一个）" : "Watched entities (one per line)"}
+                      {t("departments.slug.page.watched_entities_one_per_line")}
                       <textarea
                         value={settingsForm.watched_entities}
                         onChange={(e) =>
@@ -909,35 +879,35 @@ export default function DepartmentDetailPage() {
                     onClick={saveSettings}
                     className="px-4 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50"
                   >
-                    {savingSettings ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存设置" : "Save settings")}
+                    {savingSettings ? (t("departments.slug.page.saving")) : (t("departments.slug.page.save_settings"))}
                   </button>
                 </div>
               ) : (
                 <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4 mb-6">
                   <div className="divide-y divide-line">
                     <div className="flex items-start gap-3 py-2">
-                      <div className="w-36 flex-shrink-0 text-xs text-fg-muted pt-0.5">{isZh ? "行动授权" : "How it acts"}</div>
+                      <div className="w-36 flex-shrink-0 text-xs text-fg-muted pt-0.5">{t("departments.slug.page.how_it_acts")}</div>
                       <div>
                         <div className="text-sm text-fg">
-                          {getAuthorityMeta(dept.config.authority_level, isZh).label}
+                          {getAuthorityMeta(dept.config.authority_level, t).label}
                         </div>
                         <div className="text-[10px] text-fg-muted mt-0.5">
-                          {getAuthorityMeta(dept.config.authority_level, isZh).hint}
+                          {getAuthorityMeta(dept.config.authority_level, t).hint}
                         </div>
                       </div>
                     </div>
                     {[
-                      [isZh ? "使命愿景" : "Mission", dept.config.charter.mission || "—"],
+                      [t("departments.slug.page.mission"), dept.config.charter.mission || "—"],
                       ...(dept.config.head_person_id != null
-                        ? [[isZh ? "负责人" : "Head", people.find((p) => p.id === dept.config.head_person_id)?.full_name ?? `Person #${dept.config.head_person_id}`]]
+                        ? [[t("departments.slug.page.head"), people.find((p) => p.id === dept.config.head_person_id)?.full_name ?? `Person #${dept.config.head_person_id}`]]
                         : []),
-                      ...(dept.headcount != null ? [[isZh ? "团队编制" : "Headcount", String(dept.headcount)]] : []),
-                      ...(dept.budget_usd != null ? [[isZh ? "财务预算" : "Budget", `$${dept.budget_usd.toLocaleString()}`]] : []),
-                      ...(dept.config.slack_channel_id ? [[isZh ? "Slack 频道" : "Slack channel", dept.config.slack_channel_id]] : []),
-                      ...(dept.config.discord_channel_id ? [[isZh ? "Discord 频道" : "Discord channel", dept.config.discord_channel_id]] : []),
-                      ...(dept.config.telegram_chat_id ? [[isZh ? "Telegram 群组" : "Telegram chat", dept.config.telegram_chat_id]] : []),
+                      ...(dept.headcount != null ? [[t("departments.slug.page.headcount"), String(dept.headcount)]] : []),
+                      ...(dept.budget_usd != null ? [[t("departments.slug.page.budget"), `$${dept.budget_usd.toLocaleString()}`]] : []),
+                      ...(dept.config.slack_channel_id ? [[t("departments.slug.page.slack_channel"), dept.config.slack_channel_id]] : []),
+                      ...(dept.config.discord_channel_id ? [[t("departments.slug.page.discord_channel"), dept.config.discord_channel_id]] : []),
+                      ...(dept.config.telegram_chat_id ? [[t("departments.slug.page.telegram_chat"), dept.config.telegram_chat_id]] : []),
                       ...((dept.config.watched_entities ?? []).length > 0
-                        ? [[isZh ? "关注实体" : "Watched entities", (dept.config.watched_entities ?? []).join(", ")]]
+                        ? [[t("departments.slug.page.watched_entities"), (dept.config.watched_entities ?? []).join(", ")]]
                         : []),
                     ].map(([label, value]) => (
                       <div key={label} className="flex items-start gap-3 py-2">
@@ -947,7 +917,7 @@ export default function DepartmentDetailPage() {
                     ))}
                     {Object.entries(dept.config.cadences).length > 0 && (
                       <div className="flex items-start gap-3 py-2">
-                        <div className="w-36 flex-shrink-0 text-xs text-fg-muted pt-0.5">{isZh ? "定时日常汇报" : "Recurring check-in"}</div>
+                        <div className="w-36 flex-shrink-0 text-xs text-fg-muted pt-0.5">{t("departments.slug.page.recurring_checkin")}</div>
                         <div className="flex flex-wrap gap-1.5">
                           {Object.entries(dept.config.cadences).map(([n, s]) => (
                             <span key={n} className="px-2 py-0.5 rounded bg-surface-overlay border border-line text-xs font-mono text-fg">
@@ -967,7 +937,7 @@ export default function DepartmentDetailPage() {
                   {dept.config.charter.scope.length > 0 && (
                     <div>
                       <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-2">
-                        {isZh ? "职责范围内" : "In Scope"}
+                        {t("departments.slug.page.in_scope")}
                       </h2>
                       <ul className="list-disc list-inside space-y-1">
                         {dept.config.charter.scope.map((s, i) => (
@@ -979,7 +949,7 @@ export default function DepartmentDetailPage() {
                   {dept.config.charter.out_of_scope.length > 0 && (
                     <div>
                       <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-2">
-                        {isZh ? "职责范围外" : "Out of Scope"}
+                        {t("departments.slug.page.out_of_scope")}
                       </h2>
                       <ul className="list-disc list-inside space-y-1">
                         {dept.config.charter.out_of_scope.map((s, i) => (
@@ -995,14 +965,14 @@ export default function DepartmentDetailPage() {
               <section>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
-                    {isZh ? `工作目标 (${goals.length})` : `Goals (${goals.length})`}
+                    {t("departments.slug.page.goals_goals_length", { goals_length: goals.length })}
                   </h2>
                   {!addingGoal && (
                     <button
                       onClick={() => setAddingGoal(true)}
                       className="px-3 py-1 text-xs rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30"
                     >
-                      {isZh ? "+ 新增目标" : "+ Add Goal"}
+                      {t("departments.slug.page.add_goal")}
                     </button>
                   )}
                 </div>
@@ -1020,12 +990,12 @@ export default function DepartmentDetailPage() {
                   )}
                   {goals.length === 0 && !addingGoal ? (
                     <p className="py-6 text-sm text-fg-muted text-center">
-                      {isZh ? "暂无工作目标。" : "No Goals yet."}{" "}
+                      {t("departments.slug.page.no_goals_yet")}{" "}
                       <button
                         onClick={() => setAddingGoal(true)}
                         className="text-indigo-400 hover:underline"
                       >
-                        {isZh ? "添加一个 →" : "Add one →"}
+                        {t("departments.slug.page.add_one")}
                       </button>
                     </p>
                   ) : (

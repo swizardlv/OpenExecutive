@@ -32,8 +32,7 @@ export default function SourceTree({
   filter,
   onSelect,
 }: SourceTreeProps) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
   const [collapsedBuiltin, setCollapsedBuiltin] = useState(true);
   const [collapsedDomains, setCollapsedDomains] = useState<Set<string>>(new Set());
 
@@ -65,7 +64,7 @@ export default function SourceTree({
   return (
     <nav className="text-sm space-y-3">
       <Section
-        label={isZh ? "内置知识" : "Built-in"}
+        label={t("knowledge.SourceTree.builtin")}
         icon="grid"
         collapsed={collapsedBuiltin}
         onToggle={() => setCollapsedBuiltin((v) => !v)}
@@ -95,7 +94,7 @@ export default function SourceTree({
               {!isCollapsed && (
                 <div className="ml-3 mt-1 space-y-2">
                   <FileGroup
-                    label={isZh ? "最佳实践" : "Playbooks"}
+                    label={t("knowledge.SourceTree.playbooks")}
                     files={playbooks}
                     accent="indigo"
                     onClickFile={(f) =>
@@ -110,7 +109,7 @@ export default function SourceTree({
                     isActive={(f) => isActiveFile("builtin", domain, f.filename)}
                   />
                   <FileGroup
-                    label={isZh ? "失败教训" : "Failures"}
+                    label={t("knowledge.SourceTree.failures")}
                     files={failures}
                     accent="rose"
                     onClickFile={(f) =>
@@ -136,14 +135,14 @@ export default function SourceTree({
         onClick={() => onSelect({ kind: "company" })}
         icon="building"
       >
-        {isZh ? "企业文档" : "Company"}
+        {t("knowledge.SourceTree.company")}
       </RootButton>
       <RootButton
         active={selection?.kind === "reference"}
         onClick={() => onSelect({ kind: "reference" })}
         icon="book"
       >
-        {isZh ? "参考资料库" : "Reference Library"}
+        {t("knowledge.SourceTree.reference_library")}
       </RootButton>
       <RootButton
         active={selection?.kind === "query"}
@@ -151,7 +150,7 @@ export default function SourceTree({
         accent="indigo"
         icon="doc-search"
       >
-        {isZh ? "检索测试" : "Query mode"}
+        {t("knowledge.SourceTree.query_mode")}
       </RootButton>
     </nav>
   );
@@ -207,8 +206,7 @@ function FileGroup({
   onAdd: () => void;
   isActive: (f: BuiltinFileMeta) => boolean;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
   const labelClass = accent === "rose" ? "text-rose-400/80" : "text-fg-muted";
   return (
     <div>
@@ -219,13 +217,13 @@ function FileGroup({
         <button
           onClick={onAdd}
           className="text-[10px] text-fg-subtle hover:text-fg transition-colors px-1"
-          title={isZh ? `添加${label}文件` : `Add ${label.toLowerCase()} file`}
+          title={t("knowledge.SourceTree.add_label_tolowercase_file", { label_toLowerCase: label.toLowerCase(), label })}
         >
           +
         </button>
       </div>
       {files.length === 0 ? (
-        <p className="text-[11px] text-fg-subtle px-1 mt-0.5">{isZh ? "无" : "none"}</p>
+        <p className="text-[11px] text-fg-subtle px-1 mt-0.5">{t("knowledge.SourceTree.none")}</p>
       ) : (
         <div className="mt-0.5">
           {files.map((f) => {

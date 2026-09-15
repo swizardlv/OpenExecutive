@@ -3,6 +3,7 @@
 // mirrors how the talent vertical centralises its stage metadata in
 // `components/talent/stages.ts`.
 import type { OnboardingPhase, OnboardingStatus } from "@/lib/api";
+import { DEFAULT_LOCALE, translate } from "@/locales";
 
 export const STATUS_META: Record<OnboardingStatus, { label: string; labelZh: string; cls: string }> = {
   draft: { label: "Draft", labelZh: "草稿", cls: "bg-slate-500/15 text-slate-300 border-slate-500/30" },
@@ -45,11 +46,22 @@ export const STATUS_ORDER: Record<OnboardingStatus, number> = {
 
 // Tolerant lookups for values that arrive as plain strings from the briefing
 // digest (which types phase/status loosely).
-export function phaseLabel(phase: string, isZh?: boolean): string {
-  if (isZh) {
-    return PHASE_LABEL_ZH[phase as OnboardingPhase] ?? phase;
-  }
-  return PHASE_LABEL[phase as OnboardingPhase] ?? phase;
+export function phaseLabel(phase: string, locale: string = DEFAULT_LOCALE): string {
+  return translate(
+    locale,
+    `onboarding.phase.${phase}`,
+    undefined,
+    PHASE_LABEL[phase as OnboardingPhase] ?? phase
+  );
+}
+
+export function statusLabel(status: string, locale: string = DEFAULT_LOCALE): string {
+  return translate(
+    locale,
+    `onboarding.status.${status}`,
+    undefined,
+    STATUS_META[status as OnboardingStatus]?.label ?? status
+  );
 }
 
 export function statusMeta(status: string): { label: string; labelZh: string; cls: string } {

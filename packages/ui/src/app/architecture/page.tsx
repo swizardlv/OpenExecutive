@@ -200,19 +200,20 @@ interface SectionMeta {
   generated_at: string | null;
 }
 
-function DiagramLegend({ isZh }: { isZh?: boolean }) {
-  const items: { label: string; labelZh: string; color: string; border: string }[] = [
-    { label: 'Entry / Client', labelZh: '入口 / 客户端', color: '#1e3a8a', border: '#60a5fa' },
-    { label: 'Compute / Agent', labelZh: '计算 / 智能体', color: '#312e81', border: '#a5b4fc' },
-    { label: 'Storage', labelZh: '存储', color: '#365314', border: '#a3e635' },
-    { label: 'Cached', labelZh: '已缓存', color: '#713f12', border: '#facc15' },
-    { label: 'External', labelZh: '外部系统', color: '#3f3f46', border: '#a1a1aa' },
-    { label: 'Hot / Not cached', labelZh: '热点 / 未缓存', color: '#7f1d1d', border: '#fca5a5' },
+function DiagramLegend() {
+  const { t } = useI18n();
+  const items: { label: string; color: string; border: string }[] = [
+    { label: t('architecture.legend.entry_client'), color: '#1e3a8a', border: '#60a5fa' },
+    { label: t('architecture.legend.compute_agent'), color: '#312e81', border: '#a5b4fc' },
+    { label: t('architecture.legend.storage'), color: '#365314', border: '#a3e635' },
+    { label: t('architecture.legend.cached'), color: '#713f12', border: '#facc15' },
+    { label: t('architecture.legend.external'), color: '#3f3f46', border: '#a1a1aa' },
+    { label: t('architecture.legend.hot_not_cached'), color: '#7f1d1d', border: '#fca5a5' },
   ];
   return (
     <div className="rounded-lg bg-surface border border-line px-4 py-3">
       <p className="text-[10px] font-semibold uppercase tracking-widest text-fg-subtle mb-2">
-        {isZh ? "架构图例" : "Diagram legend"}
+        {t("architecture.page.diagram_legend")}
       </p>
       <div className="flex flex-wrap gap-x-4 gap-y-2">
         {items.map((it) => (
@@ -221,7 +222,7 @@ function DiagramLegend({ isZh }: { isZh?: boolean }) {
               className="inline-block w-3 h-3 rounded-sm"
               style={{ background: it.color, border: `1.5px solid ${it.border}` }}
             />
-            <span className="text-fg-muted">{isZh ? it.labelZh : it.label}</span>
+            <span className="text-fg-muted">{it.label}</span>
           </div>
         ))}
       </div>
@@ -230,8 +231,7 @@ function DiagramLegend({ isZh }: { isZh?: boolean }) {
 }
 
 export default function ArchitecturePage() {
-  const { locale } = useI18n();
-  const isZh = locale === 'zh';
+  const { t } = useI18n();
   const [activeSection, setActiveSection] = useState('overview');
   const [sectionMeta, setSectionMeta] = useState<Record<string, SectionMeta>>({});
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -271,7 +271,7 @@ export default function ArchitecturePage() {
       <aside className="w-52 flex-shrink-0 border-r border-line flex flex-col bg-surface-elevated">
         <div className="px-3 py-4">
           <p className="px-2 text-[10px] font-semibold uppercase tracking-widest text-fg-subtle mb-2">
-            {isZh ? '架构章节' : 'Architecture'}
+            {t("architecture.page.architecture")}
           </p>
           <nav className="space-y-0.5">
             {SECTIONS.map((sec) => {
@@ -294,7 +294,7 @@ export default function ArchitecturePage() {
                   }`}
                 >
                   <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotColor}`} />
-                  <span className="truncate">{isZh ? sec.labelZh : sec.label}</span>
+                  <span className="truncate">{t(`architecture.section.${sec.id}.label`)}</span>
                 </a>
               );
             })}
@@ -303,16 +303,14 @@ export default function ArchitecturePage() {
 
         <div className="mt-auto px-4 py-4 border-t border-line space-y-1.5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-fg-subtle mb-2">
-            {isZh ? '参考手册' : 'Reference'}
+            {t("architecture.page.reference")}
           </p>
           <div className="flex justify-between text-xs">
-            <span className="text-fg-subtle">{isZh ? '章节数' : 'Sections'}</span>
+            <span className="text-fg-subtle">{t("architecture.page.sections")}</span>
             <span className="text-fg-muted font-mono">{freshCount} / {totalCount}</span>
           </div>
           <p className="text-[10px] text-fg-subtle leading-relaxed">
-            {isZh
-              ? '运行系统构建全貌 — 组件拓扑、数据流向及系统不变量。'
-              : 'A map of how the running system is built — components, data flow, and the invariants that hold it together.'}
+            {t("architecture.page.a_map_of_how_the")}
           </p>
         </div>
       </aside>
@@ -322,23 +320,21 @@ export default function ArchitecturePage() {
           <div className="space-y-4">
             <div>
               <h1 className="text-2xl font-bold text-fg">
-                {isZh ? 'Open Executive — 系统架构' : 'Open Executive — Architecture'}
+                {t("architecture.page.open_executive_architecture")}
               </h1>
               <p className="mt-2 text-sm text-fg-muted">
-                {isZh
-                  ? 'Open Executive 运行系统的架构参考指南 — 涵盖从 Executive 核心编排器与专员委员会，到知识库、记忆、调度及外部集成层的系统组件、数据流向与设计不变量。'
-                  : 'A reference map of how Open Executive is built — the components, data flow, and invariants of the running system, from the Executive orchestrator and its specialist council to the knowledge, memory, scheduling, and integration layers.'}
+                {t("architecture.page.a_reference_map_of_how")}
               </p>
             </div>
-            <DiagramLegend isZh={isZh} />
+            <DiagramLegend />
           </div>
 
           {SECTIONS.map((sec) => (
             <DynamicSection
               key={sec.id}
               id={sec.id}
-              title={isZh ? sec.labelZh : sec.label}
-              sub={isZh ? sec.subZh : sec.sub}
+              title={t(`architecture.section.${sec.id}.label`)}
+              sub={t(`architecture.section.${sec.id}.sub`)}
             />
           ))}
         </div>

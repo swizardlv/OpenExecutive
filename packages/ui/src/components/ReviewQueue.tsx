@@ -33,13 +33,6 @@ const STATUS_LABELS: Record<ReviewStatus, string> = {
   needs_revision: "Needs revision",
 };
 
-const STATUS_LABELS_ZH: Record<ReviewStatus, string> = {
-  pending: "待审核",
-  approved: "已通过",
-  rejected: "已驳回",
-  needs_revision: "需修改",
-};
-
 const STATUS_CLASSES: Record<ReviewStatus, string> = {
   pending: "bg-amber-950/60 text-amber-400 border border-amber-900/60",
   approved: "bg-emerald-950/60 text-emerald-400 border border-emerald-900/60",
@@ -54,9 +47,8 @@ const PRIORITY_CLASSES: Record<ReviewPriority, string> = {
 };
 
 function StatusPill({ status }: { status: ReviewStatus }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
-  const label = isZh ? (STATUS_LABELS_ZH[status] ?? status) : STATUS_LABELS[status];
+  const { t } = useI18n();
+  const label = t(`review.status.${status}`, STATUS_LABELS[status]);
   return (
     <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${STATUS_CLASSES[status]}`}>
       {label}
@@ -65,14 +57,13 @@ function StatusPill({ status }: { status: ReviewStatus }) {
 }
 
 function PriorityPill({ priority }: { priority: ReviewPriority }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   if (priority === "normal") return null;
   return (
     <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${PRIORITY_CLASSES[priority]}`}>
       {priority === "high"
-        ? (isZh ? "↑ 高优先级" : "↑ High priority")
-        : (isZh ? "↓ 低优先级" : "↓ Low priority")}
+        ? (t("ReviewQueue.high_priority"))
+        : (t("ReviewQueue.low_priority"))}
     </span>
   );
 }
@@ -94,8 +85,7 @@ function ItemSlideOver({
   onClose: () => void;
   onUpdated: (item: ReviewItem) => void;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const [detail, setDetail] = useState<{ item: ReviewItem; annotations: ReviewAnnotation[] } | null>(null);
   const [content, setContent] = useState<string | null>(null);
   const [contentLoading, setContentLoading] = useState(false);
@@ -251,13 +241,13 @@ function ItemSlideOver({
           {isBuiltin && (
             <section>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium text-fg-muted uppercase tracking-wide">{isZh ? "文档内容" : "Document content"}</p>
+                <p className="text-xs font-medium text-fg-muted uppercase tracking-wide">{t("ReviewQueue.document_content")}</p>
                 {!editing && content != null && (
                   <button
                     onClick={() => { setEditDraft(content); setEditing(true); }}
                     className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
                   >
-                    {isZh ? "编辑" : "Edit"}
+                    {t("ReviewQueue.edit")}
                   </button>
                 )}
               </div>
@@ -274,20 +264,20 @@ function ItemSlideOver({
                       disabled={saving}
                       className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                     >
-                      {saving ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存" : "Save")}
+                      {saving ? (t("ReviewQueue.saving")) : (t("ReviewQueue.save"))}
                     </button>
                     <button
                       onClick={() => setEditing(false)}
                       className="text-xs text-fg-muted hover:text-fg px-3 py-1.5 rounded-lg transition-colors"
                     >
-                      {isZh ? "取消" : "Cancel"}
+                      {t("ReviewQueue.cancel")}
                     </button>
                   </div>
                 </div>
               ) : contentLoading ? (
-                <p className="text-xs text-fg-subtle">{isZh ? "加载中…" : "Loading…"}</p>
+                <p className="text-xs text-fg-subtle">{t("ReviewQueue.loading")}</p>
               ) : contentError ? (
-                <p className="text-xs text-red-500/70">{isZh ? "无法加载文件内容。" : "Could not load file content."}</p>
+                <p className="text-xs text-red-500/70">{t("ReviewQueue.could_not_load_file_content")}</p>
               ) : content != null ? (
                 <pre className="text-xs text-fg bg-surface-elevated/60 border border-line rounded-lg p-3 overflow-x-auto whitespace-pre-wrap font-mono max-h-96">{content}</pre>
               ) : null}
@@ -299,18 +289,18 @@ function ItemSlideOver({
             <section>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-medium text-fg-muted uppercase tracking-wide">
-                  {isZh ? "源内容" : "Source content"}
+                  {t("ReviewQueue.source_content")}
                 </p>
-                {loadingChunks && <span className="text-[10px] text-fg-subtle">{isZh ? "加载中…" : "Loading…"}</span>}
+                {loadingChunks && <span className="text-[10px] text-fg-subtle">{t("ReviewQueue.loading")}</span>}
               </div>
               <p className="text-[11px] text-fg-subtle mb-3">
-                {isZh ? <>来自 <span className="text-fg-muted">{item.filename}</span> 的索引切片 — 这是 AI 从此源检索到的文本。</> : <>Indexed chunks from <span className="text-fg-muted">{item.filename}</span> — this is the text the AI retrieves from this source.</>}
+                {t("ReviewQueue.indexed_chunks_desc", { filename: item.filename })}
               </p>
               {!loadingChunks && externalChunks.length === 0 && (
                 <div className="bg-surface-elevated/60 border border-line rounded-lg p-4 text-center">
-                  <p className="text-xs text-fg-muted mb-1">{isZh ? "未找到索引切片。" : "No indexed chunks found."}</p>
+                  <p className="text-xs text-fg-muted mb-1">{t("ReviewQueue.no_indexed_chunks_found")}</p>
                   <p className="text-[11px] text-fg-subtle">
-                    {isZh ? <>运行 <code className="bg-surface-overlay px-1 rounded font-mono">openexecutive ingest-oer</code> 索引该来源。</> : <>Run <code className="bg-surface-overlay px-1 rounded font-mono">openexecutive ingest-oer</code> to index this source.</>}
+                    {t("ReviewQueue.run_ingest_hint")}
                   </p>
                 </div>
               )}
@@ -331,7 +321,7 @@ function ItemSlideOver({
                   disabled={loadingChunks}
                   className="mt-3 text-xs text-fg-muted hover:text-fg transition-colors disabled:opacity-40"
                 >
-                  {isZh ? "加载更多 10 个切片…" : "Load 10 more chunks…"}
+                  {t("ReviewQueue.load_10_more_chunks")}
                 </button>
               )}
             </section>
@@ -339,12 +329,12 @@ function ItemSlideOver({
 
           {/* Notes */}
           <section>
-            <p className="text-xs font-medium text-fg-muted uppercase tracking-wide mb-2">{isZh ? "审核人备注" : "Reviewer notes"}</p>
+            <p className="text-xs font-medium text-fg-muted uppercase tracking-wide mb-2">{t("ReviewQueue.reviewer_notes")}</p>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               onBlur={handleSaveNotes}
-              placeholder={isZh ? "在此填写审核备注…" : "Add your review notes here…"}
+              placeholder={t("ReviewQueue.add_your_review_notes_here")}
               className="w-full h-20 bg-surface-elevated border border-line-strong rounded-lg px-3 py-2 text-xs text-fg resize-none focus:outline-none focus:border-indigo-500 placeholder:text-fg-subtle"
             />
           </section>
@@ -352,8 +342,8 @@ function ItemSlideOver({
           {/* Annotations */}
           <section>
             <p className="text-xs font-medium text-fg-muted uppercase tracking-wide mb-2">
-              {isZh ? "专家业务修正" : "SME corrections"}
-              <span className="text-fg-subtle ml-1 normal-case font-normal">{isZh ? "— 将注入到 AI 检索上下文中" : "— injected into AI retrieval context"}</span>
+              {t("ReviewQueue.sme_corrections")}
+              <span className="text-fg-subtle ml-1 normal-case font-normal">{t("ReviewQueue.injected_into_ai_retrieval_context")}</span>
             </p>
             <div className="space-y-2">
               {annotations.map((ann) => (
@@ -364,7 +354,7 @@ function ItemSlideOver({
                       onClick={() => handleToggleAnnotation(ann)}
                       className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${ann.is_active ? "bg-emerald-950/60 text-emerald-400 border-emerald-900/60 hover:bg-red-950/60 hover:text-red-400 hover:border-red-900/60" : "bg-surface-overlay/60 text-fg-muted border-line-strong/60 hover:bg-emerald-950/60 hover:text-emerald-400 hover:border-emerald-900/60"}`}
                     >
-                      {ann.is_active ? (isZh ? "有效" : "Active") : (isZh ? "停用" : "Inactive")}
+                      {ann.is_active ? (t("ReviewQueue.active")) : (t("ReviewQueue.inactive"))}
                     </button>
                     <button
                       onClick={() => handleDeleteAnnotation(ann.annotation_id)}
@@ -382,7 +372,7 @@ function ItemSlideOver({
                   value={newCorrection}
                   onChange={(e) => setNewCorrection(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleAddAnnotation(); } }}
-                  placeholder={isZh ? "添加业务修正或说明…" : "Add a correction or clarification…"}
+                  placeholder={t("ReviewQueue.add_a_correction_or_clarification")}
                   className="flex-1 bg-surface-elevated border border-line-strong rounded-lg px-3 py-1.5 text-xs text-fg focus:outline-none focus:border-indigo-500 placeholder:text-fg-subtle"
                 />
                 <button
@@ -390,7 +380,7 @@ function ItemSlideOver({
                   disabled={addingAnnotation || !newCorrection.trim()}
                   className="text-xs bg-surface-overlay hover:bg-surface-input text-fg px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
                 >
-                  {isZh ? "添加" : "Add"}
+                  {t("ReviewQueue.add")}
                 </button>
               </div>
             </div>
@@ -409,8 +399,7 @@ type Tab = "queue" | "all" | "annotations";
 type RejectModalState = { itemId: string; notes: string } | null;
 
 export default function ReviewQueue() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("queue");
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [allItems, setAllItems] = useState<ReviewItem[]>([]);
@@ -513,17 +502,17 @@ export default function ReviewQueue() {
     <div className="p-6">
       {/* Tabs */}
       <div className="flex gap-1 border-b border-line mb-6">
-        {(["queue", "all", "annotations"] as Tab[]).map((t) => (
+        {(["queue", "all", "annotations"] as Tab[]).map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              tab === t
+              tab === tabKey
                 ? "text-fg border-indigo-500"
                 : "text-fg-muted border-transparent hover:text-fg"
             }`}
           >
-            {t === "queue" ? (isZh ? "审核队列" : "Review queue") : t === "all" ? (isZh ? "全部条目" : "All items") : (isZh ? "专家批注" : "Annotations")}
+            {tabKey === "queue" ? t("ReviewQueue.review_queue") : tabKey === "all" ? t("ReviewQueue.all_items") : t("ReviewQueue.annotations")}
           </button>
         ))}
       </div>
@@ -533,20 +522,20 @@ export default function ReviewQueue() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-fg-muted">
-              {loading ? (isZh ? "加载中…" : "Loading…") : (isZh ? `${items.length} 个条目待审核` : `${items.length} item${items.length !== 1 ? "s" : ""} need review`)}
+              {loading ? (t("ReviewQueue.loading")) : (t("ReviewQueue.items_length_itemitems_length_____1____s_need_review", { items_length: items.length, items_length_____1____s: items.length !== 1 ? "s" : "" }))}
             </p>
             {items.length > 0 && (
               <button
                 onClick={() => handleBulkApprove()}
                 className="text-xs bg-emerald-900/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-900/60 px-3 py-1.5 rounded-lg transition-colors"
               >
-                {isZh ? "一键通过待审" : "Approve all pending"}
+                {t("ReviewQueue.approve_all_pending")}
               </button>
             )}
           </div>
           {!loading && items.length === 0 && (
             <div className="text-center py-16 text-fg-subtle text-sm">
-              {isZh ? "已全部处理完毕 — 暂无待审核条目。" : "All caught up — nothing to review."}
+              {t("ReviewQueue.all_caught_up_nothing_to")}
             </div>
           )}
           <div className="space-y-2">
@@ -575,18 +564,18 @@ export default function ReviewQueue() {
               onChange={(e) => setFilterStatus(e.target.value as ReviewStatus | "")}
               className="bg-surface-elevated border border-line-strong rounded-lg px-3 py-1.5 text-xs text-fg focus:outline-none focus:border-indigo-500"
             >
-              <option value="">{isZh ? "全部状态" : "All statuses"}</option>
-              <option value="pending">{isZh ? "待审核" : "Pending"}</option>
-              <option value="approved">{isZh ? "已通过" : "Approved"}</option>
-              <option value="rejected">{isZh ? "已驳回" : "Rejected"}</option>
-              <option value="needs_revision">{isZh ? "需修改" : "Needs revision"}</option>
+              <option value="">{t("ReviewQueue.all_statuses")}</option>
+              <option value="pending">{t("ReviewQueue.pending")}</option>
+              <option value="approved">{t("ReviewQueue.approved")}</option>
+              <option value="rejected">{t("ReviewQueue.rejected")}</option>
+              <option value="needs_revision">{t("ReviewQueue.needs_revision")}</option>
             </select>
             <select
               value={filterDomain}
               onChange={(e) => setFilterDomain(e.target.value)}
               className="bg-surface-elevated border border-line-strong rounded-lg px-3 py-1.5 text-xs text-fg focus:outline-none focus:border-indigo-500"
             >
-              <option value="">{isZh ? "全部领域" : "All domains"}</option>
+              <option value="">{t("ReviewQueue.all_domains")}</option>
               {domains.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
             <select
@@ -594,9 +583,9 @@ export default function ReviewQueue() {
               onChange={(e) => setFilterType(e.target.value as "builtin" | "external" | "")}
               className="bg-surface-elevated border border-line-strong rounded-lg px-3 py-1.5 text-xs text-fg focus:outline-none focus:border-indigo-500"
             >
-              <option value="">{isZh ? "全部类型" : "All types"}</option>
-              <option value="builtin">{isZh ? "内置规范" : "Built-in"}</option>
-              <option value="external">{isZh ? "参考资料库" : "Reference library"}</option>
+              <option value="">{t("ReviewQueue.all_types")}</option>
+              <option value="builtin">{t("ReviewQueue.builtin")}</option>
+              <option value="external">{t("ReviewQueue.reference_library")}</option>
             </select>
           </div>
 
@@ -609,13 +598,13 @@ export default function ReviewQueue() {
                   onClick={() => handleBulkApprove(d)}
                   className="text-[10px] text-fg-muted hover:text-emerald-400 bg-surface-elevated border border-line-strong hover:border-emerald-900/60 px-2 py-1 rounded-lg transition-colors"
                 >
-                  {isZh ? `一键通过 ${d} 待审` : `Approve all pending in ${d}`}
+                  {t("ReviewQueue.approve_all_pending_in_d", { d })}
                 </button>
               ))}
             </div>
           )}
 
-          {loading && <p className="text-sm text-fg-subtle">{isZh ? "加载中…" : "Loading…"}</p>}
+          {loading && <p className="text-sm text-fg-subtle">{t("ReviewQueue.loading")}</p>}
           <div className="space-y-2">
             {allItems.map((item) => (
               <ItemRow
@@ -629,7 +618,7 @@ export default function ReviewQueue() {
               />
             ))}
             {!loading && allItems.length === 0 && (
-              <p className="text-sm text-fg-subtle py-8 text-center">{isZh ? "没有符合筛选条件的条目。" : "No items match the filters."}</p>
+              <p className="text-sm text-fg-subtle py-8 text-center">{t("ReviewQueue.no_items_match_the_filters")}</p>
             )}
           </div>
         </div>
@@ -639,7 +628,7 @@ export default function ReviewQueue() {
       {tab === "annotations" && (
         <div>
           <p className="text-sm text-fg-muted mb-4">
-            {loading ? (isZh ? "加载中…" : "Loading…") : (isZh ? `${annotations.length} 条有效业务修正` : `${annotations.length} active SME correction${annotations.length !== 1 ? "s" : ""}`)}
+            {loading ? (t("ReviewQueue.loading")) : (t("ReviewQueue.annotations_length_active_sme_correctionannotations_length_____1____s", { annotations_length: annotations.length, annotations_length_____1____s: annotations.length !== 1 ? "s" : "" }))}
           </p>
           <div className="space-y-2">
             {annotations.map((ann) => (
@@ -656,7 +645,7 @@ export default function ReviewQueue() {
                     onClick={() => void patchAnnotation(ann.annotation_id, { is_active: false }).then(loadAnnotations)}
                     className="text-[10px] bg-emerald-950/60 text-emerald-400 border border-emerald-900/60 px-1.5 py-0.5 rounded-full hover:bg-red-950/60 hover:text-red-400 hover:border-red-900/60 transition-colors"
                   >
-                    {isZh ? "有效" : "Active"}
+                    {t("ReviewQueue.active")}
                   </button>
                   <button
                     onClick={() => void deleteAnnotation(ann.annotation_id).then(loadAnnotations)}
@@ -670,7 +659,7 @@ export default function ReviewQueue() {
               </div>
             ))}
             {!loading && annotations.length === 0 && (
-              <p className="text-sm text-fg-subtle py-8 text-center">{isZh ? "暂无有效业务修正。打开审核条目可添加批注。" : "No active corrections. Open a review item to add one."}</p>
+              <p className="text-sm text-fg-subtle py-8 text-center">{t("ReviewQueue.no_active_corrections_open_a")}</p>
             )}
           </div>
         </div>
@@ -681,11 +670,11 @@ export default function ReviewQueue() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setRejectModal(null)} />
           <div className="relative bg-surface-elevated border border-line-strong rounded-xl p-5 w-[400px] shadow-2xl">
-            <p className="text-sm font-medium text-fg mb-3">{isZh ? "驳回条目" : "Reject item"}</p>
+            <p className="text-sm font-medium text-fg mb-3">{t("ReviewQueue.reject_item")}</p>
             <textarea
               value={rejectModal.notes}
               onChange={(e) => setRejectModal({ ...rejectModal, notes: e.target.value })}
-              placeholder={isZh ? "驳回原因说明（可选）…" : "Optional notes about why this is rejected…"}
+              placeholder={t("ReviewQueue.optional_notes_about_why_this")}
               className="w-full h-24 bg-surface-elevated border border-line-strong rounded-lg px-3 py-2 text-xs text-fg resize-none focus:outline-none focus:border-red-500 placeholder:text-fg-subtle mb-3"
             />
             <div className="flex gap-2 justify-end">
@@ -693,13 +682,13 @@ export default function ReviewQueue() {
                 onClick={() => setRejectModal(null)}
                 className="text-xs text-fg-muted hover:text-fg px-3 py-1.5 rounded-lg transition-colors"
               >
-                {isZh ? "取消" : "Cancel"}
+                {t("ReviewQueue.cancel")}
               </button>
               <button
                 onClick={handleRejectConfirm}
                 className="text-xs bg-red-900/40 hover:bg-red-900/60 text-red-400 border border-red-900/60 px-3 py-1.5 rounded-lg transition-colors"
               >
-                {isZh ? "驳回" : "Reject"}
+                {t("ReviewQueue.reject")}
               </button>
             </div>
           </div>
@@ -737,8 +726,7 @@ function ItemRow({
   onView: () => void;
   onPriorityChange: (p: ReviewPriority) => void;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
 
   return (
     <div className="bg-surface-elevated/40 border border-line rounded-lg px-4 py-3 flex items-center gap-3">
@@ -763,7 +751,7 @@ function ItemRow({
           <StatusPill status={item.status} />
           <PriorityPill priority={item.priority} />
         </div>
-        <p className="text-[11px] text-fg-subtle mt-0.5">{isZh ? `添加于 ${formatDate(item.registered_at)}` : `Added ${formatDate(item.registered_at)}`}</p>
+        <p className="text-[11px] text-fg-subtle mt-0.5">{t("ReviewQueue.added_formatdate_item_registered_at", { formatDate_item_registered_at: formatDate(item.registered_at) })}</p>
       </div>
 
       {/* Priority selector */}
@@ -773,9 +761,9 @@ function ItemRow({
         className="bg-surface-elevated border border-line-strong rounded-lg px-2 py-1 text-[10px] text-fg-muted focus:outline-none focus:border-indigo-500"
         title="Set priority"
       >
-        <option value="low">{isZh ? "↓ 低" : "↓ Low"}</option>
-        <option value="normal">{isZh ? "正常" : "Normal"}</option>
-        <option value="high">{isZh ? "↑ 高" : "↑ High"}</option>
+        <option value="low">{t("ReviewQueue.low")}</option>
+        <option value="normal">{t("ReviewQueue.normal")}</option>
+        <option value="high">{t("ReviewQueue.high")}</option>
       </select>
 
       {/* Actions */}
@@ -784,14 +772,14 @@ function ItemRow({
           onClick={onView}
           className="text-[10px] text-fg-muted hover:text-fg bg-surface-overlay hover:bg-surface-input border border-line-strong px-2 py-1 rounded-lg transition-colors"
         >
-          {isZh ? "查看" : "View"}
+          {t("ReviewQueue.view")}
         </button>
         {item.status !== "approved" && (
           <button
             onClick={onApprove}
             className="text-[10px] text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-950/60 border border-emerald-900/60 px-2 py-1 rounded-lg transition-colors"
           >
-            {isZh ? "通过" : "Approve"}
+            {t("ReviewQueue.approve")}
           </button>
         )}
         {item.status !== "needs_revision" && (
@@ -799,7 +787,7 @@ function ItemRow({
             onClick={onFlag}
             className="text-[10px] text-violet-400 hover:text-violet-300 bg-violet-950/40 hover:bg-violet-950/60 border border-violet-900/60 px-2 py-1 rounded-lg transition-colors"
           >
-            {isZh ? "标记需修改" : "Flag"}
+            {t("ReviewQueue.flag")}
           </button>
         )}
         {item.status !== "rejected" && (
@@ -807,7 +795,7 @@ function ItemRow({
             onClick={onReject}
             className="text-[10px] text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-950/60 border border-red-900/60 px-2 py-1 rounded-lg transition-colors"
           >
-            {isZh ? "驳回" : "Reject"}
+            {t("ReviewQueue.reject")}
           </button>
         )}
       </div>

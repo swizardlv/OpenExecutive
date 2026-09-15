@@ -148,7 +148,7 @@ export default function RecentSessions({
                         onClick={() => revealAll(group.key)}
                         className="w-full text-left px-2 py-1.5 text-[11px] text-fg-subtle hover:text-fg cursor-pointer"
                       >
-                        {locale === "zh" ? `显示更多 (${hiddenCount})` : `Show ${hiddenCount} more`}
+                        {t("recent.showMore", { count: hiddenCount })}
                       </button>
                     )}
                   </div>

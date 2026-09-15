@@ -53,8 +53,7 @@ function stageBadge(stage: string) {
 }
 
 export default function DemoPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
 
   const [fixtures, setFixtures] = useState<FixtureSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,7 +103,7 @@ export default function DemoPage() {
       setDraft(result);
     } catch (e: unknown) {
       setToast({
-        message: e instanceof Error ? e.message : (isZh ? "生成失败" : "Generation failed"),
+        message: e instanceof Error ? e.message : (t("demo.page.generation_failed")),
         kind: "error",
       });
     } finally {
@@ -118,9 +117,7 @@ export default function DemoPage() {
     try {
       const result = await createFixture(draft.bundle, description.trim());
       setToast({
-        message: isZh
-          ? `已保存 ${result.display_name}${thenLoad ? " — 正在加载…" : ""}`
-          : `Saved ${result.display_name}${thenLoad ? " — loading…" : ""}`,
+        message: t("demo.page.saved_result_display_namethenload_______loading", { result_display_name: result.display_name, thenLoad_______loading: thenLoad ? " — loading…" : "", thenLoad: thenLoad ? " — 正在加载…" : "" }),
         kind: "success",
       });
       closeCreate();
@@ -128,7 +125,7 @@ export default function DemoPage() {
       if (thenLoad) await handleLoad(result.name);
     } catch (e: unknown) {
       setToast({
-        message: e instanceof Error ? e.message : (isZh ? "保存失败" : "Save failed"),
+        message: e instanceof Error ? e.message : (t("demo.page.save_failed")),
         kind: "error",
       });
     } finally {
@@ -140,12 +137,12 @@ export default function DemoPage() {
     setDeletingName(name);
     try {
       await deleteFixture(name);
-      setToast({ message: isZh ? `已删除 ${name}` : `Deleted ${name}`, kind: "success" });
+      setToast({ message: t("demo.page.deleted_name", { name }), kind: "success" });
       await refreshFixtures();
       await refreshStatus();
     } catch (e: unknown) {
       setToast({
-        message: e instanceof Error ? e.message : (isZh ? "删除失败" : "Delete failed"),
+        message: e instanceof Error ? e.message : (t("demo.page.delete_failed")),
         kind: "error",
       });
     } finally {
@@ -184,15 +181,13 @@ export default function DemoPage() {
         (mem.initiatives ?? 0) +
         (mem.advice_given ?? 0);
       setToast({
-        message: isZh
-          ? `已加载 ${result.display_name} — 索引了 ${result.docs_indexed} 个分块，播种了 ${memTotal} 项记忆`
-          : `Loaded ${result.display_name} — ${result.docs_indexed} chunks indexed, ${memTotal} memory items seeded`,
+        message: t("demo.page.loaded_result_display_name_result_docs_indexed_chunks_indexed", { result_display_name: result.display_name, result_docs_indexed: result.docs_indexed, memTotal }),
         kind: "success",
       });
       await refreshStatus();
     } catch (e: unknown) {
       setToast({
-        message: e instanceof Error ? e.message : (isZh ? "加载失败" : "Failed to load fixture"),
+        message: e instanceof Error ? e.message : (t("demo.page.failed_to_load_fixture")),
         kind: "error",
       });
     } finally {
@@ -205,15 +200,13 @@ export default function DemoPage() {
     try {
       const r = await snapshotCurrentState();
       setToast({
-        message: isZh
-          ? `快照已保存 — ${r.people_snapshotted} 人，${r.departments_snapshotted} 个部门，${r.docs_snapshotted} 篇文档`
-          : `Snapshot saved — ${r.people_snapshotted} people, ${r.departments_snapshotted} departments, ${r.docs_snapshotted} docs`,
+        message: t("demo.page.snapshot_saved_r_people_snapshotted_people_r_departments_snapshotted", { r_people_snapshotted: r.people_snapshotted, r_departments_snapshotted: r.departments_snapshotted, r_docs_snapshotted: r.docs_snapshotted }),
         kind: "success",
       });
       await refreshStatus();
     } catch (e: unknown) {
       setToast({
-        message: e instanceof Error ? e.message : (isZh ? "快照失败" : "Snapshot failed"),
+        message: e instanceof Error ? e.message : (t("demo.page.snapshot_failed")),
         kind: "error",
       });
     } finally {
@@ -226,15 +219,13 @@ export default function DemoPage() {
     try {
       const r = await unloadFixture();
       setToast({
-        message: isZh
-          ? `已恢复您的公司 — 重新索引了 ${r.docs_indexed} 个分块，${r.people_seeded} 人`
-          : `Restored your company — ${r.docs_indexed} chunks reindexed, ${r.people_seeded} people`,
+        message: t("demo.page.restored_your_company_r_docs_indexed_chunks", { r_docs_indexed: r.docs_indexed, r_people_seeded: r.people_seeded }),
         kind: "success",
       });
       await refreshStatus();
     } catch (e: unknown) {
       setToast({
-        message: e instanceof Error ? e.message : (isZh ? "卸载失败" : "Unload failed"),
+        message: e instanceof Error ? e.message : (t("demo.page.unload_failed")),
         kind: "error",
       });
     } finally {
@@ -247,9 +238,7 @@ export default function DemoPage() {
     try {
       const r = await resetAllState();
       setToast({
-        message: isZh
-          ? `重置完成 — 播种了 ${r.departments_seeded} 个默认部门，快照已清除`
-          : `Reset complete — ${r.departments_seeded} default departments seeded, snapshot wiped`,
+        message: t("demo.page.reset_complete_r_departments_seeded_default_departments", { r_departments_seeded: r.departments_seeded }),
         kind: "success",
       });
       setResetOpen(false);
@@ -257,7 +246,7 @@ export default function DemoPage() {
       await refreshStatus();
     } catch (e: unknown) {
       setToast({
-        message: e instanceof Error ? e.message : (isZh ? "重置失败" : "Reset failed"),
+        message: e instanceof Error ? e.message : (t("demo.page.reset_failed")),
         kind: "error",
       });
     } finally {
@@ -270,12 +259,10 @@ export default function DemoPage() {
       <div className="border-b border-line px-6 py-5 flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold text-fg">
-            {isZh ? "公司模拟器" : "Company Simulator"}
+            {t("demo.page.company_simulator")}
           </h1>
           <p className="text-xs text-fg-muted mt-1">
-            {isZh
-              ? "将 Executive 置于真实业务场景中。加载模拟企业（包含完整画像、文档和记忆），在委托实际业务前检验其推理、优先级判断与决策能力。"
-              : "Put the Executive in a real-world scenario. Load a simulated company — full profile, documents, and memory — and test how it reasons, prioritizes, and decides before you trust it with your own."}
+            {t("demo.page.put_the_executive_in_a")}
           </p>
         </div>
         <button
@@ -283,7 +270,7 @@ export default function DemoPage() {
           onClick={() => setCreateOpen(true)}
           className="shrink-0 text-xs font-medium px-3 py-2 rounded-lg border border-indigo-500/30 bg-indigo-500/15 text-indigo-200 hover:bg-indigo-500/25 transition-colors cursor-pointer"
         >
-          {isZh ? "✨ 用 AI 创建" : "✨ Create with AI"}
+          {t("demo.page.create_with_ai")}
         </button>
       </div>
 
@@ -307,12 +294,10 @@ export default function DemoPage() {
             {!draft ? (
               <>
                 <h2 className="text-sm font-semibold text-fg">
-                  {isZh ? "使用 AI 创建模拟公司" : "Create a company with AI"}
+                  {t("demo.page.create_a_company_with_ai")}
                 </h2>
                 <p className="text-xs text-fg-muted mt-1 leading-relaxed">
-                  {isZh
-                    ? "描述一家公司及具体场景。Executive 将生成全套企业资产（画像、团队、部门、历史与文档）供你预览确认后保存。"
-                    : "Describe a company and scenario. The Executive will generate a full fixture — profile, team, departments, history, and docs — for you to review before saving."}
+                  {t("demo.page.describe_a_company_and_scenario")}
                 </p>
                 <textarea
                   autoFocus
@@ -321,9 +306,7 @@ export default function DemoPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   disabled={generating}
                   placeholder={
-                    isZh
-                      ? "例如：一家针对独立牙医诊所的 A 轮垂类 SaaS 初创公司，团队 45 人，月亏损 60 万美元，正面临一家融资充裕的新竞争对手…"
-                      : "e.g. A Series A vertical-SaaS startup selling scheduling software to independent dental practices, 45 people, burning $600K/month, facing a new well-funded competitor…"
+                    t("demo.page.eg_a_series_a_verticalsaas")
                   }
                   className="mt-3 w-full text-xs rounded-lg border border-line bg-surface-input text-fg placeholder:text-fg-subtle px-3 py-2 focus:outline-none focus:border-indigo-500/50 disabled:opacity-50"
                 />
@@ -334,7 +317,7 @@ export default function DemoPage() {
                     disabled={generating}
                     className="text-xs font-medium px-3 py-1.5 rounded-lg border border-line bg-surface-overlay text-fg-muted hover:text-fg transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    {isZh ? "取消" : "Cancel"}
+                    {t("demo.page.cancel")}
                   </button>
                   <button
                     type="button"
@@ -345,10 +328,10 @@ export default function DemoPage() {
                     {generating ? (
                       <span className="flex items-center gap-1.5">
                         <span className="inline-block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-                        {isZh ? "生成中…" : "Generating…"}
+                        {t("demo.page.generating")}
                       </span>
                     ) : (
-                      isZh ? "生成" : "Generate"
+                      t("demo.page.generate")
                     )}
                   </button>
                 </div>
@@ -356,13 +339,13 @@ export default function DemoPage() {
             ) : (
               <>
                 <h2 className="text-sm font-semibold text-fg">
-                  {isZh ? "审查模拟公司数据" : "Review fixture"}
+                  {t("demo.page.review_fixture")}
                 </h2>
                 <p className="text-xs text-fg-muted mt-1">
-                  {isZh ? "根据你的场景生成完成。确认无误后点击保存。" : "Generated from your scenario. Review, then save."}
+                  {t("demo.page.generated_from_your_scenario_review")}
                 </p>
                 <label className="block text-[11px] text-fg-muted mt-3 mb-1">
-                  {isZh ? "公司名称" : "Company name"}
+                  {t("demo.page.company_name")}
                 </label>
                 <input
                   type="text"
@@ -380,37 +363,37 @@ export default function DemoPage() {
                 />
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-lg border border-line bg-surface-overlay px-3 py-2">
-                    <span className="text-fg-muted">{isZh ? "所属行业：" : "Industry: "}</span>
+                    <span className="text-fg-muted">{t("demo.page.industry")}</span>
                     <span className="text-fg">{draft.bundle.profile.industry || "—"}</span>
                   </div>
                   <div className="rounded-lg border border-line bg-surface-overlay px-3 py-2">
-                    <span className="text-fg-muted">{isZh ? "融资阶段：" : "Stage: "}</span>
+                    <span className="text-fg-muted">{t("demo.page.stage")}</span>
                     <span className="text-fg">{draft.bundle.profile.stage || "—"}</span>
                   </div>
                 </div>
                 <div className="mt-3 text-xs text-fg-muted">
-                  <span className="text-fg font-medium">{draft.bundle.people.length}</span> {isZh ? "人" : "people"}
+                  <span className="text-fg font-medium">{draft.bundle.people.length}</span> {t("demo.page.people")}
                   {" · "}
-                  <span className="text-fg font-medium">{draft.bundle.departments.length}</span> {isZh ? "个部门" : "departments"}
+                  <span className="text-fg font-medium">{draft.bundle.departments.length}</span> {t("demo.page.departments")}
                   {" · "}
-                  <span className="text-fg font-medium">{draft.bundle.docs.length}</span> {isZh ? "篇文档" : "docs"}
+                  <span className="text-fg font-medium">{draft.bundle.docs.length}</span> {t("demo.page.docs")}
                 </div>
                 <div className="mt-2 text-xs text-fg-muted">
-                  <span className="text-fg font-medium">{draft.bundle.memory.decisions?.length ?? 0}</span> {isZh ? "条决策" : "decisions"}
+                  <span className="text-fg font-medium">{draft.bundle.memory.decisions?.length ?? 0}</span> {t("demo.page.decisions")}
                   {" · "}
-                  <span className="text-fg font-medium">{draft.bundle.memory.initiatives?.length ?? 0}</span> {isZh ? "项倡议" : "initiatives"}
+                  <span className="text-fg font-medium">{draft.bundle.memory.initiatives?.length ?? 0}</span> {t("demo.page.initiatives")}
                   {" · "}
-                  <span className="text-fg font-medium">{draft.bundle.memory.alerts?.length ?? 0}</span> {isZh ? "条告警" : "alerts"}
+                  <span className="text-fg font-medium">{draft.bundle.memory.alerts?.length ?? 0}</span> {t("demo.page.alerts")}
                 </div>
                 <div className="mt-3 rounded-lg border border-line bg-surface-overlay px-3 py-2 text-xs">
-                  <p className="text-fg-muted mb-1">{isZh ? "团队" : "Team"}</p>
+                  <p className="text-fg-muted mb-1">{t("demo.page.team")}</p>
                   <ul className="space-y-0.5">
                     {draft.bundle.people.map((p) => (
                       <li key={p.full_name} className="text-fg truncate">
                         {p.full_name}
                         {p.role ? <span className="text-fg-muted"> — {p.role}</span> : null}
                         {p.is_principal ? (
-                          <span className="text-indigo-300">{isZh ? " (负责人)" : " (principal)"}</span>
+                          <span className="text-indigo-300">{t("demo.page.principal_2")}</span>
                         ) : null}
                       </li>
                     ))}
@@ -423,7 +406,7 @@ export default function DemoPage() {
                     disabled={saving}
                     className="text-xs font-medium px-3 py-1.5 rounded-lg border border-line bg-surface-overlay text-fg-muted hover:text-fg transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    {isZh ? "← 修改提示词" : "← Edit prompt"}
+                    {t("demo.page.edit_prompt")}
                   </button>
                   <div className="flex items-center gap-2">
                     <button
@@ -432,7 +415,7 @@ export default function DemoPage() {
                       disabled={saving || !draft.bundle.profile.name.trim()}
                       className="text-xs font-medium px-3 py-1.5 rounded-lg border border-line bg-surface-overlay text-fg hover:bg-surface-input transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      {saving ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存" : "Save")}
+                      {saving ? (t("demo.page.saving")) : (t("demo.page.save"))}
                     </button>
                     <button
                       type="button"
@@ -440,7 +423,7 @@ export default function DemoPage() {
                       disabled={saving || !draft.bundle.profile.name.trim()}
                       className="text-xs font-medium px-3 py-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/15 text-indigo-200 hover:bg-indigo-500/25 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      {isZh ? "保存并加载" : "Save & Load"}
+                      {t("demo.page.save_load")}
                     </button>
                   </div>
                 </div>
@@ -454,12 +437,12 @@ export default function DemoPage() {
       <div className="px-6 py-6 max-w-4xl mx-auto">
         {loading && (
           <p className="text-sm text-fg-muted">
-            {isZh ? "正在加载模拟场景…" : "Loading fixtures…"}
+            {t("demo.page.loading_fixtures")}
           </p>
         )}
         {error && (
           <p className="text-sm text-red-400">
-            {isZh ? `错误：${error}。后端服务是否正在运行？` : `Error: ${error}. Is the backend running?`}
+            {t("demo.page.error_error_is_the_backend", { error })}
           </p>
         )}
 
@@ -467,20 +450,16 @@ export default function DemoPage() {
         {!loading && status.active_fixture && (
           <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-center gap-3 flex-wrap">
             <div className="text-xs text-amber-200 flex-1 min-w-0">
-              <span className="font-medium">{isZh ? "当前生效的模拟公司：" : "Simulated company active:"}</span>{" "}
+              <span className="font-medium">{t("demo.page.simulated_company_active")}</span>{" "}
               <span className="font-mono text-amber-100">{status.active_fixture}</span>
               {!status.has_snapshot && (
                 <span className="block text-amber-300/80 mt-1">
-                  {isZh
-                    ? "未找到原始公司快照 — 卸载将无法恢复任何数据。"
-                    : "No snapshot of your original company exists — unload won't restore anything."}
+                  {t("demo.page.no_snapshot_of_your_original")}
                 </span>
               )}
               {status.has_snapshot && (
                 <span className="block text-amber-300/80 mt-1">
-                  {isZh
-                    ? "在模拟环境生效期间无法创建快照 — 请先卸载以捕获真实公司状态。"
-                    : "Snapshotting is disabled while a fixture is active — unload first to capture your real state."}
+                  {t("demo.page.snapshotting_is_disabled_while_a")}
                 </span>
               )}
             </div>
@@ -492,7 +471,7 @@ export default function DemoPage() {
                   onClick={() => void handleUnload()}
                   className="text-xs font-medium px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {busy ? (isZh ? "处理中…" : "Working…") : (isZh ? "卸载并恢复我的公司" : "Unload to my company")}
+                  {busy ? (t("demo.page.working")) : (t("demo.page.unload_to_my_company"))}
                 </button>
               )}
             </div>
@@ -503,19 +482,7 @@ export default function DemoPage() {
         {!loading && !status.active_fixture && !error && fixtures.length > 0 && (
           <div className="mb-5 rounded-xl border border-line bg-surface-elevated px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
             <p className="text-xs text-fg-muted flex-1 min-w-0">
-              {status.has_snapshot ? (
-                isZh ? (
-                  <>公司快照已存在。加载模拟公司将替换当前状态；卸载时可从快照恢复。</>
-                ) : (
-                  <>Snapshot of your company exists. Loading a fixture will replace state; unload restores from the snapshot.</>
-                )
-              ) : (
-                isZh ? (
-                  <>暂无公司快照。加载模拟公司将先自动创建快照。您也可以现在手动保存快照。</>
-                ) : (
-                  <>No snapshot of your company yet. Loading a fixture will auto-snapshot first. You can also snapshot manually now.</>
-                )
-              )}
+              {status.has_snapshot ? t("demo.page.snapshot_exists") : t("demo.page.no_snapshot_yet")}
             </p>
             <button
               type="button"
@@ -523,39 +490,21 @@ export default function DemoPage() {
               onClick={() => void handleSnapshot()}
               className="text-xs font-medium px-3 py-1.5 rounded-lg border border-line bg-surface-overlay text-fg hover:bg-surface-input transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {busy ? (isZh ? "处理中…" : "Working…") : (isZh ? "保存当前状态为我的公司快照" : "Snapshot current as my company")}
+              {busy ? (t("demo.page.working")) : (t("demo.page.snapshot_current_as_my_company"))}
             </button>
           </div>
         )}
 
         {!loading && !error && fixtures.length === 0 && (
           <p className="text-sm text-fg-muted">
-            {isZh ? (
-              <>
-                未找到预设场景。请将公司数据目录放置在{" "}
-                <code className="text-xs bg-surface-overlay px-1 py-0.5 rounded">
-                  fixtures/companies/
-                </code>
-                。
-              </>
-            ) : (
-              <>
-                No fixtures found. Add company directories to{" "}
-                <code className="text-xs bg-surface-overlay px-1 py-0.5 rounded">
-                  fixtures/companies/
-                </code>
-                .
-              </>
-            )}
+            {t("demo.page.no_fixtures_found")}
           </p>
         )}
 
         {!loading && fixtures.length > 0 && (
           <>
             <p className="text-xs text-fg-muted mb-4">
-              {isZh
-                ? `共 ${fixtures.length} 个可用预设场景 — 点击“加载”替换当前生效的公司上下文。`
-                : `${fixtures.length} fixture${fixtures.length !== 1 ? "s" : ""} available — click Load to replace the active company context.`}
+              {t("demo.page.fixtures_length_fixturefixtures_length_____1____s_available_click_load", { fixtures_length: fixtures.length, fixtures_length_____1____s: fixtures.length !== 1 ? "s" : "" })}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {fixtures.map((fx) => {
@@ -579,7 +528,7 @@ export default function DemoPage() {
                           </h2>
                           {isActive && (
                             <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                              {isZh ? "生效中" : "Active"}
+                              {t("demo.page.active")}
                             </span>
                           )}
                           {fx.source === "generated" && (
@@ -597,12 +546,12 @@ export default function DemoPage() {
                         {fx.source === "generated" && (
                           <button
                             type="button"
-                            title={isZh ? "删除该生成的场景" : "Delete this generated fixture"}
+                            title={t("demo.page.delete_this_generated_fixture")}
                             disabled={deletingName === fx.name || isActive}
                             onClick={() => void handleDelete(fx.name)}
                             className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                           >
-                            {deletingName === fx.name ? "…" : (isZh ? "删除" : "Delete")}
+                            {deletingName === fx.name ? "…" : (t("demo.page.delete"))}
                           </button>
                         )}
                       </div>
@@ -628,14 +577,14 @@ export default function DemoPage() {
                           <span className="text-fg font-medium">
                             {fx.headcount}
                           </span>{" "}
-                          {isZh ? "人" : "people"}
+                          {t("demo.page.people")}
                         </span>
                       )}
                       <span>
                         <span className="text-fg font-medium">
                           {fx.doc_count}
                         </span>{" "}
-                        {isZh ? "篇文档" : "docs"}
+                        {t("demo.page.docs")}
                       </span>
                     </div>
 
@@ -645,13 +594,13 @@ export default function DemoPage() {
                         {fx.departments.length > 0 && (
                           <div>
                             <p className="text-[10px] font-medium uppercase tracking-wider text-fg-subtle mb-1.5">
-                              {isZh ? `部门 · ${fx.departments.length}` : `Departments · ${fx.departments.length}`}
+                              {t("demo.page.departments_fx_departments_length", { fx_departments_length: fx.departments.length })}
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {fx.departments.slice(0, 6).map((d) => (
                                 <span
                                   key={d.title}
-                                  title={d.head ? `${d.title} — ${isZh ? "负责人" : "led by"} ${d.head}` : d.title}
+                                  title={d.head ? `${d.title} — ${t("demo.page.led_by")} ${d.head}` : d.title}
                                   className="text-[10px] leading-none px-1.5 py-1 rounded-md bg-surface-overlay border border-line text-fg-muted"
                                 >
                                   {d.title}
@@ -659,7 +608,7 @@ export default function DemoPage() {
                               ))}
                               {fx.departments.length > 6 && (
                                 <span className="text-[10px] leading-none px-1.5 py-1 text-fg-subtle">
-                                  {isZh ? `还有 ${fx.departments.length - 6} 个` : `+${fx.departments.length - 6} more`}
+                                  {t("demo.page.fx_departments_length___6_more", { fx_departments_length___6: fx.departments.length - 6 })}
                                 </span>
                               )}
                             </div>
@@ -669,7 +618,7 @@ export default function DemoPage() {
                         {fx.people.length > 0 && (
                           <div>
                             <p className="text-[10px] font-medium uppercase tracking-wider text-fg-subtle mb-1.5">
-                              {isZh ? `管理团队 · ${fx.people.length}` : `Leadership · ${fx.people.length}`}
+                              {t("demo.page.leadership_fx_people_length", { fx_people_length: fx.people.length })}
                             </p>
                             <ul className="flex flex-col gap-1">
                               {fx.people.slice(0, 5).map((p) => (
@@ -682,7 +631,7 @@ export default function DemoPage() {
                                   </span>
                                   {p.is_principal && (
                                     <span className="text-[9px] uppercase tracking-wide px-1 py-px rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 whitespace-nowrap">
-                                      {isZh ? "负责人" : "Principal"}
+                                      {t("demo.page.principal")}
                                     </span>
                                   )}
                                   {p.role && (
@@ -712,12 +661,12 @@ export default function DemoPage() {
                       {isLoading ? (
                         <span className="flex items-center justify-center gap-1.5">
                           <span className="inline-block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-                          {isZh ? "加载中…" : "Loading…"}
+                          {t("demo.page.loading")}
                         </span>
                       ) : isActive ? (
-                        isZh ? "重新加载" : "Reload"
+                        t("demo.page.reload")
                       ) : (
-                        isZh ? "加载" : "Load"
+                        t("demo.page.load")
                       )}
                     </button>
                   </div>
@@ -728,13 +677,13 @@ export default function DemoPage() {
             {status.active_fixture && (
               <div className="mt-6 flex items-center gap-3">
                 <p className="text-xs text-fg-muted">
-                  {isZh ? "公司上下文已加载。前往对话界面即可发起提问。" : "Company context loaded. Head to the chat to ask questions."}
+                  {t("demo.page.company_context_loaded_head_to")}
                 </p>
                 <Link
                   href="/"
                   className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  {isZh ? "进入对话 →" : "Open chat →"}
+                  {t("demo.page.open_chat")}
                 </Link>
               </div>
             )}
@@ -744,20 +693,10 @@ export default function DemoPage() {
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <h3 className="text-xs font-semibold text-red-300">
-                    {isZh ? "危险区域 — 重置全部状态" : "Danger zone — Reset everything"}
+                    {t("demo.page.danger_zone_reset_everything")}
                   </h3>
                   <p className="text-xs text-fg-muted mt-1 leading-relaxed">
-                    {isZh ? (
-                      <>
-                        清除当前实时公司数据<strong>及</strong>历史快照。重新初始化 8 个默认专业部门，恢复纯净空白起点。此操作不可逆。
-                      </>
-                    ) : (
-                      <>
-                        Clears your live company data <em>and</em> the snapshot.
-                        Re-seeds the 8 default specialist departments so you start
-                        from a sensible blank slate. There is no undo.
-                      </>
-                    )}
+                    {t("demo.page.danger_zone_desc")}
                   </p>
                 </div>
                 {!resetOpen && (
@@ -767,7 +706,7 @@ export default function DemoPage() {
                     onClick={() => setResetOpen(true)}
                     className="text-xs font-medium px-3 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
-                    {isZh ? "重置全部数据" : "Reset everything"}
+                    {t("demo.page.reset_everything")}
                   </button>
                 )}
               </div>
@@ -778,17 +717,7 @@ export default function DemoPage() {
                     htmlFor="reset-confirm-input"
                     className="text-xs text-fg-muted whitespace-nowrap"
                   >
-                    {isZh ? (
-                      <>
-                        输入 <code className="font-mono text-red-300">{RESET_CONFIRM_TOKEN}</code> 以确认：
-                      </>
-                    ) : (
-                      <>
-                        Type{" "}
-                        <code className="font-mono text-red-300">{RESET_CONFIRM_TOKEN}</code>{" "}
-                        to confirm:
-                      </>
-                    )}
+                    {t("demo.page.type_token_confirm", { token: RESET_CONFIRM_TOKEN })}
                   </label>
                   <input
                     id="reset-confirm-input"
@@ -808,7 +737,7 @@ export default function DemoPage() {
                     onClick={() => void handleReset()}
                     className="text-xs font-medium px-3 py-1.5 rounded-lg border border-red-500/40 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
                   >
-                    {busy ? (isZh ? "重置中…" : "Resetting…") : (isZh ? "确认重置" : "Confirm reset")}
+                    {busy ? (t("demo.page.resetting")) : (t("demo.page.confirm_reset"))}
                   </button>
                   <button
                     type="button"
@@ -819,7 +748,7 @@ export default function DemoPage() {
                     }}
                     className="text-xs font-medium px-3 py-1.5 rounded-lg border border-line bg-surface-overlay text-fg-muted hover:text-fg transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    {isZh ? "取消" : "Cancel"}
+                    {t("demo.page.cancel")}
                   </button>
                 </div>
               )}

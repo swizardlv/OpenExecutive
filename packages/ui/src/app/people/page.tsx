@@ -27,23 +27,10 @@ const CHANNELS = ["any", "slack", "discord", "telegram", "email"];
 
 // ---------------------------------------------------------------------------
 // PersonCard (unchanged from read-only)
-const SCOPE_LABELS_ZH: Record<string, string> = {
-  spend_lt_2k: "支出 <$2K",
-  spend_lt_10k: "支出 <$10K",
-  spend_gt_10k: "支出 >$10K",
-  hiring_signoff: "招聘审批",
-  vendor_onboarding: "供应商签署",
-  customer_credit: "授信/信用",
-  legal_sign: "法务签署",
-  board_comms: "董事会通讯",
-  wildcard: "全权通配",
-};
-
 function ScopePill({ scope }: { scope: string }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const entry = ALL_SCOPES.find((s) => s.value === scope);
-  const label = isZh ? (SCOPE_LABELS_ZH[scope] ?? entry?.label ?? scope) : (entry?.label ?? scope);
+  const label = t(`people.scope.${scope}`, entry?.label ?? scope);
   const isStar = scope === "wildcard";
   return (
     <span
@@ -59,8 +46,7 @@ function ScopePill({ scope }: { scope: string }) {
 }
 
 function PersonCard({ person }: { person: Person }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   return (
     <Link
       href={`/people/${person.id}`}
@@ -72,7 +58,7 @@ function PersonCard({ person }: { person: Person }) {
             {person.full_name}
             {person.is_principal && (
               <span className="inline-block px-1.5 py-0.5 rounded border text-[10px] font-medium bg-violet-500/20 text-violet-300 border-violet-500/30">
-                {isZh ? "主要负责人" : "Principal"}
+                {t("people.page.principal")}
               </span>
             )}
           </div>
@@ -479,8 +465,7 @@ function AddPersonModal({ onCreated, onClose }: AddPersonModalProps) {
 // ---------------------------------------------------------------------------
 
 export default function PeoplePage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -490,7 +475,7 @@ export default function PeoplePage() {
     setLoading(true);
     listPeople()
       .then(setPeople)
-      .catch((e) => setError(e instanceof Error ? e.message : (isZh ? "加载失败" : "Failed to load")))
+      .catch((e) => setError(e instanceof Error ? e.message : (t("people.page.failed_to_load"))))
       .finally(() => setLoading(false));
   }
 
@@ -512,23 +497,21 @@ export default function PeoplePage() {
           <div className="flex items-baseline justify-between mb-6">
             <div>
               <h1 className="text-xl font-semibold text-fg">
-                {isZh ? "组织成员" : "People"}
+                {t("people.page.people")}
               </h1>
               <p className="text-sm text-fg-muted mt-0.5">
-                {isZh
-                  ? "与执行团队协同的成员名单。审批权限范围决定谁有权批准对应类型的提议。"
-                  : "Humans the Executive coordinates with. Authority scopes determine who approves what."}
+                {t("people.page.humans_the_executive_coordinates_with")}
               </p>
             </div>
             <button
               onClick={() => setShowAdd(true)}
               className="flex-shrink-0 px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium"
             >
-              {isZh ? "+ 新增成员" : "+ Add person"}
+              {t("people.page.add_person")}
             </button>
           </div>
 
-          {loading && <p className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</p>}
+          {loading && <p className="text-fg-muted text-sm">{t("people.page.loading")}</p>}
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm mb-4">
               {error}
@@ -537,13 +520,13 @@ export default function PeoplePage() {
           {!loading && !error && people.length === 0 && (
             <div className="rounded-xl border border-line bg-surface-elevated p-8 text-center">
               <p className="text-fg-muted text-sm mb-3">
-                {isZh ? "暂未配置任何成员。" : "No people configured yet."}
+                {t("people.page.no_people_configured_yet")}
               </p>
               <button
                 onClick={() => setShowAdd(true)}
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white"
               >
-                {isZh ? "添加首位成员 →" : "Add your first person →"}
+                {t("people.page.add_your_first_person")}
               </button>
             </div>
           )}

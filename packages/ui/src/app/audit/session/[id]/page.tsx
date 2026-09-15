@@ -309,13 +309,12 @@ function EventDetailPanel({
   event,
   detail,
   onOpenDrawer,
-  isZh,
 }: {
   event: AuditEvent;
   detail: AuditEventDetail | null;
   onOpenDrawer: () => void;
-  isZh?: boolean;
 }) {
+  const { t } = useI18n();
   const d = (event.details ?? {}) as Record<string, unknown>;
   const full = detail?.full ?? null;
 
@@ -331,7 +330,7 @@ function EventDetailPanel({
         </span>
         <span className="text-xs text-fg-muted">@ {formatTs(event.ts)}</span>
         <span className="text-xs text-fg-muted">·</span>
-        <span className="text-xs text-fg-muted">{isZh ? "执行者: " : "actor: "}{event.actor ?? "—"}</span>
+        <span className="text-xs text-fg-muted">{t("audit.session.id.page.actor")}{event.actor ?? "—"}</span>
       </div>
       <div className="text-sm text-fg break-words">{event.summary}</div>
     </div>
@@ -375,7 +374,7 @@ function EventDetailPanel({
         onClick={onOpenDrawer}
         className="mt-4 w-full px-3 py-1.5 rounded-lg bg-surface-overlay hover:bg-surface-input text-xs border border-line-strong"
       >
-        {isZh ? "查看完整载荷 →" : "View full payload →"}
+        {t("audit.session.id.page.view_full_payload")}
       </button>
     </div>
   );
@@ -741,8 +740,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ---------------------------------------------------------------------------
 
 export default function AuditSessionPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
   const params = useParams<{ id: string }>();
   const sessionId = useMemo(() => {
     if (!params?.id) return "";
@@ -780,7 +778,7 @@ export default function AuditSessionPage() {
       })
       .catch((e) => {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : (isZh ? "加载会话失败" : "Failed to load session"));
+        setError(e instanceof Error ? e.message : (t("audit.session.id.page.failed_to_load_session")));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -788,7 +786,7 @@ export default function AuditSessionPage() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId, isZh]);
+  }, [sessionId]);
 
   // Lazy-fetch full payload for the currently selected event (cached by id).
   const [detailsCache, setDetailsCache] = useState<Record<number, AuditEventDetail>>({});
@@ -845,7 +843,7 @@ export default function AuditSessionPage() {
       <main className="flex-1 min-h-0 flex">
         {loading && (
           <div className="flex-1 flex items-center justify-center text-fg-muted">
-            {isZh ? "正在加载会话…" : "Loading session…"}
+            {t("audit.session.id.page.loading_session")}
           </div>
         )}
         {error && !loading && (
@@ -869,10 +867,10 @@ export default function AuditSessionPage() {
                   channel) without scanning the whole tree. */}
               <div className="absolute top-3 left-3 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-elevated/90 backdrop-blur border border-line text-[11px] text-fg-muted font-mono">
                 <span className="text-fg">{flow.nodes.length}</span>
-                <span>{isZh ? "事件" : "events"}</span>
+                <span>{t("audit.session.id.page.events")}</span>
                 <span className="text-fg-subtle">·</span>
                 <span className="text-fg">{flow.edges.length}</span>
-                <span>{isZh ? "连线" : "edges"}</span>
+                <span>{t("audit.session.id.page.edges")}</span>
                 {data.channel && (
                   <>
                     <span className="text-fg-subtle">·</span>
@@ -894,15 +892,15 @@ export default function AuditSessionPage() {
                       <>
                         <span className="text-fg-subtle">·</span>
                         <span className="text-fg">{cs.calls}</span>
-                        <span>{isZh ? "调用" : "calls"}</span>
+                        <span>{t("audit.session.id.page.calls")}</span>
                         <span className="text-fg-subtle">·</span>
                         <span className="text-fg">{totalIn.toLocaleString()}</span>
-                        <span>{isZh ? "入" : "in"}</span>
+                        <span>{t("audit.session.id.page.in")}</span>
                         <span className="text-fg-subtle">·</span>
                         <span className="text-fg">
                           {cs.output_tokens.toLocaleString()}
                         </span>
-                        <span>{isZh ? "出" : "out"}</span>
+                        <span>{t("audit.session.id.page.out")}</span>
                         <span className="text-fg-subtle">·</span>
                         <span
                           className="text-fg"
@@ -910,7 +908,7 @@ export default function AuditSessionPage() {
                         >
                           {cachedPct}%
                         </span>
-                        <span>{isZh ? "缓存率" : "cached"}</span>
+                        <span>{t("audit.session.id.page.cached")}</span>
                       </>
                     );
                   })()}
@@ -928,7 +926,7 @@ export default function AuditSessionPage() {
                         .join("; ")}
                     >
                       ⚠ {data.degradations.reduce((n, d) => n + d.count, 0)}{" "}
-                      {isZh ? "降级" : "degraded"}
+                      {t("audit.session.id.page.degraded")}
                     </span>
                   </>
                 )}
@@ -985,16 +983,15 @@ export default function AuditSessionPage() {
                   event={selectedEvent}
                   detail={detail}
                   onOpenDrawer={() => setDrawerExpanded(true)}
-                  isZh={isZh}
                 />
               ) : (
                 <div className="p-4 text-fg-muted text-sm">
-                  {isZh ? "点击节点查看 Agent 当时的感知与上下文。" : "Click a node to see what the agent saw."}
+                  {t("audit.session.id.page.click_a_node_to_see")}
                 </div>
               )}
               {detailLoading && (
                 <div className="px-4 pb-2 text-[10px] text-fg-muted">
-                  {isZh ? "正在加载完整载荷…" : "loading full payload…"}
+                  {t("audit.session.id.page.loading_full_payload")}
                 </div>
               )}
             </div>
@@ -1010,7 +1007,7 @@ export default function AuditSessionPage() {
                 type="button"
                 onClick={() => setDrawerExpanded((v) => !v)}
                 className="h-10 flex items-center justify-center border-b border-line text-fg-muted hover:text-fg text-xs"
-                title={isZh ? (drawerExpanded ? "收起抽屉" : "展开抽屉 (完整载荷)") : (drawerExpanded ? "Collapse drawer" : "Expand drawer (full payload)")}
+                title={drawerExpanded ? t("audit.session.id.page.collapse_drawer") : t("audit.session.id.page.expand_drawer")}
               >
                 {drawerExpanded ? "→" : "←"}
               </button>
@@ -1018,7 +1015,7 @@ export default function AuditSessionPage() {
                 <div className="flex-1 min-h-0 overflow-y-auto p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-[10px] uppercase tracking-wide text-fg-muted">
-                      {isZh ? "完整载荷" : "Full payload"}
+                      {t("audit.session.id.page.full_payload")}
                     </div>
                     <button
                       type="button"
@@ -1054,10 +1051,10 @@ export default function AuditSessionPage() {
                       className="text-[10px] px-2 py-0.5 rounded bg-surface-overlay hover:bg-surface-input border border-line-strong"
                     >
                       {copyState === "ok"
-                        ? (isZh ? "已复制！" : "Copied!")
+                        ? (t("audit.session.id.page.copied"))
                         : copyState === "fail"
-                          ? (isZh ? "复制失败" : "Copy failed")
-                          : (isZh ? "复制" : "Copy")}
+                          ? (t("audit.session.id.page.copy_failed"))
+                          : (t("audit.session.id.page.copy"))}
                     </button>
                   </div>
                   <pre className="text-[11px] text-fg bg-black/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
@@ -1065,7 +1062,7 @@ export default function AuditSessionPage() {
                       ? JSON.stringify(detail.full ?? detail, null, 2)
                       : selectedEvent
                         ? JSON.stringify(selectedEvent.details, null, 2)
-                        : (isZh ? "(请选择节点)" : "(select a node)")}
+                        : (t("audit.session.id.page.select_a_node"))}
                   </pre>
                 </div>
               )}

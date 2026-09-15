@@ -10,20 +10,17 @@ import { useI18n } from "@/lib/i18n";
 // of the primary nav to keep day-to-day navigation focused. Each tool is
 // a full route; this page is just the directory that points to them.
 export default function SettingsPage() {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const items = getAdvancedItems(locale);
-  const isZh = locale === "zh";
 
   return (
     <main className="flex-1 min-h-0 overflow-y-auto">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-xl font-semibold text-fg">
-          {isZh ? "系统设置与高级工具" : "Settings & advanced"}
+          {t("settings.page.settings_advanced")}
         </h1>
         <p className="mt-1 text-sm text-fg-muted">
-          {isZh
-            ? "系统配置、诊断测试与管理工具中心。这些工具位于日常工作空间主导航之外。"
-            : "Configuration, diagnostics, and power-user tools. These sit outside the day-to-day workspace nav."}
+          {t("settings.page.configuration_diagnostics_and_poweruser_tools")}
         </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">

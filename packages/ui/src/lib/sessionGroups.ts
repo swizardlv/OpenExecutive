@@ -1,4 +1,5 @@
 import type { SessionSummary } from "@/lib/api";
+import { translate } from "@/locales";
 
 export type GroupKey = "today" | "yesterday" | "prev7" | "prev30" | "older";
 
@@ -7,22 +8,6 @@ export interface SessionGroup {
   label: string;
   items: SessionSummary[];
 }
-
-const GROUP_LABELS_ZH: Record<GroupKey, string> = {
-  today: "今天",
-  yesterday: "昨天",
-  prev7: "过去 7 天",
-  prev30: "过去 30 天",
-  older: "更早之前",
-};
-
-const GROUP_LABELS_EN: Record<GroupKey, string> = {
-  today: "Today",
-  yesterday: "Yesterday",
-  prev7: "Previous 7 Days",
-  prev30: "Previous 30 Days",
-  older: "Older",
-};
 
 const GROUP_KEYS: GroupKey[] = ["today", "yesterday", "prev7", "prev30", "older"];
 
@@ -38,7 +23,7 @@ const DAY_MS = 86_400_000;
 export function groupSessionsByDate(
   sessions: SessionSummary[],
   now: Date = new Date(),
-  locale: "zh" | "en" = "zh",
+  locale: string = "zh",
 ): SessionGroup[] {
   const startOfToday = new Date(
     now.getFullYear(),
@@ -76,11 +61,9 @@ export function groupSessionsByDate(
     buckets[key].push(s);
   }
 
-  const labelDict = locale === "zh" ? GROUP_LABELS_ZH : GROUP_LABELS_EN;
-
   return GROUP_KEYS.map((key) => ({
     key,
-    label: labelDict[key],
+    label: translate(locale, `sessionGroup.${key}`),
     items: buckets[key],
   })).filter((g) => g.items.length > 0);
 }

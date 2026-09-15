@@ -80,8 +80,7 @@ function isMultiline(name: string, schema: WorkflowInputFieldSchema): boolean {
 }
 
 export default function JobDetailPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
 
   const params = useParams<{ name: string }>();
   const searchParams = useSearchParams();
@@ -233,9 +232,9 @@ export default function JobDetailPage() {
   if (loadError) {
     return (
       <div className="flex flex-col h-full bg-surface text-fg items-center justify-center">
-        <div className="text-sm text-red-400 mb-4">{isZh ? "出错了" : "Error"}: {loadError}</div>
+        <div className="text-sm text-red-400 mb-4">{t("jobs.name.page.error")}: {loadError}</div>
         <Link href="/jobs" className="text-sm text-fg-muted hover:text-fg">
-          {isZh ? "← 返回任务流列表" : "← Back to jobs"}
+          {t("jobs.name.page.back_to_jobs")}
         </Link>
       </div>
     );
@@ -244,7 +243,7 @@ export default function JobDetailPage() {
   if (!workflow) {
     return (
       <div className="flex flex-col h-full bg-surface text-fg-muted items-center justify-center text-sm">
-        {isZh ? "加载中…" : "Loading…"}
+        {t("jobs.name.page.loading")}
       </div>
     );
   }
@@ -268,16 +267,14 @@ export default function JobDetailPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="flex items-center justify-between rounded-md border border-line bg-surface/40 px-3 py-2">
                 <div className="text-xs text-fg-muted leading-relaxed">
-                  {isZh
-                    ? "不知道如何填写？加载示例数据即可参考标准输入格式。在运行前可自由修改任何内容。"
-                    : "Stuck on how to fill this out? Load a realistic sample to see what good inputs look like. You can edit anything before running."}
+                  {t("jobs.name.page.stuck_on_how_to_fill")}
                 </div>
                 <button
                   type="button"
                   onClick={handleLoadSample}
                   className="ml-3 shrink-0 text-xs text-indigo-300 hover:text-indigo-200 underline underline-offset-2"
                 >
-                  {isZh ? "加载示例输入" : "Load sample run"}
+                  {t("jobs.name.page.load_sample_run")}
                 </button>
               </div>
 
@@ -289,13 +286,13 @@ export default function JobDetailPage() {
                 >
                   <span>
                     {prefillBanner === "suggestion"
-                      ? (isZh ? "已根据建议预填表单。请在运行前核对并按需修改。" : "Inputs pre-filled from a suggestion. Review and edit before running.")
-                      : (isZh ? "已载入示例输入。在运行前可自由修改任何内容。" : "Sample inputs loaded. Edit anything before running.")}
+                      ? (t("jobs.name.page.inputs_prefilled_from_a_suggestion"))
+                      : (t("jobs.name.page.sample_inputs_loaded_edit_anything"))}
                   </span>
                   <button
                     type="button"
                     onClick={() => setPrefillBanner(null)}
-                    aria-label={isZh ? "关闭提示" : "Dismiss notice"}
+                    aria-label={t("jobs.name.page.dismiss_notice")}
                     className="shrink-0 text-indigo-300 hover:text-indigo-100 focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-300 rounded px-1"
                   >
                     ×
@@ -343,13 +340,11 @@ export default function JobDetailPage() {
                           type="button"
                           onClick={() => handleInsertExample(fieldName, schema)}
                           aria-label={
-                            isZh
-                              ? `填入 ${fieldLabel(fieldName, schema, locale)} 的示例值`
-                              : `Insert example value for ${fieldLabel(fieldName, schema)}`
+                            t("jobs.name.page.insert_example_value_for_fieldlabel_fieldname__schema", { fieldLabel_fieldName__schema: fieldLabel(fieldName, schema), fieldLabel_fieldName__schema__locale: fieldLabel(fieldName, schema, locale) })
                           }
                           className="text-[11px] text-fg-muted hover:text-indigo-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-400 rounded px-1 transition"
                         >
-                          {isZh ? "填入示例" : "Insert example"}
+                          {t("jobs.name.page.insert_example")}
                         </button>
                       )}
                     </div>
@@ -366,7 +361,7 @@ export default function JobDetailPage() {
                         required={isRequired}
                         className="w-full rounded-md bg-surface/60 border border-line focus:border-indigo-500 focus:outline-none text-sm text-fg px-3 py-2"
                       >
-                        <option value="">{isZh ? "请选择…" : "Select…"}</option>
+                        <option value="">{t("jobs.name.page.select")}</option>
                         {pickerItems.map((opt) => (
                           <option key={opt.value} value={opt.value}>
                             {opt.label}
@@ -412,10 +407,10 @@ export default function JobDetailPage() {
                   disabled={!allRequiredFilled}
                   className="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition disabled:bg-surface-overlay disabled:text-fg-muted disabled:cursor-not-allowed"
                 >
-                  {isZh ? "继续执行" : "Continue"}
+                  {t("jobs.name.page.continue")}
                 </button>
                 <span className="text-xs text-fg-muted">
-                  {isZh ? "带 * 的字段均为必填项。" : "All fields with * are required."}
+                  {t("jobs.name.page.all_fields_with_are_required")}
                 </span>
               </div>
             </form>

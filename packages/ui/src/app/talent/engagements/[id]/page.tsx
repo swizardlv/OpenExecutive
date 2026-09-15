@@ -31,8 +31,7 @@ function AddCandidateModal({
   onCreated: (c: Candidate) => void;
   onClose: () => void;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
 
   const [form, setForm] = useState({
     full_name: "",
@@ -62,19 +61,19 @@ function AddCandidateModal({
       });
       onCreated(c);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : (isZh ? "创建候选人失败" : "Failed to create"));
+      setErr(e instanceof Error ? e.message : (t("talent.engagements.id.page.failed_to_create")));
       setSaving(false);
     }
   }
 
   const fields: [keyof typeof form, string, string][] = [
-    ["full_name", isZh ? "姓名 *" : "Full name *", isZh ? "张伟" : "Dana Cole"],
-    ["current_title", isZh ? "当前职位" : "Current title", isZh ? "钻井总监" : "Drilling Director"],
-    ["current_company", isZh ? "当前公司" : "Current company", isZh ? "能源集团" : "Permian Co"],
-    ["location", isZh ? "所在地" : "Location", isZh ? "北京" : "Midland, TX"],
-    ["email", isZh ? "电子邮箱" : "Email", "dana@example.com"],
-    ["linkedin_url", isZh ? "领英链接" : "LinkedIn URL", "https://linkedin.com/in/…"],
-    ["source", isZh ? "来源" : "Source", isZh ? "推荐" : "referral"],
+    ["full_name", t("talent.engagements.id.page.full_name"), t("talent.engagements.id.page.dana_cole")],
+    ["current_title", t("talent.engagements.id.page.current_title"), t("talent.engagements.id.page.drilling_director")],
+    ["current_company", t("talent.engagements.id.page.current_company"), t("talent.engagements.id.page.permian_co")],
+    ["location", t("talent.engagements.id.page.location"), t("talent.engagements.id.page.midland_tx")],
+    ["email", t("talent.engagements.id.page.email"), "dana@example.com"],
+    ["linkedin_url", t("talent.engagements.id.page.linkedin_url"), "https://linkedin.com/in/…"],
+    ["source", t("talent.engagements.id.page.source"), t("talent.engagements.id.page.referral")],
   ];
 
   return (
@@ -83,7 +82,7 @@ function AddCandidateModal({
         className="w-full max-w-lg bg-surface border border-line rounded-2xl shadow-2xl p-6 mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold text-fg mb-4">{isZh ? "添加候选人" : "Add candidate"}</h2>
+        <h2 className="text-lg font-semibold text-fg mb-4">{t("talent.engagements.id.page.add_candidate_2")}</h2>
         <div className="space-y-3">
           {fields.map(([key, label, placeholder]) => (
             <label key={key} className="block">
@@ -104,14 +103,14 @@ function AddCandidateModal({
             onClick={submit}
             className="flex-1 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 font-medium"
           >
-            {saving ? (isZh ? "添加中…" : "Adding…") : (isZh ? "添加候选人" : "Add candidate")}
+            {saving ? (t("talent.engagements.id.page.adding")) : (t("talent.engagements.id.page.add_candidate_2"))}
           </button>
           <button
             disabled={saving}
             onClick={onClose}
             className="px-4 py-2 text-sm rounded-lg border border-line hover:bg-surface-overlay disabled:opacity-50"
           >
-            {isZh ? "取消" : "Cancel"}
+            {t("talent.engagements.id.page.cancel")}
           </button>
         </div>
       </div>
@@ -120,8 +119,7 @@ function AddCandidateModal({
 }
 
 export default function EngagementDetailPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
 
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -162,9 +160,9 @@ export default function EngagementDetailPage() {
         });
         setAllCandidates(await listCandidates());
       })
-      .catch((err) => setError(err instanceof Error ? err.message : (isZh ? "加载失败" : "Failed to load")))
+      .catch((err) => setError(err instanceof Error ? err.message : (t("talent.engagements.id.page.failed_to_load"))))
       .finally(() => setLoading(false));
-  }, [engagementId, isZh]);
+  }, [engagementId, t]);
 
   useEffect(() => {
     load();
@@ -188,7 +186,7 @@ export default function EngagementDetailPage() {
       setEngagement(updated);
       setEditing(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : (isZh ? "保存失败" : "Failed to save"));
+      setError(e instanceof Error ? e.message : (t("talent.engagements.id.page.failed_to_save")));
     } finally {
       setSaving(false);
     }
@@ -200,7 +198,7 @@ export default function EngagementDetailPage() {
       await archiveEngagement(engagementId);
       router.push("/talent/searches");
     } catch (e) {
-      setError(e instanceof Error ? e.message : (isZh ? "归档失败" : "Failed to archive"));
+      setError(e instanceof Error ? e.message : (t("talent.engagements.id.page.failed_to_archive")));
     }
   }
 
@@ -210,11 +208,11 @@ export default function EngagementDetailPage() {
     try {
       setMatches(await matchCandidatesForEngagement(engagementId));
     } catch (e) {
-      setMatchError(e instanceof Error ? e.message : (isZh ? "加载匹配候选人失败" : "Failed to load matches"));
+      setMatchError(e instanceof Error ? e.message : (t("talent.engagements.id.page.failed_to_load_matches")));
     }
   }
 
-  if (loading) return <div className="p-6 text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</div>;
+  if (loading) return <div className="p-6 text-fg-muted text-sm">{t("talent.engagements.id.page.loading")}</div>;
   if (error) {
     return (
       <div className="p-6">
@@ -224,7 +222,7 @@ export default function EngagementDetailPage() {
       </div>
     );
   }
-  if (!engagement) return <div className="p-6 text-fg-muted text-sm">{isZh ? "未找到该招聘职位。" : "Engagement not found."}</div>;
+  if (!engagement) return <div className="p-6 text-fg-muted text-sm">{t("talent.engagements.id.page.engagement_not_found")}</div>;
 
   return (
     <div className="flex flex-col h-full bg-surface">
@@ -244,7 +242,7 @@ export default function EngagementDetailPage() {
             href="/talent/searches"
             className="text-xs text-fg-muted hover:text-fg"
           >
-            {isZh ? "← 职位招聘" : "← Searches"}
+            {t("talent.engagements.id.page.searches")}
           </Link>
 
           <div className="flex items-start justify-between mt-2 mb-6 gap-4">
@@ -264,13 +262,13 @@ export default function EngagementDetailPage() {
                 onClick={() => setEditing((v) => !v)}
                 className="px-3 py-2 text-sm rounded-lg border border-line hover:bg-surface-overlay text-fg"
               >
-                {editing ? (isZh ? "取消" : "Cancel") : (isZh ? "编辑" : "Edit")}
+                {editing ? (t("talent.engagements.id.page.cancel")) : (t("talent.engagements.id.page.edit"))}
               </button>
               <button
                 onClick={handleArchive}
                 className="px-3 py-2 text-sm rounded-lg border border-rose-500/40 text-rose-300 hover:bg-rose-500/10"
               >
-                {isZh ? "归档" : "Archive"}
+                {t("talent.engagements.id.page.archive")}
               </button>
             </div>
           </div>
@@ -279,7 +277,7 @@ export default function EngagementDetailPage() {
             <div className="rounded-xl border border-line bg-surface-elevated p-4 mb-6 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-xs text-fg-muted">{isZh ? "职位名称" : "Role title"}</span>
+                  <span className="text-xs text-fg-muted">{t("talent.engagements.id.page.role_title")}</span>
                   <input
                     value={editForm.role_title}
                     onChange={(e) => setEditForm((f) => ({ ...f, role_title: e.target.value }))}
@@ -287,7 +285,7 @@ export default function EngagementDetailPage() {
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs text-fg-muted">{isZh ? "所属部门" : "Department"}</span>
+                  <span className="text-xs text-fg-muted">{t("talent.engagements.id.page.department")}</span>
                   <input
                     value={editForm.department}
                     onChange={(e) => setEditForm((f) => ({ ...f, department: e.target.value }))}
@@ -297,7 +295,7 @@ export default function EngagementDetailPage() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <label className="block">
-                  <span className="text-xs text-fg-muted">{isZh ? "状态" : "Status"}</span>
+                  <span className="text-xs text-fg-muted">{t("talent.engagements.id.page.status")}</span>
                   <select
                     value={editForm.status}
                     onChange={(e) =>
@@ -307,13 +305,13 @@ export default function EngagementDetailPage() {
                   >
                     {ENGAGEMENT_STATUSES.map((s) => (
                       <option key={s} value={s}>
-                        {isZh ? (STATUS_META[s]?.labelZh ?? s) : s}
+                        {t(`talent.status.${s}`, STATUS_META[s]?.label ?? s)}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label className="block">
-                  <span className="text-xs text-fg-muted">{isZh ? "工作地点" : "Location"}</span>
+                  <span className="text-xs text-fg-muted">{t("talent.engagements.id.page.location")}</span>
                   <input
                     value={editForm.location}
                     onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
@@ -321,7 +319,7 @@ export default function EngagementDetailPage() {
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs text-fg-muted">{isZh ? "薪酬范围" : "Comp band"}</span>
+                  <span className="text-xs text-fg-muted">{t("talent.engagements.id.page.comp_band")}</span>
                   <input
                     value={editForm.comp_band}
                     onChange={(e) => setEditForm((f) => ({ ...f, comp_band: e.target.value }))}
@@ -330,7 +328,7 @@ export default function EngagementDetailPage() {
                 </label>
               </div>
               <label className="block">
-                <span className="text-xs text-fg-muted">{isZh ? "必备硬性要求" : "Must-haves"}</span>
+                <span className="text-xs text-fg-muted">{t("talent.engagements.id.page.musthaves")}</span>
                 <textarea
                   value={editForm.must_haves}
                   onChange={(e) => setEditForm((f) => ({ ...f, must_haves: e.target.value }))}
@@ -339,7 +337,7 @@ export default function EngagementDetailPage() {
                 />
               </label>
               <label className="block">
-                <span className="text-xs text-fg-muted">{isZh ? "详细描述" : "Description"}</span>
+                <span className="text-xs text-fg-muted">{t("talent.engagements.id.page.description")}</span>
                 <textarea
                   value={editForm.description}
                   onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
@@ -352,7 +350,7 @@ export default function EngagementDetailPage() {
                 onClick={saveEdits}
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 font-medium"
               >
-                {saving ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存" : "Save")}
+                {saving ? (t("talent.engagements.id.page.saving")) : (t("talent.engagements.id.page.save"))}
               </button>
             </div>
           )}
@@ -360,7 +358,7 @@ export default function EngagementDetailPage() {
           {engagement.must_haves && !editing && (
             <div className="mb-6">
               <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-1">
-                {isZh ? "必备硬性要求" : "Must-haves"}
+                {t("talent.engagements.id.page.musthaves")}
               </div>
               <p className="text-sm text-fg-muted whitespace-pre-wrap">{engagement.must_haves}</p>
             </div>
@@ -369,17 +367,17 @@ export default function EngagementDetailPage() {
           {/* Candidates */}
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-fg">
-              {isZh ? `候选人 (${engagementCandidates.length})` : `Candidates (${engagementCandidates.length})`}
+              {t("talent.engagements.id.page.candidates_engagementcandidates_length", { engagementCandidates_length: engagementCandidates.length })}
             </h2>
             <button
               onClick={() => setShowAddCandidate(true)}
               className="px-3 py-1.5 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium"
             >
-              {isZh ? "+ 添加候选人" : "+ Add candidate"}
+              {t("talent.engagements.id.page.add_candidate")}
             </button>
           </div>
           {engagementCandidates.length === 0 ? (
-            <p className="text-sm text-fg-subtle mb-6">{isZh ? "暂无候选人。" : "No candidates yet."}</p>
+            <p className="text-sm text-fg-subtle mb-6">{t("talent.engagements.id.page.no_candidates_yet")}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
               {engagementCandidates.map((c) => (
@@ -391,21 +389,21 @@ export default function EngagementDetailPage() {
           {/* Talent-graph matches */}
           <div className="flex items-center justify-between mb-3 border-t border-line pt-6">
             <div>
-              <h2 className="text-sm font-semibold text-fg">{isZh ? "推荐匹配人选" : "Suggested matches"}</h2>
+              <h2 className="text-sm font-semibold text-fg">{t("talent.engagements.id.page.suggested_matches")}</h2>
               <p className="text-xs text-fg-muted mt-0.5">
-                {isZh ? "全量人才库中最契合该职位的候选人排名。" : "Best-fit candidates across the whole pool, ranked against this role."}
+                {t("talent.engagements.id.page.bestfit_candidates_across_the_whole")}
               </p>
             </div>
             <button
               onClick={loadMatches}
               className="px-3 py-1.5 text-xs rounded-lg border border-line hover:bg-surface-overlay text-fg"
             >
-              {matches ? (isZh ? "刷新" : "Refresh") : (isZh ? "查找匹配人选" : "Find matches")}
+              {matches ? (t("talent.engagements.id.page.refresh")) : (t("talent.engagements.id.page.find_matches"))}
             </button>
           </div>
           {matchError && <p className="text-sm text-rose-300">{matchError}</p>}
           {matches && matches.length === 0 && (
-            <p className="text-sm text-fg-subtle">{isZh ? "未找到匹配候选人（可在管线页尝试重建索引）。" : "No matches found (try Reindex on the pipeline)."}</p>
+            <p className="text-sm text-fg-subtle">{t("talent.engagements.id.page.no_matches_found_try_reindex")}</p>
           )}
           {matches && matches.length > 0 && (
             <div className="space-y-2">
@@ -419,7 +417,7 @@ export default function EngagementDetailPage() {
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-fg group-hover:text-indigo-300 truncate">
-                        {cand ? cand.full_name : `${isZh ? "候选人 #" : "Candidate #"}${m.candidate_id}`}
+                        {cand ? cand.full_name : `${t("talent.engagements.id.page.candidate")}${m.candidate_id}`}
                       </div>
                       <div className="text-xs text-fg-muted truncate">
                         {cand?.current_title || m.stage}
@@ -429,7 +427,7 @@ export default function EngagementDetailPage() {
                       className={`text-sm font-semibold tabular-nums ${fitScoreColor(
                         Math.round(m.score * 100),
                       )}`}
-                      title={isZh ? "匹配度得分" : "Match score"}
+                      title={t("talent.engagements.id.page.match_score")}
                     >
                       {Math.round(m.score * 100)}%
                     </div>

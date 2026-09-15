@@ -30,8 +30,7 @@ export default function FileEditor({
   onSave,
   onDelete,
 }: FileEditorProps) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const [mode, setMode] = useState<"edit" | "preview">("preview");
   const isFailure = variant === "failure";
   const accent = isFailure ? "text-rose-400" : "text-indigo-400";
@@ -41,7 +40,7 @@ export default function FileEditor({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <span className={`text-xs font-semibold uppercase tracking-widest ${accent}`}>
-            {isFailure ? (isZh ? "失败案例 · " : "Failure · ") : ""}
+            {isFailure ? (t("knowledge.FileEditor.failure")) : ""}
             {file.domain}
           </span>
           <h2 className="text-base font-semibold text-fg mt-0.5">{file.filename}</h2>
@@ -58,7 +57,7 @@ export default function FileEditor({
                     : "text-fg-muted hover:text-fg"
                 }`}
               >
-                {isZh ? (m === "edit" ? "编辑" : "预览") : m}
+                {m === "edit" ? t("knowledge.editor.edit") : t("knowledge.editor.preview")}
               </button>
             ))}
           </div>
@@ -66,14 +65,14 @@ export default function FileEditor({
             onClick={onDelete}
             className="px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 text-xs hover:bg-red-500/10 transition-colors"
           >
-            {isZh ? "删除" : "Delete"}
+            {t("knowledge.FileEditor.delete")}
           </button>
           <button
             onClick={onSave}
             disabled={!isDirty || isSaving}
             className="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white text-xs font-medium transition-colors"
           >
-            {isSaving ? (isZh ? "保存中…" : "Saving…") : isDirty ? (isZh ? "保存" : "Save") : (isZh ? "已保存" : "Saved")}
+            {isSaving ? (t("knowledge.FileEditor.saving")) : isDirty ? (t("knowledge.FileEditor.save")) : (t("knowledge.FileEditor.saved"))}
           </button>
         </div>
       </div>

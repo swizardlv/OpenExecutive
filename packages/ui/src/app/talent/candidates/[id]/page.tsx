@@ -23,21 +23,20 @@ import { workflowLink } from "@/components/talent/workflowLink";
 import { useI18n } from "@/lib/i18n";
 
 export default function CandidateDetailPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
 
   const editFields: [keyof Candidate, string][] = useMemo(
     () => [
-      ["full_name", isZh ? "姓名" : "Full name"],
-      ["current_title", isZh ? "当前职位" : "Current title"],
-      ["current_company", isZh ? "当前公司" : "Current company"],
-      ["location", isZh ? "所在地" : "Location"],
-      ["email", isZh ? "电子邮箱" : "Email"],
-      ["linkedin_url", isZh ? "LinkedIn 链接" : "LinkedIn URL"],
-      ["source", isZh ? "来源" : "Source"],
-      ["notes", isZh ? "备注" : "Notes"],
+      ["full_name", t("talent.candidates.id.page.full_name")],
+      ["current_title", t("talent.candidates.id.page.current_title")],
+      ["current_company", t("talent.candidates.id.page.current_company")],
+      ["location", t("talent.candidates.id.page.location")],
+      ["email", t("talent.candidates.id.page.email")],
+      ["linkedin_url", t("talent.candidates.id.page.linkedin_url")],
+      ["source", t("talent.candidates.id.page.source")],
+      ["notes", t("talent.candidates.id.page.notes")],
     ],
-    [isZh],
+    [t],
   );
 
   const params = useParams<{ id: string }>();
@@ -70,13 +69,13 @@ export default function CandidateDetailPage() {
           notes: c.notes,
         });
       })
-      .catch((e) => setError(e instanceof Error ? e.message : (isZh ? "加载失败" : "Failed to load")))
+      .catch((e) => setError(e instanceof Error ? e.message : (t("talent.candidates.id.page.failed_to_load"))))
       .finally(() => setLoading(false));
     similarCandidates(candidateId).then(setSimilar).catch(() => setSimilar([]));
     listCandidates()
       .then((all) => setNameById(new Map(all.map((c) => [c.id, c]))))
       .catch(() => setNameById(new Map()));
-  }, [candidateId, isZh]);
+  }, [candidateId, t]);
 
   useEffect(() => {
     load();
@@ -87,14 +86,14 @@ export default function CandidateDetailPage() {
     const cid = String(candidate.id);
     const eid = String(candidate.engagement_id);
     return [
-      { label: isZh ? "初筛评估" : "Screen", href: workflowLink("candidate_screen", { engagement_id: eid, candidate_id: cid }) },
-      { label: isZh ? "外联沟通" : "Outreach", href: workflowLink("candidate_outreach", { candidate_id: cid }) },
-      { label: isZh ? "面试安排" : "Interviews", href: workflowLink("interview_coordination", { candidate_id: cid }) },
-      { label: isZh ? "背景调查" : "References", href: workflowLink("reference_check", { candidate_id: cid }) },
-      { label: isZh ? "录用审批" : "Offer", href: workflowLink("offer_approval", { candidate_id: cid }) },
-      { label: isZh ? "入职引导" : "Onboarding", href: workflowLink("new_hire_onboarding", { candidate_id: cid }) },
+      { label: t("talent.candidates.id.page.screen"), href: workflowLink("candidate_screen", { engagement_id: eid, candidate_id: cid }) },
+      { label: t("talent.candidates.id.page.outreach"), href: workflowLink("candidate_outreach", { candidate_id: cid }) },
+      { label: t("talent.candidates.id.page.interviews"), href: workflowLink("interview_coordination", { candidate_id: cid }) },
+      { label: t("talent.candidates.id.page.references"), href: workflowLink("reference_check", { candidate_id: cid }) },
+      { label: t("talent.candidates.id.page.offer"), href: workflowLink("offer_approval", { candidate_id: cid }) },
+      { label: t("talent.candidates.id.page.onboarding"), href: workflowLink("new_hire_onboarding", { candidate_id: cid }) },
     ];
-  }, [candidate, isZh]);
+  }, [candidate, t]);
 
   async function saveEdits() {
     if (candidateId == null) return;
@@ -113,7 +112,7 @@ export default function CandidateDetailPage() {
       setCandidate(updated);
       setEditing(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : (isZh ? "保存失败" : "Failed to save"));
+      setError(e instanceof Error ? e.message : (t("talent.candidates.id.page.failed_to_save")));
     } finally {
       setSaving(false);
     }
@@ -125,7 +124,7 @@ export default function CandidateDetailPage() {
     try {
       setCandidate(await setCandidateStage(candidateId, stage));
     } catch (e) {
-      setError(e instanceof Error ? e.message : (isZh ? "阶段流转失败" : "Failed to move stage"));
+      setError(e instanceof Error ? e.message : (t("talent.candidates.id.page.failed_to_move_stage")));
     } finally {
       setStageBusy(false);
     }
@@ -137,11 +136,11 @@ export default function CandidateDetailPage() {
       await archiveCandidate(candidateId);
       router.push(`/talent/engagements/${candidate.engagement_id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : (isZh ? "归档失败" : "Failed to archive"));
+      setError(e instanceof Error ? e.message : (t("talent.candidates.id.page.failed_to_archive")));
     }
   }
 
-  if (loading) return <div className="p-6 text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</div>;
+  if (loading) return <div className="p-6 text-fg-muted text-sm">{t("talent.candidates.id.page.loading")}</div>;
   if (error && !candidate) {
     return (
       <div className="p-6">
@@ -151,7 +150,7 @@ export default function CandidateDetailPage() {
       </div>
     );
   }
-  if (!candidate) return <div className="p-6 text-fg-muted text-sm">{isZh ? "未找到该候选人。" : "Candidate not found."}</div>;
+  if (!candidate) return <div className="p-6 text-fg-muted text-sm">{t("talent.candidates.id.page.candidate_not_found")}</div>;
 
   const subtitle = [candidate.current_title, candidate.current_company].filter(Boolean).join(" · ");
 
@@ -163,7 +162,7 @@ export default function CandidateDetailPage() {
             href={`/talent/engagements/${candidate.engagement_id}`}
             className="text-xs text-fg-muted hover:text-fg"
           >
-            {isZh ? "← 招聘职位" : "← Engagement"}
+            {t("talent.candidates.id.page.engagement")}
           </Link>
 
           <div className="flex items-start justify-between mt-2 mb-6 gap-4">
@@ -179,19 +178,19 @@ export default function CandidateDetailPage() {
                 <div className={`text-2xl font-bold tabular-nums ${fitScoreColor(candidate.fit_score)}`}>
                   {candidate.fit_score ?? "—"}
                 </div>
-                <div className="text-[10px] text-fg-subtle uppercase">{isZh ? "匹配度" : "Fit score"}</div>
+                <div className="text-[10px] text-fg-subtle uppercase">{t("talent.candidates.id.page.fit_score")}</div>
               </div>
               <button
                 onClick={() => setEditing((v) => !v)}
                 className="px-3 py-2 text-sm rounded-lg border border-line hover:bg-surface-overlay text-fg"
               >
-                {editing ? (isZh ? "取消" : "Cancel") : (isZh ? "编辑" : "Edit")}
+                {editing ? (t("talent.candidates.id.page.cancel")) : (t("talent.candidates.id.page.edit"))}
               </button>
               <button
                 onClick={handleArchive}
                 className="px-3 py-2 text-sm rounded-lg border border-rose-500/40 text-rose-300 hover:bg-rose-500/10"
               >
-                {isZh ? "归档" : "Archive"}
+                {t("talent.candidates.id.page.archive")}
               </button>
             </div>
           </div>
@@ -205,7 +204,7 @@ export default function CandidateDetailPage() {
           {/* Stage control */}
           <div className="mb-6">
             <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-2">
-              {isZh ? "招聘阶段" : "Pipeline stage"}
+              {t("talent.candidates.id.page.pipeline_stage")}
             </div>
             <div className="flex flex-wrap gap-2">
               {CANDIDATE_STAGES.map((stage) => {
@@ -221,7 +220,7 @@ export default function CandidateDetailPage() {
                         : "bg-surface-input border-line text-fg-muted hover:border-indigo-500/40 disabled:opacity-50"
                     }`}
                   >
-                    {isZh ? STAGE_META[stage].labelZh : STAGE_META[stage].label}
+                    {t(`talent.stage.${stage}`, STAGE_META[stage]?.label ?? stage)}
                   </button>
                 );
               })}
@@ -234,7 +233,7 @@ export default function CandidateDetailPage() {
           {/* Run workflows */}
           <div className="mb-6">
             <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-2">
-              {isZh ? "执行工作流" : "Run a workflow"}
+              {t("talent.candidates.id.page.run_a_workflow")}
             </div>
             <div className="flex flex-wrap gap-2">
               {workflowActions.map((a) => (
@@ -275,7 +274,7 @@ export default function CandidateDetailPage() {
                 onClick={saveEdits}
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 font-medium"
               >
-                {saving ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存" : "Save")}
+                {saving ? (t("talent.candidates.id.page.saving")) : (t("talent.candidates.id.page.save"))}
               </button>
             </div>
           )}
@@ -284,7 +283,7 @@ export default function CandidateDetailPage() {
           {candidate.screening_summary && (
             <div className="mb-6">
               <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-1">
-                {isZh ? "初筛评估总结" : "Screening summary"}
+                {t("talent.candidates.id.page.screening_summary")}
               </div>
               <p className="text-sm text-fg-muted whitespace-pre-wrap">{candidate.screening_summary}</p>
             </div>
@@ -292,7 +291,7 @@ export default function CandidateDetailPage() {
 
           {candidate.notes && !editing && (
             <div className="mb-6">
-              <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-1">{isZh ? "备注" : "Notes"}</div>
+              <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-1">{t("talent.candidates.id.page.notes")}</div>
               <p className="text-sm text-fg-muted whitespace-pre-wrap">{candidate.notes}</p>
             </div>
           )}
@@ -300,10 +299,10 @@ export default function CandidateDetailPage() {
           {/* Similar candidates */}
           <div className="border-t border-line pt-6">
             <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-2">
-              {isZh ? "相似候选人" : "Similar candidates"}
+              {t("talent.candidates.id.page.similar_candidates")}
             </div>
             {similar.length === 0 ? (
-              <p className="text-sm text-fg-subtle">{isZh ? "暂无已建索引的相似候选人。" : "No similar candidates indexed yet."}</p>
+              <p className="text-sm text-fg-subtle">{t("talent.candidates.id.page.no_similar_candidates_indexed_yet")}</p>
             ) : (
               <div className="space-y-2">
                 {similar.map((m) => {
@@ -315,7 +314,7 @@ export default function CandidateDetailPage() {
                       className="flex items-center justify-between rounded-xl border border-line bg-surface-elevated hover:bg-surface-overlay transition-colors p-3 group"
                     >
                       <span className="text-sm text-fg group-hover:text-indigo-300 truncate">
-                        {cand ? cand.full_name : `${isZh ? "候选人 #" : "Candidate #"}${m.candidate_id}`}
+                        {cand ? cand.full_name : `${t("talent.candidates.id.page.candidate")}${m.candidate_id}`}
                       </span>
                       <span className={`text-sm font-semibold tabular-nums ${fitScoreColor(Math.round(m.score * 100))}`}>
                         {Math.round(m.score * 100)}%

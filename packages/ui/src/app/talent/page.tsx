@@ -14,8 +14,7 @@ import { STAGE_META, PIPELINE_STAGES } from "@/components/talent/stages";
 import { useI18n } from "@/lib/i18n";
 
 export default function TalentPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [engagements, setEngagements] = useState<Engagement[]>([]);
@@ -29,9 +28,9 @@ export default function TalentPage() {
         setCandidates(c);
         setEngagements(e);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : (isZh ? "加载失败" : "Failed to load")))
+      .catch((err) => setError(err instanceof Error ? err.message : (t("talent.page.failed_to_load"))))
       .finally(() => setLoading(false));
-  }, [isZh]);
+  }, []);
 
   const filtered = useMemo(() => {
     if (!engagementFilter) return candidates;
@@ -54,12 +53,12 @@ export default function TalentPage() {
           <div className="flex items-baseline justify-between mb-6 gap-4 flex-wrap">
             <div>
               <h1 className="text-xl font-semibold text-fg">
-                {isZh ? "人才招聘管线" : "Talent Pipeline"}
+                {t("talent.page.talent_pipeline")}
               </h1>
               <p className="text-sm text-fg-muted mt-0.5">
-                {isZh ? "按阶段展示所有招聘职位的候选人。管理开放职位请前往 " : "Candidates across all searches, by stage. Manage open roles under "}
+                {t("talent.page.candidates_across_all_searches_by")}
                 <Link href="/talent/searches" className="text-indigo-300 hover:text-indigo-200">
-                  {isZh ? "职位列表" : "Searches"}
+                  {t("talent.page.searches_2")}
                 </Link>
                 。
               </p>
@@ -70,7 +69,7 @@ export default function TalentPage() {
                 onChange={(e) => setEngagementFilter(e.target.value)}
                 className="px-3 py-2 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
               >
-                <option value="">{isZh ? "全部招聘职位" : "All engagements"}</option>
+                <option value="">{t("talent.page.all_engagements")}</option>
                 {engagements.map((e) => (
                   <option key={e.id} value={String(e.id)}>
                     {e.role_title}
@@ -81,12 +80,12 @@ export default function TalentPage() {
                 href="/talent/searches"
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium"
               >
-                {isZh ? "职位列表 →" : "Searches →"}
+                {t("talent.page.searches")}
               </Link>
             </div>
           </div>
 
-          {loading && <p className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</p>}
+          {loading && <p className="text-fg-muted text-sm">{t("talent.page.loading")}</p>}
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm mb-4">
               {error}
@@ -94,12 +93,12 @@ export default function TalentPage() {
           )}
           {!loading && !error && candidates.length === 0 && (
             <div className="rounded-xl border border-line bg-surface-elevated p-8 text-center">
-              <p className="text-fg-muted text-sm mb-3">{isZh ? "暂无候选人。" : "No candidates yet."}</p>
+              <p className="text-fg-muted text-sm mb-3">{t("talent.page.no_candidates_yet")}</p>
               <Link
                 href="/talent/searches"
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white"
               >
-                {isZh ? "发起新招聘 →" : "Open a search →"}
+                {t("talent.page.open_a_search")}
               </Link>
             </div>
           )}
@@ -113,7 +112,7 @@ export default function TalentPage() {
                     <div key={stage} className="flex flex-col">
                       <div className="flex items-center justify-between mb-2 px-1">
                         <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">
-                          {isZh ? STAGE_META[stage].labelZh : STAGE_META[stage].label}
+                          {t(`talent.stage.${stage}`, STAGE_META[stage]?.label ?? stage)}
                         </span>
                         <span className="text-xs text-fg-subtle tabular-nums">{items.length}</span>
                       </div>
@@ -123,7 +122,7 @@ export default function TalentPage() {
                         ))}
                         {items.length === 0 && (
                           <div className="rounded-xl border border-dashed border-line p-4 text-center text-[11px] text-fg-subtle">
-                            {isZh ? "无" : "None"}
+                            {t("talent.page.none")}
                           </div>
                         )}
                       </div>
@@ -135,7 +134,7 @@ export default function TalentPage() {
               {rejected.length > 0 && (
                 <div className="mt-8">
                   <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-2">
-                    {isZh ? `已淘汰 (${rejected.length})` : `Rejected (${rejected.length})`}
+                    {t("talent.page.rejected_rejected_length", { rejected_length: rejected.length })}
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     {rejected.map((c) => (

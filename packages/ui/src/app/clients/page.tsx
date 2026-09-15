@@ -38,8 +38,7 @@ function encodePrefill(payload: Record<string, string>): string {
 }
 
 export default function ClientsPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { locale, t } = useI18n();
 
   const [status, setStatus] = useState<ClientsStatus>({
     active: null,
@@ -82,11 +81,11 @@ export default function ClientsPage() {
         setCockpit([]);
       }
     } catch {
-      setToast({ message: isZh ? "加载客户列表失败" : "Failed to load clients", kind: "error" });
+      setToast({ message: t("clients.page.failed_to_load_clients"), kind: "error" });
     } finally {
       setLoading(false);
     }
-  }, [isZh]);
+  }, []);
 
   useEffect(() => {
     void refresh();
@@ -105,18 +104,14 @@ export default function ClientsPage() {
       const created = await createClient(name.trim(), source);
       setToast({
         message: created.active
-          ? (isZh
-            ? `${created.display_name} 已从当前公司创建并已激活。`
-            : `${created.display_name} created from your current company and is now active.`)
-          : (isZh
-            ? `${created.display_name} 已创建 — 请激活以开始入职引导。`
-            : `${created.display_name} created — activate it to start onboarding.`),
+          ? (t("clients.page.created_display_name_created_from_your_current", { created_display_name: created.display_name }))
+          : (t("clients.page.created_display_name_created_activate_it_to", { created_display_name: created.display_name })),
         kind: "success",
       });
       setName("");
       await refresh();
     } catch (e: unknown) {
-      setToast({ message: e instanceof Error ? e.message : (isZh ? "创建失败" : "Create failed"), kind: "error" });
+      setToast({ message: e instanceof Error ? e.message : (t("clients.page.create_failed")), kind: "error" });
     } finally {
       setCreating(false);
     }
@@ -146,11 +141,11 @@ export default function ClientsPage() {
         Object.entries(metaForm).filter(([, v]) => v !== "" && v !== undefined),
       ) as ClientMetaPatch;
       await updateClientMeta(editingSlug, patch);
-      setToast({ message: isZh ? "委托合作详情已保存。" : "Engagement details saved.", kind: "success" });
+      setToast({ message: t("clients.page.engagement_details_saved"), kind: "success" });
       setEditingSlug(null);
       await refresh();
     } catch (e: unknown) {
-      setToast({ message: e instanceof Error ? e.message : (isZh ? "保存失败" : "Save failed"), kind: "error" });
+      setToast({ message: e instanceof Error ? e.message : (t("clients.page.save_failed")), kind: "error" });
     } finally {
       setSavingMeta(false);
     }
@@ -164,7 +159,7 @@ export default function ClientsPage() {
       setDraft(result);
       setDraftName(result.display_name);
     } catch (e: unknown) {
-      setToast({ message: e instanceof Error ? e.message : (isZh ? "草案生成失败" : "Draft failed"), kind: "error" });
+      setToast({ message: e instanceof Error ? e.message : (t("clients.page.draft_failed")), kind: "error" });
     } finally {
       setGenerating(false);
     }
@@ -180,14 +175,12 @@ export default function ClientsPage() {
       if (activate) {
         await activateClient(created.slug);
         setToast({
-          message: isZh ? `${displayName} 已创建并激活。` : `${displayName} created and activated.`,
+          message: t("clients.page.displayname_created_and_activated", { displayName }),
           kind: "success",
         });
       } else {
         setToast({
-          message: isZh
-            ? `${displayName} 已创建 — 请激活以开始委托合作。`
-            : `${displayName} created — activate it to start the engagement.`,
+          message: t("clients.page.displayname_created_activate_it_to", { displayName }),
           kind: "success",
         });
       }
@@ -196,7 +189,7 @@ export default function ClientsPage() {
       setAttachments([]);
       await refresh();
     } catch (e: unknown) {
-      setToast({ message: e instanceof Error ? e.message : (isZh ? "创建失败" : "Create failed"), kind: "error" });
+      setToast({ message: e instanceof Error ? e.message : (t("clients.page.create_failed")), kind: "error" });
     } finally {
       setCreatingDraft(false);
     }
@@ -208,15 +201,13 @@ export default function ClientsPage() {
       const result = await activateClient(slug);
       setToast({
         message: result.mcp_config_changed
-          ? (isZh
-            ? `已切换至 ${slug}。MCP 工具配置已更新 — 将在下次 API 重启时生效。`
-            : `Switched to ${slug}. MCP tool config changed — it applies on the next API restart.`)
-          : (isZh ? `已切换至 ${slug}。` : `Switched to ${slug}.`),
+          ? (t("clients.page.switched_to_slug_mcp_tool", { slug }))
+          : (t("clients.page.switched_to_slug", { slug })),
         kind: "success",
       });
       await refresh();
     } catch (e: unknown) {
-      setToast({ message: e instanceof Error ? e.message : (isZh ? "切换失败" : "Switch failed"), kind: "error" });
+      setToast({ message: e instanceof Error ? e.message : (t("clients.page.switch_failed")), kind: "error" });
     } finally {
       setBusySlug(null);
     }
@@ -226,10 +217,10 @@ export default function ClientsPage() {
     setBusySlug(status.active);
     try {
       const result = await saveActiveClient();
-      setToast({ message: isZh ? `已将 ${result.slug} 保存至存储槽。` : `Saved ${result.slug} to its slot.`, kind: "success" });
+      setToast({ message: t("clients.page.saved_result_slug_to_its_slot", { result_slug: result.slug }), kind: "success" });
       await refresh();
     } catch (e: unknown) {
-      setToast({ message: e instanceof Error ? e.message : (isZh ? "保存失败" : "Save failed"), kind: "error" });
+      setToast({ message: e instanceof Error ? e.message : (t("clients.page.save_failed")), kind: "error" });
     } finally {
       setBusySlug(null);
     }
@@ -239,11 +230,11 @@ export default function ClientsPage() {
     setBusySlug(slug);
     try {
       await deleteClient(slug);
-      setToast({ message: isZh ? `已删除 ${slug}。` : `Deleted ${slug}.`, kind: "success" });
+      setToast({ message: t("clients.page.deleted_slug", { slug }), kind: "success" });
       setConfirmDelete(null);
       await refresh();
     } catch (e: unknown) {
-      setToast({ message: e instanceof Error ? e.message : (isZh ? "删除失败" : "Delete failed"), kind: "error" });
+      setToast({ message: e instanceof Error ? e.message : (t("clients.page.delete_failed")), kind: "error" });
     } finally {
       setBusySlug(null);
     }
@@ -253,12 +244,10 @@ export default function ClientsPage() {
     <main className="flex-1 min-h-0 overflow-y-auto">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-xl font-semibold text-fg">
-          {isZh ? "客户公司（多租户管理）" : "Client companies"}
+          {t("clients.page.client_companies")}
         </h1>
         <p className="mt-1 text-sm text-fg-muted">
-          {isZh
-            ? "在单个 Open Executive 实例中管理多家客户公司 — 同一时间仅一家处于激活运行状态。切换客户时会将当前客户的完整状态（对话、计划排期、入职规划、文档、MCP 工具）完整保存至其专属存储槽，并恢复目标客户的状态。"
-            : "Run several client companies from one Open Executive — one active at a time. Switching saves the current client's full state (chat, schedule, onboarding plans, documents, MCP tools) to its slot and restores the target."}
+          {t("clients.page.run_several_client_companies_from")}
         </p>
 
         {toast && (
@@ -275,24 +264,13 @@ export default function ClientsPage() {
 
         {status.rotation_in_progress && (
           <div className="mt-4 rounded-lg border border-line bg-surface-elevated px-3 py-2 text-sm text-fg-muted">
-            {isZh
-              ? "夜间巡检轮转正在运行中 — 当前激活的客户将在休眠客户刷新期间短暂切换，之后会自动切回。"
-              : "Overnight rotation is running — the active client will switch briefly while parked clients are refreshed, then return."}
+            {t("clients.page.overnight_rotation_is_running_the")}
           </div>
         )}
 
         {status.fixture_active && (
           <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
-            {isZh ? (
-              <>
-                演示模拟公司 <strong>{status.fixture_active}</strong> 处于生效状态 — 请先在“公司模拟器”页面卸载它，然后再进行客户管理。
-              </>
-            ) : (
-              <>
-                Demo fixture <strong>{status.fixture_active}</strong> is active —
-                unload it on the Company Simulator page before working with clients.
-              </>
-            )}
+            {t("clients.page.demo_fixture_active", { name: status.fixture_active })}
           </div>
         )}
 
@@ -300,12 +278,10 @@ export default function ClientsPage() {
         {cockpit.length >= 2 && (
           <div className="mt-6 rounded-xl border border-line bg-surface-elevated p-4">
             <h2 className="text-sm font-medium text-fg">
-              {isZh ? "业务全景工作台" : "Practice cockpit"}
+              {t("clients.page.practice_cockpit")}
             </h2>
             <p className="mt-1 text-xs text-fg-muted">
-              {isZh
-                ? "所有客户业务一览。未激活的客户展示截至上一次保存点的状态。"
-                : "All clients at a glance. Parked clients show their state as of the last save point."}
+              {t("clients.page.all_clients_at_a_glance")}
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {cockpit.map((c) => (
@@ -324,7 +300,7 @@ export default function ClientsPage() {
                     </div>
                     {c.is_active ? (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 flex-shrink-0">
-                        {isZh ? "生效中" : "active"}
+                        {t("clients.page.active")}
                       </span>
                     ) : (
                       (() => {
@@ -352,7 +328,7 @@ export default function ClientsPage() {
                         href={`/jobs/engagement_value_report?prefill=${encodePrefill({ client_slug: c.slug })}`}
                         className="text-[11px] text-indigo-400 hover:text-indigo-300"
                       >
-                        {isZh ? "价值交付报告 →" : "Value report →"}
+                        {t("clients.page.value_report")}
                       </Link>
                     </div>
                   )}
@@ -365,13 +341,13 @@ export default function ClientsPage() {
         {/* Create */}
         <div className="mt-6 rounded-xl border border-line bg-surface-elevated p-4">
           <h2 className="text-sm font-medium text-fg">
-            {isZh ? "创建新客户" : "New client"}
+            {t("clients.page.new_client")}
           </h2>
           <div className="mt-3 flex flex-col sm:flex-row gap-2">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={isZh ? "客户公司名称" : "Client company name"}
+              placeholder={t("clients.page.client_company_name")}
               className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-line-strong"
             />
             <select
@@ -379,37 +355,31 @@ export default function ClientsPage() {
               onChange={(e) => setSource(e.target.value as "current" | "blank")}
               className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg focus:outline-none"
             >
-              <option value="current">{isZh ? "从当前公司捕获" : "From current company"}</option>
-              <option value="blank">{isZh ? "全新空白（重新入职引导）" : "Blank (onboard fresh)"}</option>
+              <option value="current">{t("clients.page.from_current_company")}</option>
+              <option value="blank">{t("clients.page.blank_onboard_fresh")}</option>
             </select>
             <button
               onClick={() => void handleCreate()}
               disabled={creating || !name.trim() || !!status.fixture_active}
               className="rounded-lg border border-line bg-surface-overlay px-4 py-2 text-sm font-medium text-fg hover:border-line-strong disabled:opacity-50"
             >
-              {creating ? (isZh ? "创建中…" : "Creating…") : (isZh ? "创建客户" : "Create")}
+              {creating ? (t("clients.page.creating")) : (t("clients.page.create"))}
             </button>
           </div>
           <p className="mt-2 text-xs text-fg-muted">
             {source === "current"
-              ? (isZh
-                ? "将当前生效公司的状态捕获到新客户存储槽中，并将其设为当前激活客户。"
-                : "Captures the live company into the new client slot and makes it the active client.")
-              : (isZh
-                ? "创建一个空白客户。激活后即可运行公司入职引导并上传专属文档。"
-                : "Creates an empty client. Activate it, then run company onboarding and upload its documents.")}
+              ? (t("clients.page.captures_the_live_company_into"))
+              : (t("clients.page.creates_an_empty_client_activate"))}
           </p>
         </div>
 
         {/* New engagement from intake notes (AI) */}
         <div className="mt-4 rounded-xl border border-line bg-surface-elevated p-4">
           <h2 className="text-sm font-medium text-fg">
-            {isZh ? "从对接材料生成新客户 (AI)" : "New client from intake notes"}
+            {t("clients.page.new_client_from_intake_notes")}
           </h2>
           <p className="mt-1 text-xs text-fg-muted">
-            {isZh
-              ? "粘贴真实的客户对接材料（初访纪要、业务概述、官网文案等）或上传 PDF、Word、Excel、CSV 文件，AI 将自动梳理并草拟客户画像、组织架构、初始文档和已知沿革。上传的文件也将作为公司文档保存。AI 严格基于材料提取事实：未知项保持留白并列为待办问题，绝不导入任何联系人私人方式。"
-              : "Paste real intake material — call notes, a brief, website copy — or attach PDFs, Word, Excel, or CSV files, and the AI drafts the client's profile, org, starter documents, and known history. Attachments are also saved as company documents. It extracts only what the material says: unknowns stay blank and become open questions, and no contact details are ever imported."}
+            {t("clients.page.paste_real_intake_material_call")}
           </p>
 
           {!draft ? (
@@ -419,16 +389,14 @@ export default function ClientsPage() {
                 onChange={(e) => setNotes(e.target.value)}
                 rows={5}
                 placeholder={
-                  isZh
-                    ? "例如：与 Meridian Solar 启动会纪要：位于德州的 80 人商业太阳能工程商，CEO 为 Dana Reyes，当前痛点是项目毛利率不够透明…"
-                    : "e.g. Notes from the kickoff call with Meridian Solar: 80-person commercial solar installer in Texas, CEO Dana Reyes, struggling with project-margin visibility…"
+                  t("clients.page.eg_notes_from_the_kickoff")
                 }
                 className="mt-3 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-line-strong"
               />
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <label className="cursor-pointer rounded-lg border border-line bg-surface-overlay px-3 py-1.5 text-xs font-medium text-fg hover:border-line-strong">
-                  {isZh ? "添加附件" : "Attach files"}
+                  {t("clients.page.attach_files")}
                   <input
                     type="file"
                     multiple
@@ -442,7 +410,7 @@ export default function ClientsPage() {
                   />
                 </label>
                 <span className="text-xs text-fg-muted">
-                  {isZh ? "支持 PDF、Word、Excel、CSV 或纯文本" : "PDF, Word, Excel, CSV, or text"}
+                  {t("clients.page.pdf_word_excel_csv_or")}
                 </span>
               </div>
 
@@ -459,7 +427,7 @@ export default function ClientsPage() {
                         onClick={() =>
                           setAttachments((prev) => prev.filter((_, j) => j !== i))
                         }
-                        aria-label={isZh ? `移除 ${f.name}` : `Remove ${f.name}`}
+                        aria-label={t("clients.page.remove_f_name", { f_name: f.name })}
                         className="shrink-0 text-fg-muted hover:text-fg"
                       >
                         ×
@@ -478,7 +446,7 @@ export default function ClientsPage() {
                 }
                 className="mt-2 rounded-lg border border-line bg-surface-overlay px-4 py-2 text-sm font-medium text-fg hover:border-line-strong disabled:opacity-50"
               >
-                {generating ? (isZh ? "生成中…" : "Drafting…") : (isZh ? "草拟客户信息" : "Draft client")}
+                {generating ? (t("clients.page.drafting")) : (t("clients.page.draft_client"))}
               </button>
             </>
           ) : (
@@ -490,22 +458,20 @@ export default function ClientsPage() {
                   className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg focus:outline-none focus:border-line-strong"
                 />
                 <span className="text-xs text-fg-muted">
-                  {isZh
-                    ? `${draft.bundle.people.length} 人 · ${draft.bundle.departments.length} 个部门 · ${draft.bundle.docs.length} 篇文档`
-                    : `${draft.bundle.people.length} people · ${draft.bundle.departments.length} departments · ${draft.bundle.docs.length} docs`}
+                  {t("clients.page.draft_bundle_people_length_people_draft_bundle_departments_length_departments_draft_bundle_docs_length", { draft_bundle_people_length: draft.bundle.people.length, draft_bundle_departments_length: draft.bundle.departments.length, draft_bundle_docs_length: draft.bundle.docs.length })}
                 </span>
               </div>
               {draft.bundle.people.length > 0 && (
                 <p className="mt-2 text-xs text-fg-muted">
-                  {isZh ? "团队人员：" : "Roster: "}
+                  {t("clients.page.roster")}
                   {draft.bundle.people
-                    .map((p) => `${p.full_name}${p.is_principal ? (isZh ? " (负责人)" : " (principal)") : ""}`)
+                    .map((p) => `${p.full_name}${p.is_principal ? (t("clients.page.principal")) : ""}`)
                     .join(", ")}
                 </p>
               )}
               {draft.bundle.docs.length > 0 && (
                 <p className="mt-1 text-xs text-fg-muted">
-                  {isZh ? "初始文档：" : "Docs: "}
+                  {t("clients.page.docs")}
                   {draft.bundle.docs.map((d) => d.filename).join(", ")}
                 </p>
               )}
@@ -515,21 +481,21 @@ export default function ClientsPage() {
                   disabled={creatingDraft || !draftName.trim()}
                   className="rounded-lg border border-line bg-surface-overlay px-4 py-2 text-sm font-medium text-fg hover:border-line-strong disabled:opacity-50"
                 >
-                  {creatingDraft ? (isZh ? "创建中…" : "Creating…") : (isZh ? "创建客户" : "Create client")}
+                  {creatingDraft ? (t("clients.page.creating")) : (t("clients.page.create_client"))}
                 </button>
                 <button
                   onClick={() => void handleCreateFromDraft(true)}
                   disabled={creatingDraft || !draftName.trim()}
                   className="rounded-lg border border-line bg-surface-overlay px-4 py-2 text-sm font-medium text-fg hover:border-line-strong disabled:opacity-50"
                 >
-                  {creatingDraft ? (isZh ? "创建中…" : "Creating…") : (isZh ? "创建并激活" : "Create & activate")}
+                  {creatingDraft ? (t("clients.page.creating")) : (t("clients.page.create_activate"))}
                 </button>
                 <button
                   onClick={() => setDraft(null)}
                   disabled={creatingDraft}
                   className="rounded-lg border border-line px-4 py-2 text-sm text-fg-muted hover:border-line-strong disabled:opacity-50"
                 >
-                  {isZh ? "← 修改材料" : "← Edit notes"}
+                  {t("clients.page.edit_notes")}
                 </button>
               </div>
             </div>
@@ -539,13 +505,11 @@ export default function ClientsPage() {
         {/* List */}
         {loading ? (
           <p className="mt-6 text-sm text-fg-muted">
-            {isZh ? "正在加载客户列表…" : "Loading clients…"}
+            {t("clients.page.loading_clients")}
           </p>
         ) : status.clients.length === 0 ? (
           <p className="mt-6 text-sm text-fg-muted">
-            {isZh
-              ? "暂无客户。从当前公司创建一个客户即可进入多客户管理模式 — 在创建之前单公司体验不受任何影响。"
-              : "No clients yet. Create one from your current company to enter multi-client mode — single-company use is unaffected until you do."}
+            {t("clients.page.no_clients_yet_create_one")}
           </p>
         ) : (
           <div className="mt-6 space-y-3">
@@ -569,12 +533,12 @@ export default function ClientsPage() {
                         </h3>
                         {isActive && (
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
-                            {isZh ? "生效中" : "active"}
+                            {t("clients.page.active")}
                           </span>
                         )}
                         {c.has_mcp_config && (
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-line text-fg-muted">
-                            {isZh ? "MCP 工具" : "MCP tools"}
+                            {t("clients.page.mcp_tools")}
                           </span>
                         )}
                       </div>
@@ -583,12 +547,10 @@ export default function ClientsPage() {
                           .filter(Boolean)
                           .join(" · ") || c.slug}
                         {" · "}
-                        {isZh ? `${c.doc_count} 篇文档` : `${c.doc_count} doc${c.doc_count !== 1 ? "s" : ""}`}
+                        {t("clients.page.c_doc_count_docc_doc_count_____1____s", { c_doc_count: c.doc_count, c_doc_count_____1____s: c.doc_count !== 1 ? "s" : "" })}
                         {c.saved_at
-                          ? (isZh
-                            ? ` · 保存于 ${new Date(c.saved_at).toLocaleString("zh-CN")}`
-                            : ` · saved ${new Date(c.saved_at).toLocaleString()}`)
-                          : (isZh ? " · 未曾保存" : " · never saved")}
+                          ? (t("clients.page.saved_new_date_c_saved_at__tolocalestring", { new_Date_c_saved_at__toLocaleString: new Date(c.saved_at).toLocaleString(), new_Date_c_saved_at__toLocaleString__zh_CN: new Date(c.saved_at).toLocaleString("zh-CN") }))
+                          : (t("clients.page.never_saved"))}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -598,7 +560,7 @@ export default function ClientsPage() {
                           disabled={busy || !!status.fixture_active}
                           className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-fg hover:border-line-strong disabled:opacity-50"
                         >
-                          {busy ? (isZh ? "保存中…" : "Saving…") : (isZh ? "立即保存" : "Save now")}
+                          {busy ? (t("clients.page.saving")) : (t("clients.page.save_now"))}
                         </button>
                       ) : (
                         <>
@@ -607,7 +569,7 @@ export default function ClientsPage() {
                             disabled={busy || !!status.fixture_active}
                             className="rounded-lg border border-line bg-surface-overlay px-3 py-1.5 text-xs font-medium text-fg hover:border-line-strong disabled:opacity-50"
                           >
-                            {busy ? (isZh ? "切换中…" : "Switching…") : (isZh ? "激活切换" : "Activate")}
+                            {busy ? (t("clients.page.switching")) : (t("clients.page.activate"))}
                           </button>
                           {confirmDelete === c.slug ? (
                             <button
@@ -615,13 +577,13 @@ export default function ClientsPage() {
                               disabled={busy}
                               className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 disabled:opacity-50"
                             >
-                              {isZh ? "确认删除" : "Confirm delete"}
+                              {t("clients.page.confirm_delete")}
                             </button>
                           ) : (
                             <button
                               onClick={() => setConfirmDelete(c.slug)}
                               disabled={busy}
-                              aria-label={isZh ? `删除 ${c.display_name}` : `Delete ${c.display_name}`}
+                              aria-label={t("clients.page.delete_c_display_name", { c_display_name: c.display_name })}
                               className="rounded-lg border border-line px-2 py-1.5 text-xs text-fg-muted hover:border-line-strong disabled:opacity-50"
                             >
                               <Icon name="trash" size="w-3.5 h-3.5" />
@@ -637,7 +599,7 @@ export default function ClientsPage() {
                         <input
                           value={metaForm.role ?? ""}
                           onChange={(e) => setMetaForm({ ...metaForm, role: e.target.value })}
-                          placeholder={isZh ? "您的角色（例如：兼职 CFO / 战略顾问）" : "Your role (e.g. Fractional CFO)"}
+                          placeholder={t("clients.page.your_role_eg_fractional_cfo")}
                           className="rounded border border-line bg-surface-elevated px-2 py-1.5 text-xs text-fg placeholder:text-fg-muted focus:outline-none"
                         />
                         <select
@@ -645,13 +607,13 @@ export default function ClientsPage() {
                           onChange={(e) => setMetaForm({ ...metaForm, status: e.target.value })}
                           className="rounded border border-line bg-surface-elevated px-2 py-1.5 text-xs text-fg focus:outline-none"
                         >
-                          <option value="active">{isZh ? "活跃 (active)" : "active"}</option>
-                          <option value="paused">{isZh ? "暂停 (paused)" : "paused"}</option>
-                          <option value="winding_down">{isZh ? "收尾中 (winding down)" : "winding down"}</option>
-                          <option value="completed">{isZh ? "已完成 (completed)" : "completed"}</option>
+                          <option value="active">{t("clients.page.active")}</option>
+                          <option value="paused">{t("clients.page.paused")}</option>
+                          <option value="winding_down">{t("clients.page.winding_down")}</option>
+                          <option value="completed">{t("clients.page.completed")}</option>
                         </select>
                         <label className="text-[11px] text-fg-muted flex items-center gap-2">
-                          {isZh ? "续约日期" : "Renewal"}
+                          {t("clients.page.renewal")}
                           <input
                             type="date"
                             value={metaForm.renewal_date ?? ""}
@@ -664,7 +626,7 @@ export default function ClientsPage() {
                         <input
                           value={metaForm.retainer ?? ""}
                           onChange={(e) => setMetaForm({ ...metaForm, retainer: e.target.value })}
-                          placeholder={isZh ? "顾问月费/服务费（仅展示）" : "Retainer (display only)"}
+                          placeholder={t("clients.page.retainer_display_only")}
                           className="rounded border border-line bg-surface-elevated px-2 py-1.5 text-xs text-fg placeholder:text-fg-muted focus:outline-none"
                         />
                         <input
@@ -672,13 +634,13 @@ export default function ClientsPage() {
                           onChange={(e) =>
                             setMetaForm({ ...metaForm, primary_contact: e.target.value })
                           }
-                          placeholder={isZh ? "核心对接人" : "Primary contact"}
+                          placeholder={t("clients.page.primary_contact")}
                           className="rounded border border-line bg-surface-elevated px-2 py-1.5 text-xs text-fg placeholder:text-fg-muted focus:outline-none"
                         />
                         <input
                           value={metaForm.notes ?? ""}
                           onChange={(e) => setMetaForm({ ...metaForm, notes: e.target.value })}
-                          placeholder={isZh ? "备注说明" : "Notes"}
+                          placeholder={t("clients.page.notes")}
                           className="rounded border border-line bg-surface-elevated px-2 py-1.5 text-xs text-fg placeholder:text-fg-muted focus:outline-none"
                         />
                         <div className="sm:col-span-2 flex gap-2">
@@ -687,14 +649,14 @@ export default function ClientsPage() {
                             disabled={savingMeta}
                             className="rounded-lg border border-line bg-surface-overlay px-3 py-1.5 text-xs font-medium text-fg hover:border-line-strong disabled:opacity-50"
                           >
-                            {savingMeta ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存详情" : "Save details")}
+                            {savingMeta ? (t("clients.page.saving")) : (t("clients.page.save_details"))}
                           </button>
                           <button
                             onClick={() => setEditingSlug(null)}
                             disabled={savingMeta}
                             className="rounded-lg border border-line px-3 py-1.5 text-xs text-fg-muted hover:border-line-strong"
                           >
-                            {isZh ? "取消" : "Cancel"}
+                            {t("clients.page.cancel")}
                           </button>
                         </div>
                       </div>
@@ -703,7 +665,7 @@ export default function ClientsPage() {
                         onClick={() => openMetaEditor(c.slug)}
                         className="text-[11px] text-indigo-400 hover:text-indigo-300"
                       >
-                        {isZh ? "委托合作详情" : "Engagement details"}
+                        {t("clients.page.engagement_details")}
                       </button>
                     )}
                   </div>
@@ -714,9 +676,7 @@ export default function ClientsPage() {
         )}
 
         <p className="mt-8 text-xs text-fg-muted leading-relaxed">
-          {isZh
-            ? "同一时间仅有一家客户公司处于激活运行状态 — 其定时任务才会触发，其文档才会被索引检索；休眠中的客户安全保存在其存储槽中。首次切换时会自动备份您的原始公司，并且随时可以在“公司模拟器”页面恢复。"
-            : "Only the active client is live — its scheduled actions fire and its documents are indexed; parked clients sleep in their slots. Your original company is preserved automatically the first time you switch, and can be restored from the Company Simulator page."}
+          {t("clients.page.only_the_active_client_is")}
         </p>
       </div>
     </main>

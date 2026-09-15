@@ -66,17 +66,23 @@ function UsageRowCells({ u }: { u: UsageTotals }) {
   );
 }
 
-const COL_HEADERS_EN = ["Calls", "Input", "Cache read", "Cache write", "Output", "Searches", "Cached", "Cost"];
-const COL_HEADERS_ZH = ["调用次数", "输入", "缓存读取", "缓存写入", "输出", "搜索", "缓存率", "费用"];
 
 // Debounce window for refetching as the date-range filter changes (matches
 // the /audit list page).
 const DEBOUNCE_MS = 250;
 
 export default function TokenUsagePage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
-  const colHeaders = isZh ? COL_HEADERS_ZH : COL_HEADERS_EN;
+  const { t } = useI18n();
+  const colHeaders = [
+    t("audit.usage.page.calls"),
+    t("audit.usage.page.input"),
+    t("audit.usage.page.cache_read"),
+    t("audit.usage.page.cache_write"),
+    t("audit.usage.page.output"),
+    t("audit.usage.page.searches"),
+    t("audit.usage.page.cached"),
+    t("audit.usage.page.cost"),
+  ];
 
   const [data, setData] = useState<UsageSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -88,24 +94,23 @@ export default function TokenUsagePage() {
   const params = useMemo(
     () => ({
       // `datetime-local` returns naive strings; the backend `ts` column is ISO
-      // with offset and filters by string comparison, so normalize to ISO.
-      since: since ? new Date(since).toISOString() : undefined,
-      until: until ? new Date(until).toISOString() : undefined,
+      // with timezone. Append Z so the query parses cleanly as UTC if set.
+      since: since ? (since.endsWith("Z") ? since : `${since}:00Z`) : undefined,
+      until: until ? (until.endsWith("Z") ? until : `${until}:00Z`) : undefined,
     }),
     [since, until],
   );
 
   const refresh = useCallback(async () => {
-    setLoading(true);
     setError(null);
     try {
       setData(await getAuditUsage(params));
     } catch (e) {
-      setError(e instanceof Error ? e.message : (isZh ? "加载失败" : "Failed to load"));
+      setError(e instanceof Error ? e.message : (t("audit.usage.page.failed_to_load")));
     } finally {
       setLoading(false);
     }
-  }, [params, isZh]);
+  }, [params]);
 
   useEffect(() => {
     if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
@@ -126,24 +131,22 @@ export default function TokenUsagePage() {
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between gap-4">
-            <h1 className="text-xl font-semibold text-fg">{isZh ? "Token 用量统计" : "Token usage"}</h1>
+            <h1 className="text-xl font-semibold text-fg">{t("audit.usage.page.token_usage")}</h1>
             <Link
               href="/audit"
               className="text-xs text-fg-muted hover:text-fg underline-offset-2 hover:underline"
             >
-              {isZh ? "← 审计日志" : "← Audit log"}
+              {t("audit.usage.page.audit_log")}
             </Link>
           </div>
           <p className="mt-1 text-sm text-fg-muted">
-            {isZh
-              ? "按审计日志聚合汇总的所有会话 Token 用量和成本。日期为 UTC。费用为每次调用记录的 OpenRouter 实际支出。"
-              : "Aggregate token usage and cost across all sessions, summed from the audit log. Days are UTC. Cost is the actual OpenRouter charge captured per call — it accrues from when cost tracking went live, so calls logged before then count tokens but $0."}
+            {t("audit.usage.page.aggregate_token_usage_and_cost")}
           </p>
 
           {/* Date-range filter */}
           <div className="mt-5 grid grid-cols-1 md:grid-cols-4 gap-3">
             <label className="text-xs text-fg-muted flex flex-col gap-1">
-              {isZh ? "起始时间" : "From"}
+              {t("audit.usage.page.from")}
               <input
                 type="datetime-local"
                 value={since}
@@ -152,7 +155,7 @@ export default function TokenUsagePage() {
               />
             </label>
             <label className="text-xs text-fg-muted flex flex-col gap-1">
-              {isZh ? "截止时间" : "Until"}
+              {t("audit.usage.page.until")}
               <input
                 type="datetime-local"
                 value={until}
@@ -168,13 +171,13 @@ export default function TokenUsagePage() {
                 }}
                 className="px-3 py-1.5 rounded-lg bg-surface-overlay hover:bg-surface-input text-sm border border-line-strong"
               >
-                {isZh ? "清除筛选" : "Clear filters"}
+                {t("audit.usage.page.clear_filters")}
               </button>
             </div>
             <div className="text-xs text-fg-muted flex items-end pb-1.5">
               {loading
-                ? (isZh ? "加载中…" : "Loading…")
-                : `${fmtInt(totals?.calls ?? 0)} ${isZh ? "次调用" : "calls"}`}
+                ? (t("audit.usage.page.loading"))
+                : `${fmtInt(totals?.calls ?? 0)} ${t("audit.usage.page.calls_2")}`}
             </div>
           </div>
 
@@ -188,24 +191,24 @@ export default function TokenUsagePage() {
           {totals ? (
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               <StatCard
-                label={isZh ? "费用 (USD)" : "Cost (USD)"}
+                label={t("audit.usage.page.cost_usd")}
                 value={fmtCost(totals.cost_usd)}
-                hint={isZh ? "实际支出" : "actual charged"}
+                hint={t("audit.usage.page.actual_charged")}
               />
-              <StatCard label={isZh ? "调用次数" : "Calls"} value={fmtInt(totals.calls)} />
+              <StatCard label={t("audit.usage.page.calls")} value={fmtInt(totals.calls)} />
               <StatCard
-                label={isZh ? "缓存命中率" : "Cache hit"}
+                label={t("audit.usage.page.cache_hit")}
                 value={`${cacheHitPct(totals)}%`}
-                hint={isZh ? "来自缓存的输入 Token 占比" : "of prompt input served from cache"}
+                hint={t("audit.usage.page.of_prompt_input_served_from")}
               />
-              <StatCard label={isZh ? "输出 Token" : "Output tokens"} value={fmtInt(totals.output_tokens)} />
-              <StatCard label={isZh ? "全新输入 Token" : "Fresh input"} value={fmtInt(totals.input_tokens)} />
-              <StatCard label={isZh ? "缓存读取 Token" : "Cache read"} value={fmtInt(totals.cache_read_input_tokens)} />
-              <StatCard label={isZh ? "缓存写入 Token" : "Cache write"} value={fmtInt(totals.cache_creation_input_tokens)} />
+              <StatCard label={t("audit.usage.page.output_tokens")} value={fmtInt(totals.output_tokens)} />
+              <StatCard label={t("audit.usage.page.fresh_input")} value={fmtInt(totals.input_tokens)} />
+              <StatCard label={t("audit.usage.page.cache_read")} value={fmtInt(totals.cache_read_input_tokens)} />
+              <StatCard label={t("audit.usage.page.cache_write")} value={fmtInt(totals.cache_creation_input_tokens)} />
               <StatCard
-                label={isZh ? "搜索请求" : "Searches"}
+                label={t("audit.usage.page.searches")}
                 value={fmtInt(totals.web_search_requests ?? 0)}
-                hint={isZh ? "服务端网络搜索" : "server-side web searches"}
+                hint={t("audit.usage.page.serverside_web_searches")}
               />
             </div>
           ) : null}
@@ -213,17 +216,15 @@ export default function TokenUsagePage() {
           {/* By source */}
           {data && data.by_source && data.by_source.length > 0 ? (
             <section className="mt-8">
-              <h2 className="text-sm font-medium text-fg mb-2">{isZh ? "按调用源统计" : "By source"}</h2>
+              <h2 className="text-sm font-medium text-fg mb-2">{t("audit.usage.page.by_source")}</h2>
               <p className="text-xs text-fg-muted mb-2">
-                {isZh
-                  ? "系统各模块发起的模型调用分布：对话轮次、调研专员、调研路由与监控巡检、分类与记忆提取。"
-                  : "Which part of the system made the calls: chat turns, research specialists, the research routing and watchlist passes, triage, memory extraction."}
+                {t("audit.usage.page.which_part_of_the_system")}
               </p>
               <div className="rounded-xl border border-line overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-surface-elevated/60 text-fg-muted text-xs">
-                      <th className="px-3 py-2 text-left font-medium">{isZh ? "调用源" : "Source"}</th>
+                      <th className="px-3 py-2 text-left font-medium">{t("audit.usage.page.source")}</th>
                       {colHeaders.map((h) => (
                         <th key={h} className="px-3 py-2 text-right font-medium">{h}</th>
                       ))}
@@ -245,12 +246,12 @@ export default function TokenUsagePage() {
           {/* By model */}
           {data && data.by_model.length > 0 ? (
             <section className="mt-8">
-              <h2 className="text-sm font-medium text-fg mb-2">{isZh ? "按模型统计" : "By model"}</h2>
+              <h2 className="text-sm font-medium text-fg mb-2">{t("audit.usage.page.by_model")}</h2>
               <div className="rounded-xl border border-line overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-surface-elevated/60 text-fg-muted text-xs">
-                      <th className="px-3 py-2 text-left font-medium">{isZh ? "模型" : "Model"}</th>
+                      <th className="px-3 py-2 text-left font-medium">{t("audit.usage.page.model")}</th>
                       {colHeaders.map((h) => (
                         <th key={h} className="px-3 py-2 text-right font-medium">{h}</th>
                       ))}
@@ -272,12 +273,12 @@ export default function TokenUsagePage() {
           {/* By day */}
           {data && data.by_day.length > 0 ? (
             <section className="mt-8">
-              <h2 className="text-sm font-medium text-fg mb-2">{isZh ? "按日期统计 (UTC)" : "By day (UTC)"}</h2>
+              <h2 className="text-sm font-medium text-fg mb-2">{t("audit.usage.page.by_day_utc")}</h2>
               <div className="rounded-xl border border-line overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-surface-elevated/60 text-fg-muted text-xs">
-                      <th className="px-3 py-2 text-left font-medium">{isZh ? "日期" : "Day"}</th>
+                      <th className="px-3 py-2 text-left font-medium">{t("audit.usage.page.day")}</th>
                       {colHeaders.map((h) => (
                         <th key={h} className="px-3 py-2 text-right font-medium">{h}</th>
                       ))}
@@ -306,7 +307,7 @@ export default function TokenUsagePage() {
 
           {!loading && data && data.by_model.length === 0 ? (
             <div className="mt-8 text-sm text-fg-muted">
-              {isZh ? "当前时间范围内暂无 Token 用量记录。" : "No token usage recorded for this range yet."}
+              {t("audit.usage.page.no_token_usage_recorded_for")}
             </div>
           ) : null}
         </div>

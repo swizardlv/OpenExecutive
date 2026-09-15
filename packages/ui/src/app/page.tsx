@@ -339,9 +339,7 @@ export default function HomePage() {
             >
               <Icon name="activity" size="w-4 h-4" />
               <span className="hidden sm:inline">
-                {locale === "zh"
-                  ? debugOpen ? "隐藏专员动态" : "专员动态"
-                  : debugOpen ? "Hide activity" : "Agent activity"}
+                {debugOpen ? t("shell.hideActivity") : t("shell.agentActivity")}
               </span>
             </button>
           </div>
@@ -350,10 +348,10 @@ export default function HomePage() {
         {!isOnboarded && health && (
           <div className="border-b border-line bg-indigo-500/5 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
             <p className="text-xs text-fg-muted">
-              No company profile — responses will be generic.
+              {t("dashboard.noProfileWarning")}
             </p>
             <Link href="/onboard" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors whitespace-nowrap cursor-pointer">
-              Set up profile →
+              {t("dashboard.setupProfile")}
             </Link>
           </div>
         )}

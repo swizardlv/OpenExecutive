@@ -35,8 +35,7 @@ const DOMAINS = [
 ];
 
 export default function KnowledgeWorkspace() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const [builtinFiles, setBuiltinFiles] = useState<BuiltinFileMeta[]>([]);
   const [failureFiles, setFailureFiles] = useState<BuiltinFileMeta[]>([]);
   const [selection, setSelection] = useState<Selection>(null);
@@ -53,9 +52,9 @@ export default function KnowledgeWorkspace() {
       setBuiltinFiles(b);
       setFailureFiles(f);
     } catch {
-      setError(isZh ? "加载知识库索引失败" : "Failed to load knowledge index");
+      setError(t("knowledge.KnowledgeWorkspace.failed_to_load_knowledge_index"));
     }
-  }, [isZh]);
+  }, [t]);
 
   useEffect(() => {
     loadIndex();
@@ -76,14 +75,14 @@ export default function KnowledgeWorkspace() {
         setSelectedContent(data);
         setEditContent(data.content);
       } catch {
-        if (!cancelled) setError(isZh ? "加载文件失败" : "Failed to load file");
+        if (!cancelled) setError(t("knowledge.KnowledgeWorkspace.failed_to_load_file"));
       }
     }
     load();
     return () => {
       cancelled = true;
     };
-  }, [selection, isZh]);
+  }, [selection, t]);
 
   async function handleSave() {
     if (selection?.kind !== "file" || !selectedContent) return;
@@ -95,7 +94,7 @@ export default function KnowledgeWorkspace() {
       await updater(selection.domain, selection.filename, editContent);
       setIsDirty(false);
     } catch {
-      setError(isZh ? "保存文件失败" : "Failed to save file");
+      setError(t("knowledge.KnowledgeWorkspace.failed_to_save_file"));
     } finally {
       setIsSaving(false);
     }
@@ -103,9 +102,7 @@ export default function KnowledgeWorkspace() {
 
   async function handleDelete() {
     if (selection?.kind !== "file" || !selectedContent) return;
-    const confirmMsg = isZh
-      ? `删除 "${selectedContent.filename}"？这将从知识库中移除该文件。`
-      : `Delete "${selectedContent.filename}"? This removes it from the knowledge base.`;
+    const confirmMsg = t("knowledge.KnowledgeWorkspace.delete_selectedcontent_filename_this_removes_it", { selectedContent_filename: selectedContent.filename });
     if (!confirm(confirmMsg))
       return;
     const deleter =
@@ -115,7 +112,7 @@ export default function KnowledgeWorkspace() {
       setSelection(null);
       await loadIndex();
     } catch {
-      setError(isZh ? "删除文件失败" : "Failed to delete file");
+      setError(t("knowledge.KnowledgeWorkspace.failed_to_delete_file"));
     }
   }
 
@@ -144,7 +141,7 @@ export default function KnowledgeWorkspace() {
         <input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder={isZh ? "过滤文件…" : "Filter files…"}
+          placeholder={t("knowledge.KnowledgeWorkspace.filter_files")}
           className="w-full mb-4 rounded-lg border border-line bg-surface-elevated px-2.5 py-1.5 text-xs text-fg placeholder-fg-subtle focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
         />
         <SourceTree
@@ -185,7 +182,7 @@ export default function KnowledgeWorkspace() {
         )}
 
         {selection?.kind === "file" && !selectedContent && !error && (
-          <p className="text-sm text-fg-muted">{isZh ? "加载中…" : "Loading…"}</p>
+          <p className="text-sm text-fg-muted">{t("knowledge.KnowledgeWorkspace.loading")}</p>
         )}
 
         {selection?.kind === "new" && (
@@ -211,36 +208,33 @@ export default function KnowledgeWorkspace() {
 }
 
 function EmptyState() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   return (
     <div className="max-w-xl">
-      <h1 className="text-lg font-semibold text-fg mb-2">{isZh ? "知识库" : "Knowledge base"}</h1>
+      <h1 className="text-lg font-semibold text-fg mb-2">{t("knowledge.KnowledgeWorkspace.knowledge_base")}</h1>
       <p className="text-sm text-fg-muted">
-        {isZh
-          ? "在左侧目录树中选择文件进行查看或编辑。内置目录包含 Executive 的默认操作指南（正面指引）和失败案例复盘（反面教训）—— 两者都会在对话检索时被调取。"
-          : "Select a file in the tree to view or edit it. The Built-in tree holds the Executive's default playbooks (positive guidance) and failure case studies (negative learnings) — both are retrieved at chat time."}
+        {t("knowledge.KnowledgeWorkspace.select_a_file_in_the")}
       </p>
       <ul className="text-sm text-fg-muted mt-4 space-y-1.5 list-disc list-inside">
         <li>
-          <span className="text-fg">{isZh ? "最佳实践（Playbooks）" : "Playbooks"}</span> —{" "}
-          {isZh ? "各领域的框架与操作指南，作为正面参考示例。" : "domain frameworks and how-tos used as positive examples."}
+          <span className="text-fg">{t("knowledge.KnowledgeWorkspace.playbooks")}</span> —{" "}
+          {t("knowledge.KnowledgeWorkspace.domain_frameworks_and_howtos_used")}
         </li>
         <li>
-          <span className="text-rose-300">{isZh ? "失败教训（Failures）" : "Failures"}</span> —{" "}
-          {isZh ? "关键决策失误与踩坑复盘案例，在匹配度高时呈现。" : "case studies of what went wrong, surfaced when the question matches one strongly."}
+          <span className="text-rose-300">{t("knowledge.KnowledgeWorkspace.failures")}</span> —{" "}
+          {t("knowledge.KnowledgeWorkspace.case_studies_of_what_went")}
         </li>
         <li>
-          <span className="text-fg">{isZh ? "企业文档（Company）" : "Company"}</span> —{" "}
-          {isZh ? "您上传的企业内部资料与文档。" : "your uploaded documents."}
+          <span className="text-fg">{t("knowledge.KnowledgeWorkspace.company")}</span> —{" "}
+          {t("knowledge.KnowledgeWorkspace.your_uploaded_documents")}
         </li>
         <li>
-          <span className="text-fg">{isZh ? "参考资料库（Reference Library）" : "Reference Library"}</span> —{" "}
-          {isZh ? "开源教材与权威行业手册。" : "open-licensed textbooks and handbooks."}
+          <span className="text-fg">{t("knowledge.KnowledgeWorkspace.reference_library")}</span> —{" "}
+          {t("knowledge.KnowledgeWorkspace.openlicensed_textbooks_and_handbooks")}
         </li>
         <li>
-          <span className="text-indigo-300">{isZh ? "检索测试（Query mode）" : "Query mode"}</span> —{" "}
-          {isZh ? "直观查看 Executive 针对特定问题会调取哪些知识片段。" : "see exactly what the Executive would retrieve for a question."}
+          <span className="text-indigo-300">{t("knowledge.KnowledgeWorkspace.query_mode")}</span> —{" "}
+          {t("knowledge.KnowledgeWorkspace.see_exactly_what_the_executive")}
         </li>
       </ul>
     </div>

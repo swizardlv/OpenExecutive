@@ -10,6 +10,7 @@ import BrandMark from "@/components/BrandMark";
 import Icon, { IconName } from "@/components/Icon";
 import UserBadge from "@/components/UserBadge";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
+import { translate } from "@/locales";
 import {
   BRIEFING_DESCRIPTION,
   buildPrimaryNav,
@@ -96,9 +97,8 @@ const SEGMENT_LABELS_EN: Record<string, string> = {
   clients: "Client Companies",
 };
 
-function labelFor(segment: string, locale: "zh" | "en" = "zh"): string {
-  const dict = locale === "zh" ? SEGMENT_LABELS_ZH : SEGMENT_LABELS_EN;
-  return dict[segment] ?? segment;
+function labelFor(segment: string, locale: string = "zh"): string {
+  return translate(locale, `segment.${segment}`, undefined, segment);
 }
 
 // Is `href` the active section for the current pathname? Active when

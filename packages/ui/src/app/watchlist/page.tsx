@@ -32,21 +32,6 @@ const DECLINE_REASONS: { value: WatchDeclineReason; label: string; labelZh: stri
   { value: "wrong_source", label: "Wrong source", labelZh: "数据源不当", hint: "Right topic, drop only this feed/page", hintZh: "主题正确，仅取消该特定页面/源" },
 ];
 
-const CADENCE_LABELS_ZH: Record<string, string> = {
-  real_time: "实时",
-  "15min": "15分钟",
-  hourly: "每小时",
-  daily: "每天",
-  weekly: "每周",
-};
-
-const SEVERITY_LABELS_ZH: Record<string, string> = {
-  low: "低",
-  medium: "中",
-  high: "高",
-  urgent: "紧急",
-};
-
 // Rationale + provenance stamp the research policy left on the row.
 function policyStamp(item: WatchlistItem): { entity?: string; score?: number; source_url?: string } {
   const raw = (item.config_json as Record<string, unknown> | undefined)?._policy;
@@ -84,9 +69,6 @@ const BILLED_SIGNAL_TYPES: ReadonlySet<string> = new Set(["query"]);
 // SIGNAL_TYPES so the two never drift. Unknown types fall back to the raw value.
 const SIGNAL_TYPE_LABELS: Record<string, string> = Object.fromEntries(
   SIGNAL_TYPES.map((s) => [s.value, s.label]),
-);
-const SIGNAL_TYPE_LABELS_ZH: Record<string, string> = Object.fromEntries(
-  SIGNAL_TYPES.map((s) => [s.value, s.labelZh]),
 );
 
 // Group display order: known types in SIGNAL_TYPES order; unknown types sort last.
@@ -137,8 +119,7 @@ function DeclineMenu({
   onPick: (slug: string, reason: WatchDeclineReason) => void;
   label: string;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -162,8 +143,8 @@ function DeclineMenu({
               }}
               className="w-full text-left px-2 py-1.5 rounded hover:bg-surface-overlay"
             >
-              <div className="text-xs text-fg">{isZh ? r.labelZh : r.label}</div>
-              <div className="text-[10px] text-fg-subtle">{isZh ? r.hintZh : r.hint}</div>
+              <div className="text-xs text-fg">{t(`watchlist.decline.${r.value}.label`, r.label)}</div>
+              <div className="text-[10px] text-fg-subtle">{t(`watchlist.decline.${r.value}.hint`, r.hint)}</div>
             </button>
           ))}
         </div>
@@ -185,8 +166,7 @@ function SuggestionCard({
   onDecline: (slug: string, reason: WatchDeclineReason) => void;
   departmentTitle?: string;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const stamp = policyStamp(item);
   return (
     <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
@@ -200,34 +180,34 @@ function SuggestionCard({
           </div>
         </div>
         <span className="flex-shrink-0 inline-block px-1.5 py-0.5 rounded border text-[10px] font-medium bg-amber-500/20 text-amber-200 border-amber-500/30">
-          {isZh ? "建议监控" : "suggested"}
+          {t("watchlist.page.suggested")}
         </span>
       </div>
       {item.notes && <p className="text-xs text-fg mt-2">{item.notes}</p>}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-fg-muted mt-2">
-        {stamp.entity && <span>{isZh ? `关联: ${stamp.entity}` : `about: ${stamp.entity}`}</span>}
+        {stamp.entity && <span>{t("watchlist.page.about_stamp_entity", { stamp_entity: stamp.entity })}</span>}
         {item.route_to_department && (
-          <span title={isZh ? "已指派该部门主管审核" : "This department's head was asked to review it"}>
-            {isZh ? `归属: ${departmentTitle ?? item.route_to_department}` : `for: ${departmentTitle ?? item.route_to_department}`}
+          <span title={t("watchlist.page.this_departments_head_was_asked")}>
+            {t("watchlist.page.for_departmenttitle____item_route_to_department", { departmentTitle____item_route_to_department: departmentTitle ?? item.route_to_department })}
           </span>
         )}
-        <span>{isZh ? `建议于 ${formatRelTime(item.created_at)} 前` : `suggested ${formatRelTime(item.created_at)} ago`}</span>
-        <span>{isZh ? `影子触发: ${item.fired_count} 次` : `seen in shadow: ${item.fired_count} signal${item.fired_count === 1 ? "" : "s"}`}</span>
+        <span>{t("watchlist.page.suggested_formatreltime_item_created_at_ago", { formatRelTime_item_created_at: formatRelTime(item.created_at) })}</span>
+        <span>{t("watchlist.page.seen_in_shadow_item_fired_count_signalitem_fired_count_____1_________s", { item_fired_count: item.fired_count, item_fired_count_____1_________s: item.fired_count === 1 ? "" : "s" })}</span>
         {stamp.source_url && (
           <a href={stamp.source_url} target="_blank" rel="noreferrer" className="text-indigo-300 hover:text-indigo-200">
-            {isZh ? "数据源 ↗" : "source ↗"}
+            {t("watchlist.page.source")}
           </a>
         )}
       </div>
       <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-line">
-        <DeclineMenu slug={item.slug} busy={busy} onPick={onDecline} label={isZh ? "忽略…" : "Decline…"} />
+        <DeclineMenu slug={item.slug} busy={busy} onPick={onDecline} label={t("watchlist.page.decline")} />
         <button
           type="button"
           disabled={busy}
           onClick={() => onApprove(item.slug)}
           className="px-3 py-1.5 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium disabled:opacity-50"
         >
-          {busy ? "…" : (isZh ? "批准监控" : "Approve")}
+          {busy ? "…" : (t("watchlist.page.approve"))}
         </button>
       </div>
     </div>
@@ -247,8 +227,7 @@ function WatchCard({
   onStopWatching?: (slug: string, reason: WatchDeclineReason) => void;
   departmentTitle?: string;
 }) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const isResearch = item.origin === "research";
   const stamp = policyStamp(item);
   return (
@@ -271,18 +250,18 @@ function WatchCard({
       </div>
       {isResearch && (
         <p className="text-[11px] text-fg-muted mb-2">
-          <span className="text-indigo-300">{isZh ? "由 Executive 自动添加" : "Added by the Executive"}</span>
-          {stamp.entity ? ` · ${isZh ? "关联" : "about"} ${stamp.entity}` : ""}
-          {item.route_to_department ? ` · ${isZh ? "归属" : "for"} ${departmentTitle ?? item.route_to_department}` : ""}
+          <span className="text-indigo-300">{t("watchlist.page.added_by_the_executive")}</span>
+          {stamp.entity ? ` · ${t("watchlist.page.about")} ${stamp.entity}` : ""}
+          {item.route_to_department ? ` · ${t("watchlist.page.for")} ${departmentTitle ?? item.route_to_department}` : ""}
           {item.notes ? ` · ${item.notes}` : ""}
         </p>
       )}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-fg-muted mb-2">
-        <span>{isZh ? `周期: ${CADENCE_LABELS_ZH[item.cadence] ?? item.cadence}` : `cadence: ${item.cadence}`}</span>
-        <span>{isZh ? `级别: ${SEVERITY_LABELS_ZH[item.severity_floor] ?? item.severity_floor}→${SEVERITY_LABELS_ZH[item.severity_ceiling] ?? item.severity_ceiling}` : `severity: ${item.severity_floor}→${item.severity_ceiling}`}</span>
-        <span>{isZh ? `触发: ${item.fired_count}` : `fired: ${item.fired_count}`}</span>
-        {item.dismiss_count > 0 && <span>{isZh ? `忽略: ${item.dismiss_count}` : `dismissed: ${item.dismiss_count}`}</span>}
-        <span>{isZh ? `上次: ${formatRelTime(item.last_fired_at)}` : `last: ${formatRelTime(item.last_fired_at)}`}</span>
+        <span>{t("watchlist.page.cadence_item_cadence", { cadence: t(`watchlist.cadence.${item.cadence}`, item.cadence) })}</span>
+        <span>{t("watchlist.page.severity_item_severity_flooritem_severity_ceiling", { floor: t(`watchlist.severity.${item.severity_floor}`, item.severity_floor), ceiling: t(`watchlist.severity.${item.severity_ceiling}`, item.severity_ceiling) })}</span>
+        <span>{t("watchlist.page.fired_item_fired_count", { item_fired_count: item.fired_count })}</span>
+        {item.dismiss_count > 0 && <span>{t("watchlist.page.dismissed_item_dismiss_count", { item_dismiss_count: item.dismiss_count })}</span>}
+        <span>{t("watchlist.page.last_formatreltime_item_last_fired_at", { formatRelTime_item_last_fired_at: formatRelTime(item.last_fired_at) })}</span>
       </div>
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-line">
         <label className="flex items-center gap-1.5 text-xs text-fg-muted cursor-pointer">
@@ -293,17 +272,17 @@ function WatchCard({
             onChange={(e) => onToggle(item.slug, e.target.checked)}
             className="accent-indigo-500 disabled:opacity-50"
           />
-          {isZh ? "启用" : "enabled"}
+          {t("watchlist.page.enabled")}
         </label>
         <div className="flex items-center gap-2">
           {isResearch && onStopWatching && (
-            <DeclineMenu slug={item.slug} busy={toggleBusy} onPick={onStopWatching} label={isZh ? "停止监控…" : "Stop watching…"} />
+            <DeclineMenu slug={item.slug} busy={toggleBusy} onPick={onStopWatching} label={t("watchlist.page.stop_watching")} />
           )}
           <Link
             href={`/watchlist/${encodeURIComponent(item.slug)}`}
             className="text-xs text-indigo-300 hover:text-indigo-200"
           >
-            {isZh ? "详情 →" : "inspect →"}
+            {t("watchlist.page.inspect")}
           </Link>
         </div>
       </div>
@@ -311,14 +290,14 @@ function WatchCard({
   );
 }
 
-interface AddModalProps {
-  onCreated: (w: WatchlistItem) => void;
+function AddWatchModal({
+  onCreated,
+  onClose,
+}: {
+  onCreated: (item: WatchlistItem) => void;
   onClose: () => void;
-}
-
-function AddWatchModal({ onCreated, onClose }: AddModalProps) {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+}) {
+  const { t } = useI18n();
   const [slug, setSlug] = useState("");
   const [signalType, setSignalType] = useState<WatchlistSignalType>("stock");
   const [target, setTarget] = useState("");
@@ -337,7 +316,7 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
   }, []);
 
   const selectedSignal = SIGNAL_TYPES.find((s) => s.value === signalType);
-  const targetHint = (isZh ? selectedSignal?.hintZh : selectedSignal?.hint) ?? "";
+  const targetHint = t(`watchlist.signal.${signalType}.hint`, selectedSignal?.hint ?? "");
 
   async function submit() {
     setSaving(true);
@@ -347,7 +326,7 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
       try {
         parsedTrigger = JSON.parse(trigger);
       } catch {
-        setErr(isZh ? "触发规则必须是有效的 JSON，例如 {\"abs_change_pct_gte\": 5}" : "Trigger must be valid JSON, e.g. {\"abs_change_pct_gte\": 5}");
+        setErr(t("watchlist.page.invalid_json_err"));
         setSaving(false);
         return;
       }
@@ -366,7 +345,7 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
       });
       onCreated(created);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : (isZh ? "创建失败" : "Create failed"));
+      setErr(e instanceof Error ? e.message : (t("watchlist.page.create_failed")));
     } finally {
       setSaving(false);
     }
@@ -381,10 +360,10 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
         className="bg-surface-elevated border border-line rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold text-fg mb-4">{isZh ? "添加监控项" : "Add monitor"}</h2>
+        <h2 className="text-lg font-semibold text-fg mb-4">{t("watchlist.page.add_monitor_2")}</h2>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs text-fg-muted mb-1">{isZh ? "唯一标识（kebab-case）" : "Slug (kebab-case)"}</label>
+            <label className="block text-xs text-fg-muted mb-1">{t("watchlist.page.slug_kebabcase")}</label>
             <input
               ref={slugRef}
               value={slug}
@@ -394,7 +373,7 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
             />
           </div>
           <div>
-            <label className="block text-xs text-fg-muted mb-1">{isZh ? "信号类型" : "Signal type"}</label>
+            <label className="block text-xs text-fg-muted mb-1">{t("watchlist.page.signal_type")}</label>
             <select
               value={signalType}
               onChange={(e) => setSignalType(e.target.value as WatchlistSignalType)}
@@ -402,13 +381,13 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
             >
               {SIGNAL_TYPES.map((s) => (
                 <option key={s.value} value={s.value}>
-                  {isZh ? s.labelZh : s.label}
+                  {t(`watchlist.signal.${s.value}.label`, s.label)}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-fg-muted mb-1">{isZh ? "监控目标" : "Target"}</label>
+            <label className="block text-xs text-fg-muted mb-1">{t("watchlist.page.target")}</label>
             <input
               value={target}
               onChange={(e) => setTarget(e.target.value)}
@@ -418,14 +397,12 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
             <p className="text-[10px] text-fg-subtle mt-1">{targetHint}</p>
             {BILLED_SIGNAL_TYPES.has(signalType) && (
               <p className="text-[10px] text-amber-300/90 mt-1">
-                {isZh
-                  ? "⚠ 计费提醒：每次轮询都会调用大模型进行网络搜索。建议选择较慢的频率（每天/每周）并设置精确的查询词。"
-                  : "⚠ Billed: runs an LLM web search on every poll. Prefer a slower cadence (daily / weekly) and a tight query."}
+                {t("watchlist.page.billed_runs_an_llm_web")}
               </p>
             )}
           </div>
           <div>
-            <label className="block text-xs text-fg-muted mb-1">{isZh ? "触发规则（JSON，可选）" : "Trigger (JSON, optional)"}</label>
+            <label className="block text-xs text-fg-muted mb-1">{t("watchlist.page.trigger_json_optional")}</label>
             <textarea
               value={trigger}
               onChange={(e) => setTrigger(e.target.value)}
@@ -446,7 +423,7 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-fg-muted mb-1">{isZh ? "检查周期" : "Cadence"}</label>
+              <label className="block text-xs text-fg-muted mb-1">{t("watchlist.page.cadence")}</label>
               <select
                 value={cadence}
                 onChange={(e) => setCadence(e.target.value as WatchlistCadence)}
@@ -454,24 +431,24 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
               >
                 {CADENCES.map((c) => (
                   <option key={c} value={c}>
-                    {isZh ? CADENCE_LABELS_ZH[c] : c}
+                    {t(`watchlist.cadence.${c}`, c)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-fg-muted mb-1">{isZh ? "监控模式" : "Mode"}</label>
+              <label className="block text-xs text-fg-muted mb-1">{t("watchlist.page.mode")}</label>
               <select
                 value={mode}
                 onChange={(e) => setMode(e.target.value as "active" | "dry_run")}
                 className="w-full px-3 py-2 text-sm rounded-lg bg-surface-input border border-line"
               >
-                <option value="active">{isZh ? "生效 (active)" : "active"}</option>
-                <option value="dry_run">{isZh ? "预演 (dry_run)" : "dry_run"}</option>
+                <option value="active">{t("watchlist.page.active")}</option>
+                <option value="dry_run">{t("watchlist.page.dry_run")}</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs text-fg-muted mb-1">{isZh ? "最低告警级别" : "Severity floor"}</label>
+              <label className="block text-xs text-fg-muted mb-1">{t("watchlist.page.severity_floor")}</label>
               <select
                 value={severityFloor}
                 onChange={(e) => setSeverityFloor(e.target.value as WatchlistSeverity)}
@@ -479,13 +456,13 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
               >
                 {SEVERITIES.map((s) => (
                   <option key={s} value={s}>
-                    {isZh ? SEVERITY_LABELS_ZH[s] : s}
+                    {t(`watchlist.severity.${s}`, s)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-fg-muted mb-1">{isZh ? "最高告警级别" : "Severity ceiling"}</label>
+              <label className="block text-xs text-fg-muted mb-1">{t("watchlist.page.severity_ceiling")}</label>
               <select
                 value={severityCeiling}
                 onChange={(e) => setSeverityCeiling(e.target.value as WatchlistSeverity)}
@@ -493,14 +470,14 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
               >
                 {SEVERITIES.map((s) => (
                   <option key={s} value={s}>
-                    {isZh ? SEVERITY_LABELS_ZH[s] : s}
+                    {t(`watchlist.severity.${s}`, s)}
                   </option>
                 ))}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs text-fg-muted mb-1">{isZh ? "备注说明" : "Notes"}</label>
+            <label className="block text-xs text-fg-muted mb-1">{t("watchlist.page.notes")}</label>
             <input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -523,7 +500,7 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
             onClick={onClose}
             className="px-4 py-2 text-sm rounded-lg border border-line hover:bg-surface-overlay disabled:opacity-50"
           >
-            {isZh ? "取消" : "Cancel"}
+            {t("watchlist.page.cancel")}
           </button>
           <button
             type="button"
@@ -531,7 +508,7 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
             onClick={submit}
             className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium disabled:opacity-50"
           >
-            {saving ? (isZh ? "添加中…" : "Adding…") : (isZh ? "确认添加" : "Add monitor")}
+            {saving ? (t("watchlist.page.adding")) : (t("watchlist.page.add_monitor_2"))}
           </button>
         </div>
       </div>
@@ -540,8 +517,7 @@ function AddWatchModal({ onCreated, onClose }: AddModalProps) {
 }
 
 export default function WatchlistPage() {
-  const { locale } = useI18n();
-  const isZh = locale === "zh";
+  const { t } = useI18n();
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -577,16 +553,16 @@ export default function WatchlistPage() {
     });
     return keys.map((k) => ({
       key: k,
-      label: (isZh ? SIGNAL_TYPE_LABELS_ZH[k] : SIGNAL_TYPE_LABELS[k]) ?? k,
+      label: t(`watchlist.signal.${k}.label`, SIGNAL_TYPE_LABELS[k] ?? k),
       items: map.get(k)!,
     }));
-  }, [items, isZh]);
+  }, [items, t]);
 
   function refresh() {
     setLoading(true);
     listWatchlist()
       .then(setItems)
-      .catch((e) => setError(e instanceof Error ? e.message : (isZh ? "加载失败" : "Failed to load")))
+      .catch((e) => setError(e instanceof Error ? e.message : (t("watchlist.page.failed_to_load"))))
       .finally(() => setLoading(false));
   }
 
@@ -614,7 +590,7 @@ export default function WatchlistPage() {
       const updated = await approveWatchSuggestion(slug);
       setItems((prev) => prev.map((it) => (it.slug === slug ? updated : it)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : (isZh ? "批准失败" : "Approve failed"));
+      setError(e instanceof Error ? e.message : (t("watchlist.page.approve_failed")));
     } finally {
       markBusy(slug, false);
     }
@@ -631,7 +607,7 @@ export default function WatchlistPage() {
         refresh();
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : (isZh ? "忽略失败" : "Decline failed"));
+      setError(e instanceof Error ? e.message : (t("watchlist.page.decline_failed")));
     } finally {
       markBusy(slug, false);
     }
@@ -650,7 +626,7 @@ export default function WatchlistPage() {
         setItems((prev) => prev.filter((it) => it.slug !== slug));
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : (isZh ? "移除失败" : "Remove failed"));
+      setError(e instanceof Error ? e.message : (t("watchlist.page.remove_failed")));
     } finally {
       markBusy(slug, false);
     }
@@ -671,7 +647,7 @@ export default function WatchlistPage() {
       setItems((prev) =>
         prev.map((it) => (it.slug === slug ? { ...it, enabled: !enabled } : it)),
       );
-      setError(e instanceof Error ? e.message : (isZh ? "切换失败" : "Toggle failed"));
+      setError(e instanceof Error ? e.message : (t("watchlist.page.toggle_failed")));
     } finally {
       setBusySlugs((prev) => {
         const next = new Set(prev);
@@ -696,22 +672,20 @@ export default function WatchlistPage() {
         <div className="max-w-5xl mx-auto px-6 py-6">
           <div className="flex items-baseline justify-between mb-6">
             <div>
-              <h1 className="text-xl font-semibold text-fg">{isZh ? "监控列表" : "Watch list"}</h1>
+              <h1 className="text-xl font-semibold text-fg">{t("watchlist.page.watch_list")}</h1>
               <p className="text-sm text-fg-muted mt-0.5">
-                {isZh
-                  ? "Executive 正在监测的外部信号与动态。经过严重级别筛选与分流的信号将转化为简报中的决策提案。"
-                  : "External conditions the Executive is monitoring. Signals that survive severity + triage become proposals in your briefing."}
+                {t("watchlist.page.external_conditions_the_executive_is")}
               </p>
             </div>
             <button
               onClick={() => setShowAdd(true)}
               className="flex-shrink-0 px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium"
             >
-              {isZh ? "+ 添加监控项" : "+ Add monitor"}
+              {t("watchlist.page.add_monitor")}
             </button>
           </div>
 
-          {loading && <p className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</p>}
+          {loading && <p className="text-fg-muted text-sm">{t("watchlist.page.loading")}</p>}
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm mb-4">
               {error}
@@ -719,18 +693,18 @@ export default function WatchlistPage() {
           )}
           {!loading && !error && items.length === 0 && (
             <div className="rounded-xl border border-line bg-surface-elevated p-8 text-center">
-              <p className="text-fg-muted text-sm mb-3">{isZh ? "暂无正在监控的项目。" : "Nothing being watched yet."}</p>
+              <p className="text-fg-muted text-sm mb-3">{t("watchlist.page.nothing_being_watched_yet")}</p>
               <p className="text-xs text-fg-subtle mb-4">
-                {isZh ? "可以在对话中让 Executive 监控，例如：" : "Ask the Executive in chat: "}{" "}
+                {t("watchlist.page.ask_the_executive_in_chat")}{" "}
                 <span className="italic">
-                  {isZh ? "监控苹果公司股价，波动达到 5% 时提醒我。" : "Watch Apple stock, alert me on 5% moves."}
+                  {t("watchlist.page.watch_apple_stock_alert_me")}
                 </span>
               </p>
               <button
                 onClick={() => setShowAdd(true)}
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white"
               >
-                {isZh ? "添加监控项 →" : "Add a monitor →"}
+                {t("watchlist.page.add_a_monitor")}
               </button>
             </div>
           )}
@@ -738,15 +712,13 @@ export default function WatchlistPage() {
           {suggestions.length > 0 && (
             <div className="mb-8">
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-sm font-semibold text-fg">{isZh ? "Executive 智能建议" : "Suggested by the Executive"}</span>
+                <span className="text-sm font-semibold text-fg">{t("watchlist.page.suggested_by_the_executive")}</span>
                 <span className="text-xs text-fg-muted">
-                  {isZh ? `${suggestions.length} 项等待您决策` : `${suggestions.length} waiting for you`}
+                  {t("watchlist.page.suggestions_length_waiting_for_you", { suggestions_length: suggestions.length })}
                 </span>
               </div>
               <p className="text-xs text-fg-subtle mb-3">
-                {isZh
-                  ? "调研系统认为值得关注但尚未完全关联到核心业务的数据源。它们在影子模式下运行，在您批准前绝不会触发直接告警。您的拒绝决策将被记住。"
-                  : "Sources the research council thought worth monitoring but couldn't tie firmly enough to your company data to add on its own. They poll in shadow mode and never alert until you approve. Declines are remembered."}
+                {t("watchlist.page.sources_the_research_council_thought")}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {suggestions.map((item) => (
@@ -784,8 +756,10 @@ export default function WatchlistPage() {
                       {group.label}
                     </span>
                     <span className="text-xs text-fg-muted">
-                      {group.items.length}{" "}
-                      {isZh ? "个监控项" : (group.items.length === 1 ? "monitor" : "monitors")}
+                      {t("watchlist.page.monitors_count", {
+                        count: group.items.length,
+                        s: group.items.length === 1 ? "" : "s",
+                      })}
                     </span>
                   </button>
                   {!isCollapsed && (
