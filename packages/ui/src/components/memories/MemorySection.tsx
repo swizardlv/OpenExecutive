@@ -16,16 +16,23 @@ import {
   type Initiative,
 } from "@/lib/api";
 import { DOMAINS, STATUSES, EmptyState, formatDate } from "./shared";
+import { useI18n } from "@/lib/i18n";
 
 type MemoryTab = "decisions" | "initiatives" | "advice";
 
-const MEMORY_EMPTY = "No memories yet — they're extracted automatically after chats.";
+const TAB_LABELS_ZH: Record<MemoryTab, string> = {
+  decisions: "决策记录",
+  initiatives: "战略举措",
+  advice: "专家建议",
+};
 
 // ---------------------------------------------------------------------------
 // Section shell — the "what it knows" half of the Pulse page.
 // ---------------------------------------------------------------------------
 
 export default function MemorySection() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [tab, setTab] = useState<MemoryTab>("decisions");
   // Each tab reports its row count so the tab labels can carry a live badge.
   // All three tabs stay mounted (inactive ones hidden) so every count loads up
@@ -59,7 +66,7 @@ export default function MemorySection() {
                   : "text-fg-muted hover:text-fg"
               }`}
             >
-              {t}
+              {isZh ? TAB_LABELS_ZH[t] : t}
               {counts[t] != null && (
                 <span className="ml-1.5 text-xs font-normal tabular-nums text-fg-subtle">
                   {counts[t]}
@@ -92,6 +99,8 @@ export default function MemorySection() {
 // ---------------------------------------------------------------------------
 
 function DecisionsTab({ onCount }: { onCount: (n: number) => void }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [items, setItems] = useState<Decision[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -112,18 +121,18 @@ function DecisionsTab({ onCount }: { onCount: (n: number) => void }) {
   }, [refresh]);
 
   const handleDelete = useCallback(async (id: number) => {
-    if (!window.confirm("Delete this memory? This cannot be undone.")) return;
+    if (!window.confirm(isZh ? "确认删除该条记忆？此操作无法撤销。" : "Delete this memory? This cannot be undone.")) return;
     try {
       await deleteDecision(id);
     } catch {
-      window.alert("Failed to delete.");
+      window.alert(isZh ? "删除失败。" : "Failed to delete.");
       return;
     }
     void refresh();
-  }, [refresh]);
+  }, [refresh, isZh]);
 
-  if (loading) return <div className="text-fg-muted text-sm">Loading…</div>;
-  if (items.length === 0) return <EmptyState message={MEMORY_EMPTY} />;
+  if (loading) return <div className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</div>;
+  if (items.length === 0) return <EmptyState message={isZh ? "暂无记忆 — 对话结束后将自动提取沉淀。" : "No memories yet — they're extracted automatically after chats."} />;
 
   return (
     <div className="divide-y divide-line">
@@ -138,7 +147,7 @@ function DecisionsTab({ onCount }: { onCount: (n: number) => void }) {
             try {
               await updateDecision(d.id, patch);
             } catch {
-              window.alert("Failed to save.");
+              window.alert(isZh ? "保存失败。" : "Failed to save.");
               return;
             }
             setEditingId(null);
@@ -166,6 +175,8 @@ function DecisionRow({
   onSave: (patch: Partial<Decision>) => void;
   onDelete: () => void;
 }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [domain, setDomain] = useState(decision.domain);
   const [summary, setSummary] = useState(decision.summary);
   const [rationale, setRationale] = useState(decision.rationale);
@@ -191,8 +202,8 @@ function DecisionRow({
         </div>
         {!editing && (
           <div className="flex gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            <button onClick={onEdit} className="text-xs text-fg-muted hover:text-fg">Edit</button>
-            <button onClick={onDelete} className="text-xs text-red-400 hover:text-red-300">Delete</button>
+            <button onClick={onEdit} className="text-xs text-fg-muted hover:text-fg">{isZh ? "编辑" : "Edit"}</button>
+            <button onClick={onDelete} className="text-xs text-red-400 hover:text-red-300">{isZh ? "删除" : "Delete"}</button>
           </div>
         )}
       </div>
@@ -209,13 +220,13 @@ function DecisionRow({
             type="text"
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            placeholder="Summary"
+            placeholder={isZh ? "决策概述" : "Summary"}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           />
           <textarea
             value={rationale}
             onChange={(e) => setRationale(e.target.value)}
-            placeholder="Rationale"
+            placeholder={isZh ? "决策依据" : "Rationale"}
             rows={2}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           />
@@ -223,32 +234,32 @@ function DecisionRow({
             type="text"
             value={outcome}
             onChange={(e) => setOutcome(e.target.value)}
-            placeholder="Outcome"
+            placeholder={isZh ? "预期结果" : "Outcome"}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           />
           <input
             type="text"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            placeholder="Tags"
+            placeholder={isZh ? "标签" : "Tags"}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           />
           <div className="flex gap-2 justify-end">
-            <button onClick={onCancel} className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg">Cancel</button>
+            <button onClick={onCancel} className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg">{isZh ? "取消" : "Cancel"}</button>
             <button
               onClick={() => onSave({ domain, summary, rationale, outcome, tags })}
               className="text-xs px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white"
             >
-              Save
+              {isZh ? "保存" : "Save"}
             </button>
           </div>
         </div>
       ) : (
         <div className="space-y-1">
           <div className="text-sm text-fg line-clamp-2" title={decision.summary}>{decision.summary}</div>
-          {decision.rationale && <div className="text-xs text-fg-muted line-clamp-2" title={`Rationale: ${decision.rationale}`}><span className="text-fg-muted">Rationale: </span>{decision.rationale}</div>}
-          {decision.outcome && <div className="text-xs text-fg-muted line-clamp-2" title={`Outcome: ${decision.outcome}`}><span className="text-fg-muted">Outcome: </span>{decision.outcome}</div>}
-          {decision.tags && <div className="text-xs text-fg-muted truncate" title={`Tags: ${decision.tags}`}>Tags: {decision.tags}</div>}
+          {decision.rationale && <div className="text-xs text-fg-muted line-clamp-2" title={`${isZh ? "依据" : "Rationale"}: ${decision.rationale}`}><span className="text-fg-muted">{isZh ? "依据: " : "Rationale: "}</span>{decision.rationale}</div>}
+          {decision.outcome && <div className="text-xs text-fg-muted line-clamp-2" title={`${isZh ? "结果" : "Outcome"}: ${decision.outcome}`}><span className="text-fg-muted">{isZh ? "结果: " : "Outcome: "}</span>{decision.outcome}</div>}
+          {decision.tags && <div className="text-xs text-fg-muted truncate" title={`Tags: ${decision.tags}`}>{isZh ? "标签: " : "Tags: "}{decision.tags}</div>}
         </div>
       )}
     </div>
@@ -260,6 +271,8 @@ function DecisionRow({
 // ---------------------------------------------------------------------------
 
 function InitiativesTab({ onCount }: { onCount: (n: number) => void }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [items, setItems] = useState<Initiative[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -280,18 +293,18 @@ function InitiativesTab({ onCount }: { onCount: (n: number) => void }) {
   }, [refresh]);
 
   const handleDelete = useCallback(async (id: number) => {
-    if (!window.confirm("Delete this memory? This cannot be undone.")) return;
+    if (!window.confirm(isZh ? "确认删除该条记忆？此操作无法撤销。" : "Delete this memory? This cannot be undone.")) return;
     try {
       await deleteInitiative(id);
     } catch {
-      window.alert("Failed to delete.");
+      window.alert(isZh ? "删除失败。" : "Failed to delete.");
       return;
     }
     void refresh();
-  }, [refresh]);
+  }, [refresh, isZh]);
 
-  if (loading) return <div className="text-fg-muted text-sm">Loading…</div>;
-  if (items.length === 0) return <EmptyState message={MEMORY_EMPTY} />;
+  if (loading) return <div className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</div>;
+  if (items.length === 0) return <EmptyState message={isZh ? "暂无战略举措记录 — 对话结束后将自动提取沉淀。" : "No memories yet — they're extracted automatically after chats."} />;
 
   return (
     <div className="divide-y divide-line">
@@ -306,7 +319,7 @@ function InitiativesTab({ onCount }: { onCount: (n: number) => void }) {
             try {
               await updateInitiative(it.id, patch);
             } catch {
-              window.alert("Failed to save.");
+              window.alert(isZh ? "保存失败。" : "Failed to save.");
               return;
             }
             setEditingId(null);
@@ -334,6 +347,8 @@ function InitiativeRow({
   onSave: (patch: Partial<Initiative>) => void;
   onDelete: () => void;
 }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [title, setTitle] = useState(initiative.title);
   const [status, setStatus] = useState(initiative.status);
   const [summary, setSummary] = useState(initiative.summary);
@@ -351,12 +366,12 @@ function InitiativeRow({
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 text-xs text-fg-muted">
           <span className="px-2 py-0.5 rounded bg-surface-overlay text-fg font-medium capitalize">{editing ? status : initiative.status}</span>
-          <span>updated {formatDate(initiative.updated_at)}</span>
+          <span>{isZh ? `更新于 ${formatDate(initiative.updated_at)}` : `updated ${formatDate(initiative.updated_at)}`}</span>
         </div>
         {!editing && (
           <div className="flex gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            <button onClick={onEdit} className="text-xs text-fg-muted hover:text-fg">Edit</button>
-            <button onClick={onDelete} className="text-xs text-red-400 hover:text-red-300">Delete</button>
+            <button onClick={onEdit} className="text-xs text-fg-muted hover:text-fg">{isZh ? "编辑" : "Edit"}</button>
+            <button onClick={onDelete} className="text-xs text-red-400 hover:text-red-300">{isZh ? "删除" : "Delete"}</button>
           </div>
         )}
       </div>
@@ -366,7 +381,7 @@ function InitiativeRow({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title"
+            placeholder={isZh ? "举措名称" : "Title"}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           />
           <select
@@ -379,17 +394,17 @@ function InitiativeRow({
           <textarea
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            placeholder="Summary"
+            placeholder={isZh ? "概述说明" : "Summary"}
             rows={2}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           />
           <div className="flex gap-2 justify-end">
-            <button onClick={onCancel} className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg">Cancel</button>
+            <button onClick={onCancel} className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg">{isZh ? "取消" : "Cancel"}</button>
             <button
               onClick={() => onSave({ title, status, summary })}
               className="text-xs px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white"
             >
-              Save
+              {isZh ? "保存" : "Save"}
             </button>
           </div>
         </div>
@@ -408,6 +423,8 @@ function InitiativeRow({
 // ---------------------------------------------------------------------------
 
 function AdviceTab({ onCount }: { onCount: (n: number) => void }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [items, setItems] = useState<Advice[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -428,18 +445,18 @@ function AdviceTab({ onCount }: { onCount: (n: number) => void }) {
   }, [refresh]);
 
   const handleDelete = useCallback(async (id: number) => {
-    if (!window.confirm("Delete this memory? This cannot be undone.")) return;
+    if (!window.confirm(isZh ? "确认删除该条记忆？此操作无法撤销。" : "Delete this memory? This cannot be undone.")) return;
     try {
       await deleteAdvice(id);
     } catch {
-      window.alert("Failed to delete.");
+      window.alert(isZh ? "删除失败。" : "Failed to delete.");
       return;
     }
     void refresh();
-  }, [refresh]);
+  }, [refresh, isZh]);
 
-  if (loading) return <div className="text-fg-muted text-sm">Loading…</div>;
-  if (items.length === 0) return <EmptyState message={MEMORY_EMPTY} />;
+  if (loading) return <div className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</div>;
+  if (items.length === 0) return <EmptyState message={isZh ? "暂无建议记录 — 对话结束后将自动提取沉淀。" : "No memories yet — they're extracted automatically after chats."} />;
 
   return (
     <div className="divide-y divide-line">
@@ -454,7 +471,7 @@ function AdviceTab({ onCount }: { onCount: (n: number) => void }) {
             try {
               await updateAdvice(a.id, patch);
             } catch {
-              window.alert("Failed to save.");
+              window.alert(isZh ? "保存失败。" : "Failed to save.");
               return;
             }
             setEditingId(null);
@@ -482,6 +499,8 @@ function AdviceRow({
   onSave: (patch: Partial<Advice>) => void;
   onDelete: () => void;
 }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [domain, setDomain] = useState(advice.domain);
   const [querySummary, setQuerySummary] = useState(advice.query_summary);
   const [adviceSummary, setAdviceSummary] = useState(advice.advice_summary);
@@ -503,8 +522,8 @@ function AdviceRow({
         </div>
         {!editing && (
           <div className="flex gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            <button onClick={onEdit} className="text-xs text-fg-muted hover:text-fg">Edit</button>
-            <button onClick={onDelete} className="text-xs text-red-400 hover:text-red-300">Delete</button>
+            <button onClick={onEdit} className="text-xs text-fg-muted hover:text-fg">{isZh ? "编辑" : "Edit"}</button>
+            <button onClick={onDelete} className="text-xs text-red-400 hover:text-red-300">{isZh ? "删除" : "Delete"}</button>
           </div>
         )}
       </div>
@@ -521,29 +540,29 @@ function AdviceRow({
             type="text"
             value={querySummary}
             onChange={(e) => setQuerySummary(e.target.value)}
-            placeholder="What the user asked"
+            placeholder={isZh ? "用户咨询的问题" : "What the user asked"}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           />
           <textarea
             value={adviceSummary}
             onChange={(e) => setAdviceSummary(e.target.value)}
-            placeholder="Advice given"
+            placeholder={isZh ? "专员给出的建议" : "Advice given"}
             rows={3}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           />
           <div className="flex gap-2 justify-end">
-            <button onClick={onCancel} className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg">Cancel</button>
+            <button onClick={onCancel} className="text-xs px-3 py-1.5 rounded text-fg-muted hover:text-fg">{isZh ? "取消" : "Cancel"}</button>
             <button
               onClick={() => onSave({ domain, query_summary: querySummary, advice_summary: adviceSummary })}
               className="text-xs px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white"
             >
-              Save
+              {isZh ? "保存" : "Save"}
             </button>
           </div>
         </div>
       ) : (
         <div className="space-y-1">
-          <div className="text-xs text-fg-muted line-clamp-2" title={`Q: ${advice.query_summary}`}>Q: {advice.query_summary}</div>
+          <div className="text-xs text-fg-muted line-clamp-2" title={`${isZh ? "提问: " : "Q: "}${advice.query_summary}`}>{isZh ? "提问: " : "Q: "}{advice.query_summary}</div>
           <div className="text-sm text-fg line-clamp-2" title={advice.advice_summary}>{advice.advice_summary}</div>
         </div>
       )}

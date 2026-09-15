@@ -23,6 +23,7 @@ import {
   savePersona,
   testAgent,
 } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 interface DraftState {
   role: string;
@@ -74,6 +75,9 @@ function draftIsDirty(d: AgentDetail | null, draft: DraftState | null): boolean 
 }
 
 export default function CouncilPage() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+
   const [agents, setAgents] = useState<AgentMeta[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [detail, setDetail] = useState<AgentDetail | null>(null);
@@ -259,7 +263,7 @@ export default function CouncilPage() {
       <aside className="w-64 flex-shrink-0 border-r border-line flex flex-col bg-surface-elevated">
         <div className="px-3 py-4 overflow-y-auto">
           <p className="px-2 text-[10px] font-semibold uppercase tracking-widest text-fg-subtle mb-2">
-            Agent Council
+            {isZh ? "专员议会" : "Agent Council"}
           </p>
           <nav className="space-y-0.5">
             {agents.map((a) => (
@@ -276,7 +280,7 @@ export default function CouncilPage() {
                   className={`mt-1 inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                     a.has_override ? "bg-amber-400" : "bg-surface-input"
                   }`}
-                  title={a.has_override ? "Has override" : "Default config"}
+                  title={a.has_override ? (isZh ? "已修改配置" : "Has override") : (isZh ? "默认配置" : "Default config")}
                 />
                 <span className="flex-1 min-w-0">
                   <span className="block font-medium text-fg uppercase tracking-wide text-[10px]">
@@ -293,10 +297,11 @@ export default function CouncilPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-8 py-10 space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-fg">Agent Council</h1>
+            <h1 className="text-2xl font-bold text-fg">{isZh ? "专员议会 (Agent Council)" : "Agent Council"}</h1>
             <p className="mt-2 text-sm text-fg-muted">
-              Edit each specialist&apos;s prompt, model, and behavior. Changes apply on the next
-              specialist call — no restart needed. Resetting restores the built-in defaults.
+              {isZh
+                ? "编辑各专员的系统提示词、基座模型及行为特征。修改立即在下次专员调用时生效，无需重启。重置将恢复内置默认值。"
+                : "Edit each specialist's prompt, model, and behavior. Changes apply on the next specialist call — no restart needed. Resetting restores the built-in defaults."}
             </p>
           </div>
 
@@ -317,18 +322,18 @@ export default function CouncilPage() {
                     <p className="text-xs text-fg-muted mt-0.5 font-mono">
                       {detail.name}
                       {detail.name === "executive"
-                        ? " · orchestrator"
+                        ? (isZh ? " · 总调度协调" : " · orchestrator")
                         : detail.name === "utility_fast"
-                        ? " · utility model knob"
+                        ? (isZh ? " · 辅助工具模型" : " · utility model knob")
                         : detail.name === "research"
-                        ? " · research model knob"
-                        : ` · domains: ${detail.domains.join(", ") || "—"}`}
+                        ? (isZh ? " · 调研分析模型" : " · research model knob")
+                        : ` · ${isZh ? "领域：" : "domains: "}${detail.domains.join(", ") || "—"}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {detail.has_override && (
                       <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        Customized
+                        {isZh ? "已修改" : "Customized"}
                       </span>
                     )}
                     <button
@@ -336,14 +341,14 @@ export default function CouncilPage() {
                       disabled={resetting || !detail.has_override}
                       className="text-xs px-3 py-1.5 rounded-lg border border-line-strong text-fg-muted hover:border-red-500/40 hover:text-red-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      Reset to default
+                      {resetting ? (isZh ? "重置中…" : "Resetting…") : (isZh ? "恢复默认" : "Reset to default")}
                     </button>
                     <button
                       onClick={handleSave}
                       disabled={saving || !dirty}
                       className="text-xs px-3 py-1.5 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      {saving ? "Saving…" : "Save"}
+                      {saving ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存配置" : "Save")}
                     </button>
                   </div>
                 </div>
@@ -351,7 +356,7 @@ export default function CouncilPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label className="block text-xs">
                     <span className="text-fg-muted uppercase tracking-widest text-[10px] font-semibold">
-                      Role
+                      {isZh ? "岗位角色" : "Role"}
                     </span>
                     <input
                       type="text"
@@ -361,14 +366,14 @@ export default function CouncilPage() {
                     />
                     {detail.role_default !== draft.role && (
                       <span className="text-[10px] text-fg-subtle mt-1 block">
-                        Default: {detail.role_default}
+                        {isZh ? `默认：${detail.role_default}` : `Default: ${detail.role_default}`}
                       </span>
                     )}
                   </label>
 
                   <label className="block text-xs">
                     <span className="text-fg-muted uppercase tracking-widest text-[10px] font-semibold">
-                      Model
+                      {isZh ? "基座模型" : "Model"}
                     </span>
                     <select
                       value={draft.model}
@@ -388,7 +393,7 @@ export default function CouncilPage() {
                         (m) => (
                           <option key={m} value={m}>
                             {m}
-                            {m === detail.model_default ? " (default)" : ""}
+                            {m === detail.model_default ? (isZh ? " (默认)" : " (default)") : ""}
                           </option>
                         )
                       )}
@@ -403,8 +408,8 @@ export default function CouncilPage() {
                     }`}
                     title={
                       modelSupportsDeepReasoning(draft.model)
-                        ? "Adaptive thinking on Claude Opus/Sonnet, and on any OpenRouter model whose catalog entry supports reasoning. Ignored by models that can't reason."
-                        : "Haiku doesn't support adaptive thinking — pick another model to enable deep reasoning."
+                        ? (isZh ? "在 Claude Opus/Sonnet 以及支持推理的 OpenRouter 模型上启用自适应思考。不支持推理的模型将自动忽略。" : "Adaptive thinking on Claude Opus/Sonnet, and on any OpenRouter model whose catalog entry supports reasoning. Ignored by models that can't reason.")
+                        : (isZh ? "Haiku 模型不支持自适应思考 — 请选择其他模型以启用深度推理。" : "Haiku doesn't support adaptive thinking — pick another model to enable deep reasoning.")
                     }
                   >
                     <input
@@ -414,39 +419,33 @@ export default function CouncilPage() {
                       onChange={(e) => setDraft({ ...draft, deep_reasoning: e.target.checked })}
                       className="rounded border-line-strong bg-surface disabled:cursor-not-allowed"
                     />
-                    Deep reasoning (adaptive thinking — Claude Opus/Sonnet and reasoning-capable
-                    OpenRouter models; not available on Haiku)
+                    {isZh ? "深度推理 (自适应思考 — 支持 Claude Opus/Sonnet 及具备推理能力的 OpenRouter 模型；Haiku 不可用)" : "Deep reasoning (adaptive thinking — Claude Opus/Sonnet and reasoning-capable OpenRouter models; not available on Haiku)"}
                     <span className="text-[10px] text-fg-subtle">
-                      default: {detail.deep_reasoning_default ? "on" : "off"}
+                      {isZh ? `默认：${detail.deep_reasoning_default ? "开" : "关"}` : `default: ${detail.deep_reasoning_default ? "on" : "off"}`}
                     </span>
                   </label>
                 )}
 
                 {detail.name === "utility_fast" ? (
                   <p className="text-xs text-fg-muted leading-relaxed">
-                    This model is used for fast, non-specialist calls: the Discord response
-                    gate, Discord thread title generation, parsing human approval replies
-                    (Slack/email), and disambiguating inbound messages when multiple
-                    awaiting_human runs exist. Changing it has no effect on specialist
-                    answers — just on these lightweight classification tasks.
+                    {isZh
+                      ? "此模型用于快速、非专员调用：Discord 响应门控、Discord 帖子标题生成、人类审批回复解析（Slack/邮件），以及在存在多个等待任务时进行消息去歧义。修改此模型不会影响专员问答，仅作用于上述轻量分类调度任务。"
+                      : "This model is used for fast, non-specialist calls: the Discord response gate, Discord thread title generation, parsing human approval replies (Slack/email), and disambiguating inbound messages when multiple awaiting_human runs exist. Changing it has no effect on specialist answers — just on these lightweight classification tasks."}
                   </p>
                 ) : detail.name === "research" ? (
                   <p className="text-xs text-fg-muted leading-relaxed">
-                    This model + deep-reasoning setting drives the executive_research
-                    specialist fan-out (the periodic research scan and the manual
-                    “what should we look into?” run). It applies to all specialists’
-                    research turns at once and is independent of their chat models —
-                    lowering it cuts research cost without touching chat quality. Per-domain
-                    research focus is edited under each specialist below.
+                    {isZh
+                      ? "此模型及深度推理设置驱动 executive_research 专员扇出（定期调研扫描及手动“我们该调研什么？”任务）。它同时作用于所有专员的调研轮次，独立于它们的对话模型 — 降低此配置可节省调研开销而不影响对话质量。各领域的具体调研焦点可在下方对应专员处单独配置。"
+                      : "This model + deep-reasoning setting drives the executive_research specialist fan-out (the periodic research scan and the manual “what should we look into?” run). It applies to all specialists’ research turns at once and is independent of their chat models — lowering it cuts research cost without touching chat quality. Per-domain research focus is edited under each specialist below."}
                   </p>
                 ) : (
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-fg-muted uppercase tracking-widest text-[10px] font-semibold">
-                        System prompt
+                        {isZh ? "系统提示词 (System prompt)" : "System prompt"}
                       </span>
                       <span className="text-[10px] text-fg-subtle">
-                        {draft.prompt.length} chars
+                        {isZh ? `${draft.prompt.length} 字符` : `${draft.prompt.length} chars`}
                       </span>
                     </div>
                     <textarea
@@ -460,7 +459,7 @@ export default function CouncilPage() {
                         onClick={() => setDraft({ ...draft, prompt: detail.prompt_default })}
                         className="mt-2 text-[10px] text-fg-muted hover:text-fg underline"
                       >
-                        Restore default prompt in editor
+                        {isZh ? "在编辑器中恢复默认提示词" : "Restore default prompt in editor"}
                       </button>
                     )}
                   </div>
@@ -471,17 +470,16 @@ export default function CouncilPage() {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-fg-muted uppercase tracking-widest text-[10px] font-semibold">
-                        Research focus
+                        {isZh ? "调研焦点 (Research focus)" : "Research focus"}
                       </span>
                       <span className="text-[10px] text-fg-subtle">
-                        {(draft.research_focus ?? "").length} chars
+                        {(draft.research_focus ?? "").length} {isZh ? "字符" : "chars"}
                       </span>
                     </div>
                     <p className="text-[10px] text-fg-subtle mb-1 leading-relaxed">
-                      The domain-scope block appended to this specialist&apos;s research
-                      turn — what external signals it watches. The shared research
-                      contract (output format, recency / grounding / actionability bars)
-                      is fixed and not editable here.
+                      {isZh
+                        ? "附加到该专员调研轮次的领域范围定义——其监控的外部信号。通用的调研约定（输出格式、时效性/依据/可操作性标准）为固定规则，不可在此修改。"
+                        : "The domain-scope block appended to this specialist's research turn — what external signals it watches. The shared research contract (output format, recency / grounding / actionability bars) is fixed and not editable here."}
                     </p>
                     <textarea
                       value={draft.research_focus ?? ""}
@@ -501,7 +499,7 @@ export default function CouncilPage() {
                         }
                         className="mt-2 text-[10px] text-fg-muted hover:text-fg underline"
                       >
-                        Restore default research focus in editor
+                        {isZh ? "在编辑器中恢复默认调研焦点" : "Restore default research focus in editor"}
                       </button>
                     )}
                   </div>
@@ -513,16 +511,20 @@ export default function CouncilPage() {
                 <div className="rounded-xl border border-line bg-surface px-6 py-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-semibold text-fg">Voice Persona</h3>
+                      <h3 className="text-sm font-semibold text-fg">
+                        {isZh ? "声音人设 (Voice Persona)" : "Voice Persona"}
+                      </h3>
                       <p className="text-xs text-fg-muted mt-0.5">
-                        Sets the Executive&apos;s tone and communication style. The structural prompt stays intact.
+                        {isZh
+                          ? "设定执行官的语气和沟通风格。核心结构性提示词保持不变。"
+                          : "Sets the Executive's tone and communication style. The structural prompt stays intact."}
                       </p>
                     </div>
                     <button
                       onClick={() => { setNewPersonaMode(true); setNewPersonaName(""); setNewPersonaBody(""); }}
                       className="text-xs px-3 py-1.5 rounded-lg border border-line-strong text-fg-muted hover:border-indigo-500/40 hover:text-indigo-300 transition-colors"
                     >
-                      + New
+                      {isZh ? "+ 新建人设" : "+ New"}
                     </button>
                   </div>
 
@@ -533,7 +535,7 @@ export default function CouncilPage() {
                   {/* Persona selector */}
                   <div>
                     <label className="block text-[10px] font-semibold uppercase tracking-widest text-fg-muted mb-1">
-                      Active persona
+                      {isZh ? "当前人设" : "Active persona"}
                     </label>
                     <select
                       value={draft.voice_persona_slug ?? "default"}
@@ -543,14 +545,14 @@ export default function CouncilPage() {
                       {personas.map((p) => (
                         <option key={p.slug} value={p.slug}>
                           {p.display_name}
-                          {p.is_builtin && !p.is_customized ? " · built-in" : ""}
-                          {p.is_customized ? " · customized" : ""}
-                          {!p.is_builtin ? " · custom" : ""}
+                          {p.is_builtin && !p.is_customized ? (isZh ? " · 内置" : " · built-in") : ""}
+                          {p.is_customized ? (isZh ? " · 已自定义" : " · customized") : ""}
+                          {!p.is_builtin ? (isZh ? " · 自定义" : " · custom") : ""}
                         </option>
                       ))}
                     </select>
                     <p className="text-[10px] text-fg-subtle mt-1">
-                      Selection saves with the main Save button above.
+                      {isZh ? "选择后需点击上方的“保存”按钮生效。" : "Selection saves with the main Save button above."}
                     </p>
                   </div>
 
@@ -559,7 +561,7 @@ export default function CouncilPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-muted">
-                          Persona body
+                          {isZh ? "人设内容" : "Persona body"}
                         </span>
                         <div className="flex items-center gap-2">
                           {activePersonaDetail.source_notes && (
@@ -573,7 +575,7 @@ export default function CouncilPage() {
                         type="text"
                         value={personaDisplayNameDraft}
                         onChange={(e) => setPersonaDisplayNameDraft(e.target.value)}
-                        placeholder="Display name"
+                        placeholder={isZh ? "显示名称" : "Display name"}
                         className="w-full px-3 py-2 rounded-lg bg-surface border border-line text-fg focus:border-indigo-500/40 focus:outline-none text-sm"
                       />
                       <textarea
@@ -593,7 +595,7 @@ export default function CouncilPage() {
                               setActivePersonaDetail(updated);
                               setPersonas(await listPersonas());
                             } catch (e) {
-                              setPersonaError(e instanceof Error ? e.message : "Save failed");
+                              setPersonaError(e instanceof Error ? e.message : (isZh ? "保存失败" : "Save failed"));
                             } finally {
                               setSavingPersona(false);
                             }
@@ -601,7 +603,7 @@ export default function CouncilPage() {
                           disabled={savingPersona || !personaBodyDraft.trim()}
                           className="text-xs px-3 py-1.5 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          {savingPersona ? "Saving…" : "Save persona"}
+                          {savingPersona ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存人设" : "Save persona")}
                         </button>
                         {activePersonaDetail.is_builtin && activePersonaDetail.is_customized && (
                           <button
@@ -614,12 +616,12 @@ export default function CouncilPage() {
                                 setPersonaDisplayNameDraft(restored.display_name);
                                 setPersonas(await listPersonas());
                               } catch (e) {
-                                setPersonaError(e instanceof Error ? e.message : "Reset failed");
+                                setPersonaError(e instanceof Error ? e.message : (isZh ? "重置失败" : "Reset failed"));
                               }
                             }}
                             className="text-xs px-3 py-1.5 rounded-lg border border-line-strong text-fg-muted hover:border-amber-500/40 hover:text-amber-400 transition-colors"
                           >
-                            Reset to built-in
+                            {isZh ? "重置为内置默认" : "Reset to built-in"}
                           </button>
                         )}
                         <button
@@ -628,37 +630,37 @@ export default function CouncilPage() {
                             try {
                               const duped = await savePersona(
                                 activePersonaDetail.slug + "-copy",
-                                activePersonaDetail.display_name + " (copy)",
+                                activePersonaDetail.display_name + (isZh ? " (副本)" : " (copy)"),
                                 personaBodyDraft,
                               );
                               const updated = await listPersonas();
                               setPersonas(updated);
                               setDraft((d) => d ? { ...d, voice_persona_slug: duped.slug } : d);
                             } catch (e) {
-                              setPersonaError(e instanceof Error ? e.message : "Duplicate failed");
+                              setPersonaError(e instanceof Error ? e.message : (isZh ? "复制失败" : "Duplicate failed"));
                             }
                           }}
                           className="text-xs px-3 py-1.5 rounded-lg border border-line-strong text-fg-muted hover:border-fg-muted hover:text-fg transition-colors"
                         >
-                          Duplicate
+                          {isZh ? "复制人设" : "Duplicate"}
                         </button>
                         {!activePersonaDetail.is_builtin && (
                           <button
                             onClick={async () => {
                               if (!activePersonaDetail) return;
-                              if (!window.confirm(`Delete persona "${activePersonaDetail.display_name}"?`)) return;
+                              if (!window.confirm(isZh ? `确认删除人设“${activePersonaDetail.display_name}”？` : `Delete persona "${activePersonaDetail.display_name}"?`)) return;
                               try {
                                 await deletePersona(activePersonaDetail.slug);
                                 const updated = await listPersonas();
                                 setPersonas(updated);
                                 setDraft((d) => d ? { ...d, voice_persona_slug: null } : d);
                               } catch (e) {
-                                setPersonaError(e instanceof Error ? e.message : "Delete failed");
+                                setPersonaError(e instanceof Error ? e.message : (isZh ? "删除失败" : "Delete failed"));
                               }
                             }}
                             className="text-xs px-3 py-1.5 rounded-lg border border-line-strong text-red-400 hover:border-red-500/40 hover:bg-red-500/10 transition-colors"
                           >
-                            Delete
+                            {isZh ? "删除" : "Delete"}
                           </button>
                         )}
                       </div>
@@ -668,19 +670,19 @@ export default function CouncilPage() {
                   {/* New persona inline form */}
                   {newPersonaMode && (
                     <div className="mt-2 p-4 rounded-lg border border-line-strong bg-surface space-y-3">
-                      <p className="text-xs font-semibold text-fg">New persona</p>
+                      <p className="text-xs font-semibold text-fg">{isZh ? "新建人设" : "New persona"}</p>
                       <input
                         type="text"
                         value={newPersonaName}
                         onChange={(e) => setNewPersonaName(e.target.value)}
-                        placeholder="Display name (e.g. Elon Musk)"
+                        placeholder={isZh ? "显示名称（例如：埃隆·马斯克）" : "Display name (e.g. Elon Musk)"}
                         className="w-full px-3 py-2 rounded-lg bg-surface-elevated border border-line-strong text-fg text-sm focus:outline-none focus:border-indigo-500/40"
                       />
                       <textarea
                         value={newPersonaBody}
                         onChange={(e) => setNewPersonaBody(e.target.value)}
                         rows={6}
-                        placeholder="Voice and style bullets — e.g. '- Direct and engineering-first...'"
+                        placeholder={isZh ? "语气与风格要点 — 例如：'- 直接且工程优先...'" : "Voice and style bullets — e.g. '- Direct and engineering-first...'"}
                         className="w-full font-mono text-xs px-3 py-2 rounded-lg bg-surface-elevated border border-line-strong text-fg focus:outline-none focus:border-indigo-500/40 resize-y"
                       />
                       <div className="flex gap-2">
@@ -694,19 +696,19 @@ export default function CouncilPage() {
                               setDraft((d) => d ? { ...d, voice_persona_slug: created.slug } : d);
                               setNewPersonaMode(false);
                             } catch (e) {
-                              setPersonaError(e instanceof Error ? e.message : "Create failed");
+                              setPersonaError(e instanceof Error ? e.message : (isZh ? "创建失败" : "Create failed"));
                             }
                           }}
                           disabled={!newPersonaName.trim() || !newPersonaBody.trim()}
                           className="text-xs px-3 py-1.5 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          Create
+                          {isZh ? "创建" : "Create"}
                         </button>
                         <button
                           onClick={() => setNewPersonaMode(false)}
                           className="text-xs px-3 py-1.5 rounded-lg border border-line-strong text-fg-muted hover:text-fg transition-colors"
                         >
-                          Cancel
+                          {isZh ? "取消" : "Cancel"}
                         </button>
                       </div>
                     </div>
@@ -717,16 +719,16 @@ export default function CouncilPage() {
               {detail.name !== "utility_fast" && (
               <div className="rounded-xl border border-line bg-surface px-6 py-5 space-y-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-fg">Test this draft</h3>
+                  <h3 className="text-sm font-semibold text-fg">{isZh ? "测试当前草稿" : "Test this draft"}</h3>
                   <p className="text-xs text-fg-muted mt-0.5">
-                    Run a one-off query with the unsaved settings above. Nothing is persisted.
+                    {isZh ? "使用上方未保存的配置进行单次单轮查询测试。测试内容不会持久化保存。" : "Run a one-off query with the unsaved settings above. Nothing is persisted."}
                   </p>
                 </div>
                 <textarea
                   value={testQuery}
                   onChange={(e) => setTestQuery(e.target.value)}
                   rows={3}
-                  placeholder="Ask the specialist something…"
+                  placeholder={isZh ? "向专员提问…" : "Ask the specialist something…"}
                   className="w-full text-sm px-3 py-2 rounded-lg bg-surface border border-line text-fg focus:border-indigo-500/40 focus:outline-none"
                 />
                 <div className="flex items-center gap-2">
@@ -735,7 +737,7 @@ export default function CouncilPage() {
                     disabled={testing || !testQuery.trim()}
                     className="text-xs px-3 py-1.5 rounded-lg bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {testing ? "Running…" : "Run test"}
+                    {testing ? (isZh ? "运行中…" : "Running…") : (isZh ? "运行测试" : "Run test")}
                   </button>
                   {testError && <span className="text-xs text-red-400">{testError}</span>}
                 </div>
@@ -752,13 +754,13 @@ export default function CouncilPage() {
                   onClick={() => setHistoryOpen((o) => !o)}
                   className="flex items-center justify-between w-full text-sm font-semibold text-fg"
                 >
-                  <span>Version history</span>
-                  <span className="text-xs text-fg-muted">{historyOpen ? "Hide" : "Show"}</span>
+                  <span>{isZh ? "版本历史" : "Version history"}</span>
+                  <span className="text-xs text-fg-muted">{isZh ? (historyOpen ? "收起" : "展开") : (historyOpen ? "Hide" : "Show")}</span>
                 </button>
                 {historyOpen && (
                   <div className="mt-3 space-y-2 max-h-80 overflow-y-auto">
                     {history.length === 0 && (
-                      <p className="text-xs text-fg-subtle">No prior versions for this agent.</p>
+                      <p className="text-xs text-fg-subtle">{isZh ? "该专员暂无历史版本记录。" : "No prior versions for this agent."}</p>
                     )}
                     {history.map((h) => (
                       <div
@@ -771,19 +773,19 @@ export default function CouncilPage() {
                             {[
                               h.model && `model=${h.model}`,
                               h.use_deep_reasoning !== null &&
-                                `deep=${h.use_deep_reasoning ? "on" : "off"}`,
+                                `deep=${h.use_deep_reasoning ? (isZh ? "开" : "on") : (isZh ? "关" : "off")}`,
                               h.role && `role=${h.role}`,
                               h.prompt && `prompt=${h.prompt.slice(0, 60)}…`,
                             ]
                               .filter(Boolean)
-                              .join(" · ") || "(empty override)"}
+                              .join(" · ") || (isZh ? "(空覆盖项)" : "(empty override)")}
                           </p>
                         </div>
                         <button
                           onClick={() => handleRollback(h.id)}
                           className="text-[10px] px-2 py-1 rounded border border-line-strong text-fg hover:bg-surface-overlay hover:text-fg flex-shrink-0"
                         >
-                          Restore
+                          {isZh ? "回滚恢复" : "Restore"}
                         </button>
                       </div>
                     ))}
@@ -792,7 +794,7 @@ export default function CouncilPage() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-fg-muted">Select an agent to edit.</p>
+            <p className="text-sm text-fg-muted">{isZh ? "请在左侧选择要编辑的专员。" : "Select an agent to edit."}</p>
           )}
         </div>
       </main>

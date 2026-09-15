@@ -7,27 +7,38 @@ import {
   type KnowledgeSearchResponse,
   type KnowledgeSourceType,
 } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 interface QueryPanelProps {
   domains: string[];
   onOpenFile?: (kind: "builtin" | "failures", domain: string, filename: string) => void;
 }
 
-const SPECIALISTS = [
-  { id: "", label: "All specialists" },
-  { id: "cso", label: "CSO (Strategy)" },
-  { id: "cfo", label: "CFO (Finance)" },
-  { id: "chro", label: "CHRO (HR)" },
-  { id: "gc", label: "GC (Legal)" },
-  { id: "coo", label: "COO (Operations)" },
-  { id: "cmo", label: "CMO (Marketing)" },
-  { id: "cpo", label: "CPO (Product + Strategy)" },
-  { id: "board_comms", label: "Board Comms (Board + Finance)" },
-];
-
 const ALL_SOURCES: KnowledgeSourceType[] = ["builtin", "company", "failures", "external"];
 
 export default function QueryPanel({ domains, onOpenFile }: QueryPanelProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+
+  const specialistsList = [
+    { id: "", label: isZh ? "所有专家领域" : "All specialists" },
+    { id: "cso", label: isZh ? "CSO（战略）" : "CSO (Strategy)" },
+    { id: "cfo", label: isZh ? "CFO（财务）" : "CFO (Finance)" },
+    { id: "chro", label: isZh ? "CHRO（人力资源）" : "CHRO (HR)" },
+    { id: "gc", label: isZh ? "总法律顾问（法务）" : "GC (Legal)" },
+    { id: "coo", label: isZh ? "COO（运营）" : "COO (Operations)" },
+    { id: "cmo", label: isZh ? "CMO（市场营销）" : "CMO (Marketing)" },
+    { id: "cpo", label: isZh ? "CPO（产品与战略）" : "CPO (Product + Strategy)" },
+    { id: "board_comms", label: isZh ? "董事会沟通（董事会与财务）" : "Board Comms (Board + Finance)" },
+  ];
+
+  const sourceLabels: Record<KnowledgeSourceType, string> = {
+    builtin: isZh ? "内置实践" : "builtin",
+    company: isZh ? "企业文档" : "company",
+    failures: isZh ? "失败教训" : "failures",
+    external: isZh ? "参考资料" : "external",
+  };
+
   const [query, setQuery] = useState("");
   const [specialist, setSpecialist] = useState("");
   const [includes, setIncludes] = useState<Set<KnowledgeSourceType>>(new Set(ALL_SOURCES));
@@ -49,7 +60,7 @@ export default function QueryPanel({ domains, onOpenFile }: QueryPanelProps) {
       });
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Search failed");
+      setError(e instanceof Error ? e.message : (isZh ? "检索失败" : "Search failed"));
     } finally {
       setRunning(false);
     }
@@ -76,10 +87,11 @@ export default function QueryPanel({ domains, onOpenFile }: QueryPanelProps) {
   return (
     <div className="flex flex-col gap-5 max-w-4xl">
       <div>
-        <h2 className="text-base font-semibold text-fg">Query mode</h2>
+        <h2 className="text-base font-semibold text-fg">{isZh ? "检索测试" : "Query mode"}</h2>
         <p className="text-xs text-fg-muted mt-1">
-          Test what the Executive would retrieve for a given question. Distances are
-          cosine — lower is closer.
+          {isZh
+            ? "测试 Executive 在特定问题下会检索调取哪些知识片段。距离采用余弦距离 — 数值越小代表越相关。"
+            : "Test what the Executive would retrieve for a given question. Distances are cosine — lower is closer."}
         </p>
       </div>
 
@@ -94,7 +106,7 @@ export default function QueryPanel({ domains, onOpenFile }: QueryPanelProps) {
                 run();
               }
             }}
-            placeholder="e.g. how should we think about pricing for a new SaaS product?"
+            placeholder={isZh ? "例如：我们应该如何制定新 SaaS 产品的定价策略？" : "e.g. how should we think about pricing for a new SaaS product?"}
             className="flex-1 rounded-lg border border-line-strong bg-surface-elevated px-3 py-2 text-sm text-fg placeholder-fg-subtle focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
           />
           <button
@@ -102,21 +114,21 @@ export default function QueryPanel({ domains, onOpenFile }: QueryPanelProps) {
             disabled={!query.trim() || running}
             className="px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white text-sm font-medium transition-colors"
           >
-            {running ? "Running…" : "Run"}
+            {running ? (isZh ? "检索中…" : "Running…") : (isZh ? "检索" : "Run")}
           </button>
         </div>
 
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <label className="text-[11px] uppercase tracking-widest text-fg-muted">
-              Specialist
+              {isZh ? "专家领域" : "Specialist"}
             </label>
             <select
               value={specialist}
               onChange={(e) => setSpecialist(e.target.value)}
               className="rounded-lg border border-line-strong bg-surface-elevated px-2 py-1 text-xs text-fg focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
             >
-              {SPECIALISTS.map((s) => (
+              {specialistsList.map((s) => (
                 <option key={s.id || "all"} value={s.id}>
                   {s.label}
                 </option>
@@ -126,7 +138,7 @@ export default function QueryPanel({ domains, onOpenFile }: QueryPanelProps) {
 
           <div className="flex items-center gap-2 flex-wrap">
             <label className="text-[11px] uppercase tracking-widest text-fg-muted">
-              Include
+              {isZh ? "包含来源" : "Include"}
             </label>
             {ALL_SOURCES.map((t) => (
               <button
@@ -138,7 +150,7 @@ export default function QueryPanel({ domains, onOpenFile }: QueryPanelProps) {
                     : "bg-surface-overlay/40 text-fg-muted border-line-strong"
                 }`}
               >
-                {t}
+                {sourceLabels[t]}
               </button>
             ))}
           </div>
@@ -146,7 +158,7 @@ export default function QueryPanel({ domains, onOpenFile }: QueryPanelProps) {
 
         <div className="flex items-center gap-2 flex-wrap">
           <label className="text-[11px] uppercase tracking-widest text-fg-muted">
-            Domains
+            {isZh ? "领域过滤" : "Domains"}
           </label>
           {domains.map((d) => (
             <button
@@ -166,7 +178,7 @@ export default function QueryPanel({ domains, onOpenFile }: QueryPanelProps) {
               onClick={() => setSelectedDomains(new Set())}
               className="text-xs text-fg-muted hover:text-fg underline-offset-2 hover:underline"
             >
-              clear
+              {isZh ? "清除" : "clear"}
             </button>
           )}
         </div>
@@ -183,42 +195,42 @@ export default function QueryPanel({ domains, onOpenFile }: QueryPanelProps) {
           <div className="text-xs text-fg-muted space-y-1">
             {result.effective_domains && result.effective_domains.length > 0 ? (
               <p>
-                <span className="text-fg-muted">Domain filter:</span>{" "}
+                <span className="text-fg-muted">{isZh ? "领域过滤：" : "Domain filter:"}</span>{" "}
                 {result.effective_domains.join(", ")}
               </p>
             ) : (
               <p>
-                <span className="text-fg-muted">Domain filter:</span> none (all domains)
+                <span className="text-fg-muted">{isZh ? "领域过滤：" : "Domain filter:"}</span> {isZh ? "全部领域" : "none (all domains)"}
               </p>
             )}
             <p>
-              <span className="text-fg-muted">Specialists that would see these chunks:</span>{" "}
+              <span className="text-fg-muted">{isZh ? "调取这些片段的专家：" : "Specialists that would see these chunks:"}</span>{" "}
               {result.specialists_that_would_see_this.join(", ") || "—"}
             </p>
           </div>
 
           <ResultGroup
-            title="Playbooks"
+            title={isZh ? "最佳实践" : "Playbooks"}
             kind="builtin"
             hits={result.builtin}
             accent="indigo"
             onOpenFile={onOpenFile}
           />
           <ResultGroup
-            title="Failures"
+            title={isZh ? "失败教训" : "Failures"}
             kind="failures"
             hits={result.failures}
             accent="rose"
             onOpenFile={onOpenFile}
           />
           <ResultGroup
-            title="Company documents"
+            title={isZh ? "企业文档" : "Company documents"}
             kind="company"
             hits={result.company}
             accent="emerald"
           />
           <ResultGroup
-            title="Reference Library"
+            title={isZh ? "参考资料库" : "Reference Library"}
             kind="external"
             hits={result.external}
             accent="amber"
@@ -242,6 +254,8 @@ function ResultGroup({
   accent: "indigo" | "rose" | "emerald" | "amber";
   onOpenFile?: (kind: "builtin" | "failures", domain: string, filename: string) => void;
 }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const accentClass = {
     indigo: "text-indigo-400 border-l-indigo-500/40",
     rose: "text-rose-400 border-l-rose-500/50",
@@ -256,10 +270,12 @@ function ResultGroup({
         <h3 className={`text-xs font-semibold uppercase tracking-widest ${accentClass.split(" ")[0]}`}>
           {title}
         </h3>
-        <span className="text-[10px] text-fg-subtle">{hits.length} hit{hits.length === 1 ? "" : "s"}</span>
+        <span className="text-[10px] text-fg-subtle">
+          {hits.length} {isZh ? "条匹配" : `hit${hits.length === 1 ? "" : "s"}`}
+        </span>
       </div>
       {hits.length === 0 ? (
-        <p className="text-xs text-fg-subtle">No matches.</p>
+        <p className="text-xs text-fg-subtle">{isZh ? "无匹配项。" : "No matches."}</p>
       ) : (
         <div className="space-y-2">
           {hits.map((h, i) => (
@@ -279,14 +295,14 @@ function ResultGroup({
                     </>
                   )}
                   <span className="text-fg-muted">·</span>
-                  <span className="text-fg-muted">dist {h.distance.toFixed(3)}</span>
+                  <span className="text-fg-muted">{isZh ? `距离 ${h.distance.toFixed(3)}` : `dist ${h.distance.toFixed(3)}`}</span>
                 </div>
                 {isOpenable && onOpenFile && (
                   <button
                     onClick={() => onOpenFile(kind, h.domain, h.filename)}
                     className="text-[10px] text-fg-muted hover:text-fg transition-colors"
                   >
-                    open →
+                    {isZh ? "打开 →" : "open →"}
                   </button>
                 )}
               </div>

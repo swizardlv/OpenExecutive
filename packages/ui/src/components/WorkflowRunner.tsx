@@ -8,6 +8,7 @@ import {
   WorkflowStepDef,
   runWorkflow,
 } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 type StepState = "pending" | "running" | "done" | "skipped";
 
@@ -28,6 +29,9 @@ export default function WorkflowRunner({
   inputs,
   onCancel,
 }: WorkflowRunnerProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+
   const router = useRouter();
   const [steps, setSteps] = useState<StepStatus[]>(
     workflow.steps.map((s) => ({ def: s, state: "pending" }))
@@ -90,7 +94,7 @@ export default function WorkflowRunner({
       return;
     }
     if (evt.type === "error") {
-      setError(evt.message ?? "Workflow failed");
+      setError(evt.message ?? (isZh ? "工作流执行失败" : "Workflow failed"));
       return;
     }
   }
@@ -104,17 +108,17 @@ export default function WorkflowRunner({
             onClick={handleStart}
             className="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition"
           >
-            Run job
+            {isZh ? "开始执行任务" : "Run job"}
           </button>
           <button
             type="button"
             onClick={onCancel}
             className="px-4 py-2 rounded-md border border-line-strong text-fg hover:text-fg hover:border-line-strong text-sm transition"
           >
-            Cancel
+            {isZh ? "取消" : "Cancel"}
           </button>
           <span className="text-xs text-fg-muted ml-auto">
-            ~{workflow.estimated_minutes} min · {workflow.steps.length} steps
+            ~{workflow.estimated_minutes} {isZh ? "分钟" : "min"} · {workflow.steps.length} {isZh ? "个步骤" : "steps"}
           </span>
         </div>
       )}
@@ -122,17 +126,25 @@ export default function WorkflowRunner({
       {started && (
         <div className="rounded-lg border border-line bg-surface/40 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-fg">Progress</h3>
+            <h3 className="text-sm font-semibold text-fg">
+              {isZh ? "执行进度" : "Progress"}
+            </h3>
             {streaming && (
               <span className="text-xs text-amber-400 flex items-center gap-1.5">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                Running
+                {isZh ? "执行中" : "Running"}
               </span>
             )}
             {!streaming && !error && runId && (
-              <span className="text-xs text-emerald-400">Complete</span>
+              <span className="text-xs text-emerald-400">
+                {isZh ? "已完成" : "Complete"}
+              </span>
             )}
-            {error && <span className="text-xs text-red-400">Failed</span>}
+            {error && (
+              <span className="text-xs text-red-400">
+                {isZh ? "失败" : "Failed"}
+              </span>
+            )}
           </div>
           <ol className="space-y-3">
             {steps.map((s, i) => (
@@ -144,7 +156,15 @@ export default function WorkflowRunner({
                       {s.def.title}
                     </div>
                     <div className="text-[10px] text-fg-muted uppercase tracking-wide">
-                      {s.state}
+                      {isZh
+                        ? s.state === "pending"
+                          ? "等待中"
+                          : s.state === "running"
+                          ? "执行中"
+                          : s.state === "done"
+                          ? "已完成"
+                          : "已跳过"
+                        : s.state}
                     </div>
                   </div>
                   <div className="text-xs text-fg-muted mt-0.5">
@@ -161,7 +181,9 @@ export default function WorkflowRunner({
           </ol>
           {error && (
             <div className="mt-4 text-sm text-red-400 bg-red-500/5 border border-red-500/20 rounded-md p-3">
-              <div className="font-medium mb-1">Workflow failed</div>
+              <div className="font-medium mb-1">
+                {isZh ? "工作流执行失败" : "Workflow failed"}
+              </div>
               <div className="text-xs">{error}</div>
             </div>
           )}

@@ -6,12 +6,17 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { WorkflowRunDetail, getWorkflowRun } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
+import { getWorkflowTitle } from "@/lib/workflowI18n";
 
-function formatTimestamp(iso: string): string {
-  return new Date(iso).toLocaleString();
+function formatTimestamp(iso: string, isZh?: boolean): string {
+  return new Date(iso).toLocaleString(isZh ? "zh-CN" : undefined);
 }
 
 export default function RunDetailPage() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+
   const params = useParams<{ id: string }>();
   const runId = params?.id;
   const [run, setRun] = useState<WorkflowRunDetail | null>(null);
@@ -52,9 +57,9 @@ export default function RunDetailPage() {
   if (error) {
     return (
       <div className="flex flex-col h-full bg-surface text-fg items-center justify-center">
-        <div className="text-sm text-red-400 mb-4">Error: {error}</div>
+        <div className="text-sm text-red-400 mb-4">{isZh ? "出错了" : "Error"}: {error}</div>
         <Link href="/jobs" className="text-sm text-fg-muted hover:text-fg">
-          ← Back to jobs
+          {isZh ? "← 返回任务流列表" : "← Back to jobs"}
         </Link>
       </div>
     );
@@ -63,7 +68,7 @@ export default function RunDetailPage() {
   if (!run) {
     return (
       <div className="flex flex-col h-full bg-surface text-fg-muted items-center justify-center text-sm">
-        Loading…
+        {isZh ? "加载中…" : "Loading…"}
       </div>
     );
   }
@@ -78,8 +83,12 @@ export default function RunDetailPage() {
                 {run.title}
               </h1>
               <div className="text-xs text-fg-muted">
-                {run.workflow_name} · created {formatTimestamp(run.created_at)} ·
-                status <StatusPill status={run.status} />
+                {getWorkflowTitle(run.workflow_name, run.workflow_name, locale)} ·{" "}
+                {isZh
+                  ? `创建于 ${formatTimestamp(run.created_at, true)}`
+                  : `created ${formatTimestamp(run.created_at)}`}{" "}
+                · {isZh ? "状态 " : "status "}
+                <StatusPill status={run.status} isZh={isZh} />
               </div>
             </div>
             {run.artifact && (
@@ -89,14 +98,14 @@ export default function RunDetailPage() {
                   onClick={handleCopy}
                   className="text-xs text-fg-muted hover:text-fg transition px-3 py-1.5 rounded-md border border-line hover:bg-surface-overlay min-h-touch"
                 >
-                  {copied ? "Copied!" : "Copy"}
+                  {copied ? (isZh ? "已复制！" : "Copied!") : (isZh ? "复制" : "Copy")}
                 </button>
                 <button
                   type="button"
                   onClick={handleDownload}
                   className="text-xs text-fg-muted hover:text-fg transition px-3 py-1.5 rounded-md border border-line hover:bg-surface-overlay min-h-touch"
                 >
-                  Download .md
+                  {isZh ? "下载 .md" : "Download .md"}
                 </button>
               </div>
             )}
@@ -104,13 +113,13 @@ export default function RunDetailPage() {
 
           {run.status === "running" && (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-300">
-              This run is still in progress. Refresh in a moment.
+              {isZh ? "此任务正在执行中，请稍后刷新。" : "This run is still in progress. Refresh in a moment."}
             </div>
           )}
 
           {run.status === "error" && (
             <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-300">
-              <div className="font-medium mb-1">Run failed</div>
+              <div className="font-medium mb-1">{isZh ? "执行失败" : "Run failed"}</div>
               <div className="text-xs">{run.error}</div>
             </div>
           )}
@@ -143,7 +152,7 @@ export default function RunDetailPage() {
 
           <details className="rounded-md border border-line bg-surface/30 px-4 py-3 text-sm">
             <summary className="text-xs text-fg-muted cursor-pointer">
-              Inputs
+              {isZh ? "输入参数" : "Inputs"}
             </summary>
             <pre className="mt-3 text-xs text-fg whitespace-pre-wrap font-mono">
               {JSON.stringify(run.inputs, null, 2)}
@@ -155,12 +164,15 @@ export default function RunDetailPage() {
   );
 }
 
-function StatusPill({ status }: { status: string }) {
+function StatusPill({ status, isZh }: { status: string; isZh?: boolean }) {
   const color =
     status === "done"
       ? "text-emerald-400"
       : status === "error"
       ? "text-red-400"
       : "text-amber-400";
-  return <span className={`${color} font-medium`}>{status}</span>;
+  const label = isZh
+    ? (status === "done" ? "已完成" : status === "error" ? "失败" : "执行中")
+    : status;
+  return <span className={`${color} font-medium`}>{label}</span>;
 }

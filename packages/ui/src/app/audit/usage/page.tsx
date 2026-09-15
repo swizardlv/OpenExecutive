@@ -11,6 +11,7 @@ import {
   type UsageSummary,
   type UsageTotals,
 } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 function fmtInt(n: number): string {
   return (n ?? 0).toLocaleString();
@@ -65,13 +66,18 @@ function UsageRowCells({ u }: { u: UsageTotals }) {
   );
 }
 
-const COL_HEADERS = ["Calls", "Input", "Cache read", "Cache write", "Output", "Searches", "Cached", "Cost"];
+const COL_HEADERS_EN = ["Calls", "Input", "Cache read", "Cache write", "Output", "Searches", "Cached", "Cost"];
+const COL_HEADERS_ZH = ["调用次数", "输入", "缓存读取", "缓存写入", "输出", "搜索", "缓存率", "费用"];
 
 // Debounce window for refetching as the date-range filter changes (matches
 // the /audit list page).
 const DEBOUNCE_MS = 250;
 
 export default function TokenUsagePage() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+  const colHeaders = isZh ? COL_HEADERS_ZH : COL_HEADERS_EN;
+
   const [data, setData] = useState<UsageSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,11 +101,11 @@ export default function TokenUsagePage() {
     try {
       setData(await getAuditUsage(params));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(e instanceof Error ? e.message : (isZh ? "加载失败" : "Failed to load"));
     } finally {
       setLoading(false);
     }
-  }, [params]);
+  }, [params, isZh]);
 
   useEffect(() => {
     if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
@@ -120,25 +126,24 @@ export default function TokenUsagePage() {
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between gap-4">
-            <h1 className="text-xl font-semibold text-fg">Token usage</h1>
+            <h1 className="text-xl font-semibold text-fg">{isZh ? "Token 用量统计" : "Token usage"}</h1>
             <Link
               href="/audit"
               className="text-xs text-fg-muted hover:text-fg underline-offset-2 hover:underline"
             >
-              ← Audit log
+              {isZh ? "← 审计日志" : "← Audit log"}
             </Link>
           </div>
           <p className="mt-1 text-sm text-fg-muted">
-            Aggregate token usage and cost across all sessions, summed from the
-            audit log. Days are UTC. Cost is the actual OpenRouter charge captured
-            per call — it accrues from when cost tracking went live, so calls
-            logged before then count tokens but $0.
+            {isZh
+              ? "按审计日志聚合汇总的所有会话 Token 用量和成本。日期为 UTC。费用为每次调用记录的 OpenRouter 实际支出。"
+              : "Aggregate token usage and cost across all sessions, summed from the audit log. Days are UTC. Cost is the actual OpenRouter charge captured per call — it accrues from when cost tracking went live, so calls logged before then count tokens but $0."}
           </p>
 
           {/* Date-range filter */}
           <div className="mt-5 grid grid-cols-1 md:grid-cols-4 gap-3">
             <label className="text-xs text-fg-muted flex flex-col gap-1">
-              From
+              {isZh ? "起始时间" : "From"}
               <input
                 type="datetime-local"
                 value={since}
@@ -147,7 +152,7 @@ export default function TokenUsagePage() {
               />
             </label>
             <label className="text-xs text-fg-muted flex flex-col gap-1">
-              Until
+              {isZh ? "截止时间" : "Until"}
               <input
                 type="datetime-local"
                 value={until}
@@ -163,11 +168,13 @@ export default function TokenUsagePage() {
                 }}
                 className="px-3 py-1.5 rounded-lg bg-surface-overlay hover:bg-surface-input text-sm border border-line-strong"
               >
-                Clear filters
+                {isZh ? "清除筛选" : "Clear filters"}
               </button>
             </div>
             <div className="text-xs text-fg-muted flex items-end pb-1.5">
-              {loading ? "Loading…" : `${fmtInt(totals?.calls ?? 0)} calls`}
+              {loading
+                ? (isZh ? "加载中…" : "Loading…")
+                : `${fmtInt(totals?.calls ?? 0)} ${isZh ? "次调用" : "calls"}`}
             </div>
           </div>
 
@@ -180,30 +187,44 @@ export default function TokenUsagePage() {
           {/* Totals */}
           {totals ? (
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              <StatCard label="Cost (USD)" value={fmtCost(totals.cost_usd)} hint="actual charged" />
-              <StatCard label="Calls" value={fmtInt(totals.calls)} />
-              <StatCard label="Cache hit" value={`${cacheHitPct(totals)}%`} hint="of prompt input served from cache" />
-              <StatCard label="Output tokens" value={fmtInt(totals.output_tokens)} />
-              <StatCard label="Fresh input" value={fmtInt(totals.input_tokens)} />
-              <StatCard label="Cache read" value={fmtInt(totals.cache_read_input_tokens)} />
-              <StatCard label="Cache write" value={fmtInt(totals.cache_creation_input_tokens)} />
-              <StatCard label="Searches" value={fmtInt(totals.web_search_requests ?? 0)} hint="server-side web searches" />
+              <StatCard
+                label={isZh ? "费用 (USD)" : "Cost (USD)"}
+                value={fmtCost(totals.cost_usd)}
+                hint={isZh ? "实际支出" : "actual charged"}
+              />
+              <StatCard label={isZh ? "调用次数" : "Calls"} value={fmtInt(totals.calls)} />
+              <StatCard
+                label={isZh ? "缓存命中率" : "Cache hit"}
+                value={`${cacheHitPct(totals)}%`}
+                hint={isZh ? "来自缓存的输入 Token 占比" : "of prompt input served from cache"}
+              />
+              <StatCard label={isZh ? "输出 Token" : "Output tokens"} value={fmtInt(totals.output_tokens)} />
+              <StatCard label={isZh ? "全新输入 Token" : "Fresh input"} value={fmtInt(totals.input_tokens)} />
+              <StatCard label={isZh ? "缓存读取 Token" : "Cache read"} value={fmtInt(totals.cache_read_input_tokens)} />
+              <StatCard label={isZh ? "缓存写入 Token" : "Cache write"} value={fmtInt(totals.cache_creation_input_tokens)} />
+              <StatCard
+                label={isZh ? "搜索请求" : "Searches"}
+                value={fmtInt(totals.web_search_requests ?? 0)}
+                hint={isZh ? "服务端网络搜索" : "server-side web searches"}
+              />
             </div>
           ) : null}
 
           {/* By source */}
           {data && data.by_source && data.by_source.length > 0 ? (
             <section className="mt-8">
-              <h2 className="text-sm font-medium text-fg mb-2">By source</h2>
+              <h2 className="text-sm font-medium text-fg mb-2">{isZh ? "按调用源统计" : "By source"}</h2>
               <p className="text-xs text-fg-muted mb-2">
-                Which part of the system made the calls: chat turns, research specialists, the research routing and watchlist passes, triage, memory extraction.
+                {isZh
+                  ? "系统各模块发起的模型调用分布：对话轮次、调研专员、调研路由与监控巡检、分类与记忆提取。"
+                  : "Which part of the system made the calls: chat turns, research specialists, the research routing and watchlist passes, triage, memory extraction."}
               </p>
               <div className="rounded-xl border border-line overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-surface-elevated/60 text-fg-muted text-xs">
-                      <th className="px-3 py-2 text-left font-medium">Source</th>
-                      {COL_HEADERS.map((h) => (
+                      <th className="px-3 py-2 text-left font-medium">{isZh ? "调用源" : "Source"}</th>
+                      {colHeaders.map((h) => (
                         <th key={h} className="px-3 py-2 text-right font-medium">{h}</th>
                       ))}
                     </tr>
@@ -224,13 +245,13 @@ export default function TokenUsagePage() {
           {/* By model */}
           {data && data.by_model.length > 0 ? (
             <section className="mt-8">
-              <h2 className="text-sm font-medium text-fg mb-2">By model</h2>
+              <h2 className="text-sm font-medium text-fg mb-2">{isZh ? "按模型统计" : "By model"}</h2>
               <div className="rounded-xl border border-line overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-surface-elevated/60 text-fg-muted text-xs">
-                      <th className="px-3 py-2 text-left font-medium">Model</th>
-                      {COL_HEADERS.map((h) => (
+                      <th className="px-3 py-2 text-left font-medium">{isZh ? "模型" : "Model"}</th>
+                      {colHeaders.map((h) => (
                         <th key={h} className="px-3 py-2 text-right font-medium">{h}</th>
                       ))}
                     </tr>
@@ -251,13 +272,13 @@ export default function TokenUsagePage() {
           {/* By day */}
           {data && data.by_day.length > 0 ? (
             <section className="mt-8">
-              <h2 className="text-sm font-medium text-fg mb-2">By day (UTC)</h2>
+              <h2 className="text-sm font-medium text-fg mb-2">{isZh ? "按日期统计 (UTC)" : "By day (UTC)"}</h2>
               <div className="rounded-xl border border-line overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-surface-elevated/60 text-fg-muted text-xs">
-                      <th className="px-3 py-2 text-left font-medium">Day</th>
-                      {COL_HEADERS.map((h) => (
+                      <th className="px-3 py-2 text-left font-medium">{isZh ? "日期" : "Day"}</th>
+                      {colHeaders.map((h) => (
                         <th key={h} className="px-3 py-2 text-right font-medium">{h}</th>
                       ))}
                     </tr>
@@ -285,7 +306,7 @@ export default function TokenUsagePage() {
 
           {!loading && data && data.by_model.length === 0 ? (
             <div className="mt-8 text-sm text-fg-muted">
-              No token usage recorded for this range yet.
+              {isZh ? "当前时间范围内暂无 Token 用量记录。" : "No token usage recorded for this range yet."}
             </div>
           ) : null}
         </div>

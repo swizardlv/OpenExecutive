@@ -7,6 +7,7 @@ import BrandMark from "./BrandMark";
 import CommitteePhaseIndicator from "./CommitteePhaseIndicator";
 import Icon from "./Icon";
 import InfoTip from "./InfoTip";
+import { useI18n } from "@/lib/i18n";
 import {
   MAX_FILES_PER_TURN,
   mergePickedFiles,
@@ -24,38 +25,35 @@ interface ChatProps {
   onDebugEvent?: (event: DebugEvent) => void;
   initialMessages?: ChatMessage[];
   initialSessionId?: string;
-  // Pre-populate the input box on first render. Used when entering chat
-  // mode from a briefing item — the parent seeds a "Tell me about: …"
-  // prompt that the user can edit before sending. Only consumed on mount
-  // for a given session; subsequent changes are ignored to avoid clobbering
-  // the user's typing.
   initialInput?: string;
-  // When true AND `initialInput` is non-empty, submit it as the first turn
-  // automatically instead of leaving it as a draft. Briefing handoffs
-  // (Discuss / Approve / Dismiss / Edit&Approve) use this — the user has
-  // already committed by clicking the action; making them hit Send again
-  // is friction. One-shot per mount; ignored on subsequent prop updates.
   autoSubmitInitialInput?: boolean;
   onTurnComplete?: (sessionId: string) => void;
   onTurnStart?: () => void;
 }
 
-// Static fallbacks used only when the /chat/suggested-prompts fetch fails
-// entirely (network error, aborted, etc). The backend always returns these
-// same values on its own failure paths, so the happy path never shows them.
-const SUGGESTED_PROMPTS = [
+const SUGGESTED_PROMPTS_EN = [
   "Where did we land on this quarter's priorities?",
   "Pull the team in on a decision I'm sitting on.",
   "Let's review the board update before it goes out.",
   "What's changed since our last sync?",
 ];
 
-const FALLBACK_SUBTITLE =
+const SUGGESTED_PROMPTS_ZH = [
+  "我们这季度的战略重点确定得如何了？",
+  "拉进管理层，讨论我目前拿不准的一项决策。",
+  "在发出前，一起过一遍向董事会的汇报材料。",
+  "自上次同步以来，有哪些最新进展与变化？",
+];
+
+const FALLBACK_SUBTITLE_EN =
   "Pick up where we left off — decisions to revisit, drafts to push forward, people to pull in.";
+const FALLBACK_SUBTITLE_ZH =
+  "随时继续推进工作 — 重温待决事项、推进文档草案、协同各部门团队。";
 
 export default function Chat({ onDebugEvent, initialMessages, initialSessionId, initialInput, autoSubmitInitialInput, onTurnComplete, onTurnStart }: ChatProps) {
   const { data: session } = useSession();
   const firstName = session?.user?.name?.trim().split(/\s+/)[0];
+  const { locale, t } = useI18n();
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput] = useState(initialInput ?? "");
@@ -68,8 +66,11 @@ export default function Chat({ onDebugEvent, initialMessages, initialSessionId, 
   const [isConsulting, setIsConsulting] = useState(false);
   const [committeeEnabled, setCommitteeEnabled] = useState(false);
   const [committeePhase, setCommitteePhase] = useState<CommitteePhase | null>(null);
-  const [suggested, setSuggested] = useState<string[]>([]);
-  const [subtitle, setSubtitle] = useState<string>(FALLBACK_SUBTITLE);
+  const fallbackPrompts = locale === "zh" ? SUGGESTED_PROMPTS_ZH : SUGGESTED_PROMPTS_EN;
+  const fallbackSubtitle = locale === "zh" ? FALLBACK_SUBTITLE_ZH : FALLBACK_SUBTITLE_EN;
+
+  const [suggested, setSuggested] = useState<string[]>(fallbackPrompts);
+  const [subtitle, setSubtitle] = useState<string>(fallbackSubtitle);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(true);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -79,23 +80,32 @@ export default function Chat({ onDebugEvent, initialMessages, initialSessionId, 
   const adoptedSessionIdRef = useRef<string | undefined>(initialSessionId);
 
   useEffect(() => {
+    setSuggested(locale === "zh" ? SUGGESTED_PROMPTS_ZH : SUGGESTED_PROMPTS_EN);
+    setSubtitle(locale === "zh" ? FALLBACK_SUBTITLE_ZH : FALLBACK_SUBTITLE_EN);
+  }, [locale]);
+
+  useEffect(() => {
     const ctrl = new AbortController();
     getSuggestedPrompts(ctrl.signal)
       .then((r) => {
-        if (r.prompts.length >= 4) setSuggested(r.prompts.slice(0, 4));
-        else setSuggested(SUGGESTED_PROMPTS);
-        if (r.subtitle) setSubtitle(r.subtitle);
+        if (locale === "zh") {
+          setSuggested(SUGGESTED_PROMPTS_ZH);
+          setSubtitle(FALLBACK_SUBTITLE_ZH);
+        } else {
+          if (r.prompts.length >= 4) setSuggested(r.prompts.slice(0, 4));
+          else setSuggested(SUGGESTED_PROMPTS_EN);
+          if (r.subtitle) setSubtitle(r.subtitle);
+        }
         setIsLoadingPrompts(false);
       })
       .catch((err: unknown) => {
-        // Abort on unmount is expected — don't flip loading off so we don't
-        // briefly flash the static fallback before the component is gone.
         if (err instanceof DOMException && err.name === "AbortError") return;
-        setSuggested(SUGGESTED_PROMPTS);
+        setSuggested(locale === "zh" ? SUGGESTED_PROMPTS_ZH : SUGGESTED_PROMPTS_EN);
+        setSubtitle(locale === "zh" ? FALLBACK_SUBTITLE_ZH : FALLBACK_SUBTITLE_EN);
         setIsLoadingPrompts(false);
       });
     return () => ctrl.abort();
-  }, []);
+  }, [locale]);
 
   // Sync when parent selects a different session (or clears for new chat).
   // Skip when the prop change is the parent echoing back an id this turn
@@ -412,7 +422,7 @@ export default function Chat({ onDebugEvent, initialMessages, initialSessionId, 
               value={input}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
-              placeholder="What's on your mind?"
+              placeholder={t("chat.placeholder", "What's on your mind?")}
               rows={1}
               disabled={isLoading}
               aria-label="Message"
@@ -423,7 +433,7 @@ export default function Chat({ onDebugEvent, initialMessages, initialSessionId, 
               type="button"
               onClick={() => setCommitteeEnabled((v) => !v)}
               disabled={isLoading}
-              title="Committee review: slower, higher-quality response — adversarial review pass before sending"
+              title={locale === "zh" ? "委员会联合评审：多位专员交叉审查与对抗推演" : "Committee review: slower, higher-quality response — adversarial review pass before sending"}
               aria-pressed={committeeEnabled}
               className={
                 "flex-shrink-0 min-h-touch px-3 rounded-xl text-xs font-medium transition-all duration-150 border cursor-pointer " +
@@ -433,24 +443,29 @@ export default function Chat({ onDebugEvent, initialMessages, initialSessionId, 
                 " disabled:opacity-30 disabled:cursor-not-allowed"
               }
             >
-              Committee
+              {locale === "zh" ? "委员会评审" : "Committee"}
             </button>
             <button
               type="button"
               onClick={() => handleSend()}
               disabled={(!input.trim() && pendingFiles.length === 0) || isLoading}
-              aria-label="Send message"
+              aria-label={t("chat.send", "Send message")}
               className="flex-shrink-0 min-h-touch min-w-touch w-10 h-10 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150 flex items-center justify-center cursor-pointer"
             >
               <Icon name="arrow-send" size="w-4 h-4" className="text-white" />
             </button>
           </div>
           <p className="text-center text-xs text-fg-muted mt-2 inline-flex items-center justify-center gap-1.5 w-full">
-            <span className="hidden sm:inline">Enter to send · Shift+Enter for new line</span>
-            <span className="sm:hidden">Tap send</span>
+            <span className="hidden sm:inline">
+              {locale === "zh" ? "Enter 发送 · Shift+Enter 换行" : "Enter to send · Shift+Enter for new line"}
+            </span>
+            <span className="sm:hidden">
+              {locale === "zh" ? "点击发送" : "Tap send"}
+            </span>
             <InfoTip align="right">
-              Your Executive routes your question to the right specialist
-              behind the scenes — you don&apos;t pick which one.
+              {locale === "zh"
+                ? "执行官会在幕后自动分发问题给对口专员协同推演，无需手动指派。"
+                : "Your Executive routes your question to the right specialist behind the scenes — you don't pick which one."}
             </InfoTip>
           </p>
         </div>

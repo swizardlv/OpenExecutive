@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/Icon";
+import { useI18n } from "@/lib/i18n";
 import {
-  BRIEFING_DESCRIPTION,
+  getBriefingDescription,
+  getNewChatDescription,
+  getPulseNavItem,
   NavGroup,
-  NEW_CHAT_DESCRIPTION,
-  PULSE_NAV_ITEM,
 } from "@/components/shell/navConfig";
 
 interface SidebarNavProps {
@@ -27,6 +28,9 @@ export default function SidebarNav({
   onNewChat,
   onNavigate,
 }: SidebarNavProps) {
+  const { locale, t } = useI18n();
+  const pulseItem = getPulseNavItem(locale);
+
   // Explicit user toggles; absent keys fall back to "open only the first
   // section" so the menu starts short and the rest are tucked away.
   const [collapsedOverride, setCollapsedOverride] = useState<Record<string, boolean>>({});
@@ -38,13 +42,11 @@ export default function SidebarNav({
 
   return (
     <nav className="px-2 pt-3 pb-2 space-y-0.5">
-      {/* New chat first — the single most-used action in a chat-first
-          product, kept at the top of the sidebar to match the persistent
-          rail (see AppShell) so the two navs agree on every route. */}
+      {/* New chat */}
       <button
         type="button"
         onClick={onNewChat}
-        title={NEW_CHAT_DESCRIPTION}
+        title={getNewChatDescription(locale)}
         className={`w-full text-left px-3 py-2.5 min-h-touch rounded-lg flex items-center gap-2.5 text-sm font-medium transition-colors cursor-pointer ${
           newChatActive
             ? "bg-surface-overlay text-fg"
@@ -52,12 +54,12 @@ export default function SidebarNav({
         }`}
       >
         <Icon name="plus" size="w-4 h-4" />
-        New chat
+        {t("nav.newChat", "New chat")}
       </button>
       <button
         type="button"
         onClick={onBriefing}
-        title={BRIEFING_DESCRIPTION}
+        title={getBriefingDescription(locale)}
         className={`w-full text-left px-3 py-2.5 min-h-touch rounded-lg flex items-center gap-2.5 text-sm font-medium transition-colors cursor-pointer ${
           briefingActive
             ? "bg-surface-overlay text-fg"
@@ -65,18 +67,17 @@ export default function SidebarNav({
         }`}
       >
         <Icon name="clipboard" size="w-4 h-4" />
-        Briefing
+        {t("nav.briefing", "Briefing")}
       </button>
-      {/* Pulse — pinned beside Briefing/New chat as an always-visible
-          destination, mirroring the persistent rail. */}
+      {/* Pulse */}
       <Link
-        href={PULSE_NAV_ITEM.href}
+        href={pulseItem.href}
         onClick={onNavigate}
-        title={PULSE_NAV_ITEM.description}
+        title={pulseItem.description}
         className="w-full text-left px-3 py-2.5 min-h-touch rounded-lg flex items-center gap-2.5 text-sm font-medium transition-colors cursor-pointer text-fg-muted hover:bg-surface-overlay hover:text-fg"
       >
-        <Icon name={PULSE_NAV_ITEM.icon} size="w-4 h-4" />
-        {PULSE_NAV_ITEM.label}
+        <Icon name={pulseItem.icon} size="w-4 h-4" />
+        {pulseItem.label}
       </Link>
 
       {sections.map((section, index) => {

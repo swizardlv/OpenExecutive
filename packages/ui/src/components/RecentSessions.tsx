@@ -5,6 +5,7 @@ import Icon from "@/components/Icon";
 import type { SessionSummary } from "@/lib/api";
 import { groupSessionsByDate, type GroupKey } from "@/lib/sessionGroups";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { useI18n } from "@/lib/i18n";
 
 const GROUP_CAP = 8;
 const DEFAULT_COLLAPSED = new Set<GroupKey>(["prev30", "older"]);
@@ -22,6 +23,7 @@ export default function RecentSessions({
   onSelect,
   onDelete,
 }: RecentSessionsProps) {
+  const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
   const [collapsedOverride, setCollapsedOverride] = useState<Record<string, boolean>>({});
   const [showAll, setShowAll] = useState<Set<string>>(new Set());
@@ -32,11 +34,11 @@ export default function RecentSessions({
   const filtered = useMemo(() => {
     if (!searching) return sessions;
     return sessions.filter((s) =>
-      (s.title || "Untitled chat").toLowerCase().includes(trimmedQuery),
+      (s.title || t("recent.untitled")).toLowerCase().includes(trimmedQuery),
     );
-  }, [sessions, searching, trimmedQuery]);
+  }, [sessions, searching, trimmedQuery, t]);
 
-  const groups = useMemo(() => groupSessionsByDate(filtered), [filtered]);
+  const groups = useMemo(() => groupSessionsByDate(filtered, new Date(), locale), [filtered, locale]);
 
   if (sessions.length === 0) return null;
 
@@ -56,7 +58,7 @@ export default function RecentSessions({
       {/* Pinned header — label + search, stays put while the list scrolls */}
       <div className="flex-shrink-0 px-2 pt-3 pb-2">
         <p className="px-2 pb-1.5 text-xs text-fg-subtle font-medium uppercase tracking-wide">
-          Recent
+          {t("recent.title")}
         </p>
         <div className="relative">
           <Icon
@@ -68,8 +70,8 @@ export default function RecentSessions({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search conversations"
-            aria-label="Search conversations"
+            placeholder={t("recent.searchPlaceholder")}
+            aria-label={t("recent.searchPlaceholder")}
             className="w-full rounded-lg bg-surface-input/60 border border-line pl-7 pr-2 py-1.5 text-xs text-fg placeholder:text-fg-subtle focus:outline-none focus:border-fg-subtle"
           />
         </div>
@@ -78,7 +80,7 @@ export default function RecentSessions({
       {/* Scrollable list */}
       <div className="overflow-y-auto min-h-0 max-h-[75vh] px-2 pb-2">
         {groups.length === 0 ? (
-          <p className="px-2 py-3 text-xs text-fg-subtle">No conversations match.</p>
+          <p className="px-2 py-3 text-xs text-fg-subtle">{t("recent.noMatch")}</p>
         ) : (
           groups.map((group) => {
             const collapsed = isCollapsed(group.key);
@@ -120,16 +122,16 @@ export default function RecentSessions({
                           className="flex-1 min-w-0 text-left px-2 py-2 pr-10 cursor-pointer"
                         >
                           <p className="text-xs truncate leading-snug">
-                            {s.title || "Untitled chat"}
+                            {s.title || t("recent.untitled")}
                           </p>
                           <p className="text-[10px] text-fg-subtle mt-0.5">
-                            {formatRelativeTime(s.updated_at)}
+                            {formatRelativeTime(s.updated_at, locale)}
                           </p>
                         </button>
                         <button
                           type="button"
-                          aria-label="Delete chat"
-                          title="Delete chat"
+                          aria-label={t("recent.deleteChat")}
+                          title={t("recent.deleteChat")}
                           onClick={(e) => {
                             e.stopPropagation();
                             onDelete(s.session_id);
@@ -146,7 +148,7 @@ export default function RecentSessions({
                         onClick={() => revealAll(group.key)}
                         className="w-full text-left px-2 py-1.5 text-[11px] text-fg-subtle hover:text-fg cursor-pointer"
                       >
-                        Show {hiddenCount} more
+                        {locale === "zh" ? `显示更多 (${hiddenCount})` : `Show ${hiddenCount} more`}
                       </button>
                     )}
                   </div>

@@ -39,6 +39,7 @@ import InfoTip from "./InfoTip";
 import { phaseLabel } from "./onboarding/meta";
 import { SectionHeading } from "./memories/shared";
 import { PIPELINE_STAGES, STAGE_META, STATUS_META } from "./talent/stages";
+import { useI18n } from "@/lib/i18n";
 
 // Future-relative label for a pending run time ("in 8h"). Past/blank →
 // "soon" (the caller renders "overdue" separately via the backend flag).
@@ -481,33 +482,65 @@ function briefingStats(args: {
   inFlight: number;
   monitoring: number;
   searchesNeedingAttention: number;
+  locale?: string;
 }): StatPill[] {
+  const isZh = args.locale === "zh";
   const pills: StatPill[] = [];
   const peopleTargets = [SECTION_IDS.people];
   if (args.needsYou > 0)
-    pills.push({ label: `${args.needsYou} need${args.needsYou === 1 ? "s" : ""} you`, tone: "indigo", targetIds: [SECTION_IDS.needsYou] });
+    pills.push({
+      label: isZh ? `${args.needsYou} 项待您决策` : `${args.needsYou} need${args.needsYou === 1 ? "s" : ""} you`,
+      tone: "indigo",
+      targetIds: [SECTION_IDS.needsYou],
+    });
   // What the Executive already did on its own — shown right after the ask,
   // so the first read is "N need you, it handled M" (trust + relief).
   if (args.handledOvernight > 0)
-    pills.push({ label: `Executive handled ${args.handledOvernight} overnight`, tone: "sky", targetIds: [SECTION_IDS.handled] });
+    pills.push({
+      label: isZh ? `夜间已处理 ${args.handledOvernight} 项` : `Executive handled ${args.handledOvernight} overnight`,
+      tone: "sky",
+      targetIds: [SECTION_IDS.handled],
+    });
   if (args.peopleOverdue > 0)
-    pills.push({ label: `${args.peopleOverdue} overdue`, tone: "rose", targetIds: peopleTargets });
+    pills.push({
+      label: isZh ? `${args.peopleOverdue} 项逾期` : `${args.peopleOverdue} overdue`,
+      tone: "rose",
+      targetIds: peopleTargets,
+    });
   if (args.peopleNeedReply > 0)
-    pills.push({ label: `${args.peopleNeedReply} awaiting reply`, tone: "amber", targetIds: peopleTargets });
+    pills.push({
+      label: isZh ? `${args.peopleNeedReply} 人待回复` : `${args.peopleNeedReply} awaiting reply`,
+      tone: "amber",
+      targetIds: peopleTargets,
+    });
   if (args.deptAtRisk > 0)
-    pills.push({ label: `${args.deptAtRisk} dept${args.deptAtRisk === 1 ? "" : "s"} at risk`, tone: "amber", targetIds: [SECTION_IDS.departments] });
+    pills.push({
+      label: isZh ? `${args.deptAtRisk} 个部门有风险` : `${args.deptAtRisk} dept${args.deptAtRisk === 1 ? "" : "s"} at risk`,
+      tone: "amber",
+      targetIds: [SECTION_IDS.departments],
+    });
   if (args.inFlight > 0)
-    pills.push({ label: `${args.inFlight} in flight`, tone: "sky", targetIds: [SECTION_IDS.inFlight] });
+    pills.push({
+      label: isZh ? `${args.inFlight} 项正在执行` : `${args.inFlight} in flight`,
+      tone: "sky",
+      targetIds: [SECTION_IDS.inFlight],
+    });
   if (args.searchesNeedingAttention > 0)
     pills.push({
-      label: `${args.searchesNeedingAttention} search${args.searchesNeedingAttention === 1 ? "" : "es"} to move`,
+      label: isZh
+        ? `${args.searchesNeedingAttention} 个猎聘待推进`
+        : `${args.searchesNeedingAttention} search${args.searchesNeedingAttention === 1 ? "" : "es"} to move`,
       tone: "indigo",
       targetIds: [SECTION_IDS.talent],
     });
   // Passive watchlist signals — quietest pill, last, so it never crowds the
   // action-oriented ones but the lane is still reachable in one click.
   if (args.monitoring > 0)
-    pills.push({ label: `${args.monitoring} monitoring`, tone: "slate", targetIds: [SECTION_IDS.monitoring] });
+    pills.push({
+      label: isZh ? `${args.monitoring} 项监控中` : `${args.monitoring} monitoring`,
+      tone: "slate",
+      targetIds: [SECTION_IDS.monitoring],
+    });
   return pills;
 }
 
@@ -649,6 +682,8 @@ function ProposalCard({
   // breaking the divider-row rhythm.
   emphasized?: boolean;
 }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   // Local edit-mode state. Entering edit mode replaces the body display
   // with a textarea pre-filled with the proposal body; the action row
   // simplifies to Cancel / Send approval. Exiting (Cancel) restores the
@@ -850,7 +885,9 @@ function ProposalCard({
     return (
       <div className={`group py-3 hover:bg-surface-overlay/30 transition-colors${rowAccent}`}>
         <div className="flex items-start justify-between gap-2 mb-2">
-          <span className="text-[10px] uppercase tracking-wide text-fg-subtle">Editing proposal — send verbatim</span>
+          <span className="text-[10px] uppercase tracking-wide text-fg-subtle">
+            {isZh ? "编辑提案 — 按原样发送" : "Editing proposal — send verbatim"}
+          </span>
           {assignee && (
             <span className="flex-shrink-0 text-xs text-indigo-300">
               → {assignee.full_name}
@@ -875,7 +912,7 @@ function ProposalCard({
             disabled={busy}
             className="text-xs text-fg-muted hover:text-fg px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Cancel
+            {isZh ? "取消" : "Cancel"}
           </button>
           <button
             type="button"
@@ -883,7 +920,7 @@ function ProposalCard({
             disabled={busy || !editedBody.trim()}
             className="text-xs font-medium text-emerald-300 hover:text-emerald-200 px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ✓ Send approval
+            {isZh ? "✓ 确认并批准" : "✓ Send approval"}
           </button>
         </div>
       </div>
@@ -980,7 +1017,7 @@ function ProposalCard({
           aria-expanded={bodyOpen}
           className="pb-2 -mt-1 text-[11px] text-fg-muted hover:text-fg transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500/40 rounded"
         >
-          {bodyOpen ? "Show less" : "Show more"}
+          {bodyOpen ? (isZh ? "收起" : "Show less") : (isZh ? "展开更多" : "Show more")}
         </button>
       )}
       {showActions && (
@@ -997,7 +1034,7 @@ function ProposalCard({
                 disabled={busy}
                 className="text-xs text-fg-muted hover:text-indigo-300 px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                💬 Discuss
+                {isZh ? "💬 对话讨论" : "💬 Discuss"}
               </button>
             )}
           </div>
@@ -1014,7 +1051,7 @@ function ProposalCard({
                   disabled={busy}
                   className="text-xs font-medium text-emerald-300 hover:text-emerald-200 px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  ✓ Mark reviewed
+                  {isZh ? "✓ 标记已审阅" : "✓ Mark reviewed"}
                 </button>
               )
             ) : (
@@ -1030,7 +1067,7 @@ function ProposalCard({
                         : "text-fg-muted hover:text-rose-300"
                     }`}
                   >
-                    ✕ Dismiss
+                    {isZh ? "✕ 忽略" : "✕ Dismiss"}
                   </button>
                 )}
                 {/* Monitoring items are passive signals with no proposed
@@ -1043,7 +1080,7 @@ function ProposalCard({
                     disabled={busy}
                     className="text-xs text-fg-muted hover:text-emerald-300 px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    ✎ Edit &amp; approve
+                    {isZh ? "✎ 修改并批准" : "✎ Edit & approve"}
                   </button>
                 )}
                 {!isMonitoring && onApprove && (
@@ -1053,7 +1090,7 @@ function ProposalCard({
                     disabled={busy}
                     className="text-xs font-medium text-emerald-300 hover:text-emerald-200 px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    ✓ Approve
+                    {isZh ? "✓ 批准" : "✓ Approve"}
                   </button>
                 )}
               </>
@@ -1299,22 +1336,25 @@ function PracticeClientsPanel({
   clients: ClientCockpitCard[];
   id?: string;
 }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   if (clients.length === 0) return null;
   return (
     <section id={id} className="rounded-xl border border-line bg-surface-elevated p-4">
       <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-1.5">
-          <SectionHeading title="Across your clients" count={clients.length} icon="building" />
+          <SectionHeading title={isZh ? "客户概览" : "Across your clients"} count={clients.length} icon="building" />
           <InfoTip align="left">
-            Your parked client companies. Counts reflect each client&apos;s last
-            save point; switch to a client on the Clients page to work in it.
+            {isZh
+              ? "已保存/休眠的客户公司。统计数据反映各客户上一次保存点；在“客户公司”页面切换客户即可进入工作。"
+              : "Your parked client companies. Counts reflect each client's last save point; switch to a client on the Clients page to work in it."}
           </InfoTip>
         </div>
         <Link
           href="/clients"
           className="flex-shrink-0 text-xs text-indigo-400 hover:text-indigo-300"
         >
-          Manage clients
+          {isZh ? "管理客户" : "Manage clients"}
         </Link>
       </div>
       <div className="max-h-[32rem] overflow-y-auto pr-1 divide-y divide-line">
@@ -1326,7 +1366,7 @@ function PracticeClientsPanel({
                 {c.role ? <span className="text-fg-muted font-normal"> · {c.role}</span> : null}
               </div>
               {(() => {
-                const badge = renewalBadge(c.days_to_renewal);
+                const badge = renewalBadge(c.days_to_renewal, locale);
                 return badge ? (
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full border flex-shrink-0 ${
                     badge.urgent
@@ -1339,7 +1379,7 @@ function PracticeClientsPanel({
               })()}
             </div>
             <div className="mt-0.5 text-[11px] text-fg-muted">
-              {clientCountsSummary(c)}
+              {clientCountsSummary(c, locale)}
             </div>
           </div>
         ))}
@@ -1660,6 +1700,8 @@ function HandledOvernightPanel({
 }
 
 export default function Briefing({ onContinue, showHeader = false, firstName }: BriefingProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [today, setToday] = useState<Today | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1840,7 +1882,12 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
     return () => { cancelled = true; };
   }, []);
 
-  const dateLabel = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const dateLabel = new Date().toLocaleDateString(
+    isZh ? "zh-CN" : "en-US",
+    isZh
+      ? { year: "numeric", month: "long", day: "numeric", weekday: "long" }
+      : { weekday: "long", month: "long", day: "numeric" },
+  );
 
   const activeDepts = today?.departments.filter(
     (d) => d.goal_count > 0 || d.awaiting_count > 0
@@ -1861,12 +1908,19 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
   // Healthy + inactive departments fold into one quiet toggle. Summary text
   // reflects both buckets so the single control is self-describing.
   const quietDeptCount = onTrackDepts.length + inactiveDepts.length;
-  const quietDeptSummary = [
-    onTrackDepts.length > 0 ? `${onTrackDepts.length} on track` : null,
-    inactiveDepts.length > 0 ? `${inactiveDepts.length} inactive` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const quietDeptSummary = isZh
+    ? [
+        onTrackDepts.length > 0 ? `${onTrackDepts.length} 个正常推进` : null,
+        inactiveDepts.length > 0 ? `${inactiveDepts.length} 个未激活` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : [
+        onTrackDepts.length > 0 ? `${onTrackDepts.length} on track` : null,
+        inactiveDepts.length > 0 ? `${inactiveDepts.length} inactive` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
   const isQuiet =
     today !== null &&
@@ -1940,6 +1994,7 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
         inFlight: inFlightCount,
         monitoring: monitoringProposals.length,
         searchesNeedingAttention,
+        locale,
       })
     : [];
 
@@ -1950,13 +2005,15 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
           <div className="flex items-baseline gap-3 mb-3">
             <h1 className="text-xl font-semibold text-fg">
               {showHeader
-                ? (firstName ? `Here's where we are, ${firstName}.` : "Here's where we are.")
-                : "Today"}
+                ? (firstName
+                    ? (isZh ? `${firstName}，这是当前整体运行情况。` : `Here's where we are, ${firstName}.`)
+                    : (isZh ? "这是当前整体运行情况。" : "Here's where we are."))
+                : (isZh ? "今日简报" : "Today")}
             </h1>
             <span className="text-sm text-fg-muted">{dateLabel}</span>
           </div>
 
-          {loading && <p className="text-fg-muted text-sm">Loading…</p>}
+          {loading && <p className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</p>}
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm mb-4">
               {error}
@@ -1970,7 +2027,7 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
               <div className="flex flex-wrap items-center gap-2 mb-6">
                 {statPills.length === 0 ? (
                   <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
-                    All clear
+                    {isZh ? "一切正常" : "All clear"}
                   </span>
                 ) : (
                   statPills.map((pill) => (
@@ -1990,12 +2047,12 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
                 <section className="mb-6">
                   <div className="flex items-center gap-1.5 mb-3">
                     <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
-                      What&apos;s going on
+                      {isZh ? "当前运行态势" : "What's going on"}
                     </h2>
                     <InfoTip align="left">
-                      The Executive&apos;s read on the company right now —
-                      synthesized from proposals, at-risk goals, and recent
-                      activity. Regenerates as the picture changes.
+                      {isZh
+                        ? "执行官对当前业务状态的即时研判 — 综合了提案、风险目标与近期动态。随着局势变化实时更新。"
+                        : "The Executive's read on the company right now — synthesized from proposals, at-risk goals, and recent activity. Regenerates as the picture changes."}
                     </InfoTip>
                   </div>
                   <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-5 py-4">
@@ -2033,7 +2090,11 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
                                           <details className="group mt-0.5">
                                             <summary className="flex items-center gap-1.5 py-0.5 cursor-pointer list-none text-xs text-fg-muted hover:text-fg transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500/40 rounded">
                                               <span aria-hidden className="text-[10px] transition-transform group-open:rotate-90">▸</span>
-                                              <span>Show {tail.length} more signal{tail.length === 1 ? "" : "s"}</span>
+                                              <span>
+                                                {isZh
+                                                  ? `展开另外 ${tail.length} 项信号`
+                                                  : `Show ${tail.length} more signal${tail.length === 1 ? "" : "s"}`}
+                                              </span>
                                             </summary>
                                             <ul className="list-none pl-0 mt-1 space-y-0.5">{tail}</ul>
                                           </details>
@@ -2085,9 +2146,11 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
 
               {isQuiet && activeDepts.length > 0 && (
                 <div className="mb-6 flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
-                  <span className="text-sm text-emerald-300">Quiet day — nothing needs your attention.</span>
+                  <span className="text-sm text-emerald-300">
+                    {isZh ? "今日平稳 — 暂无待处理事项。" : "Quiet day — nothing needs your attention."}
+                  </span>
                   <Link href="/departments" className="text-xs text-indigo-400 hover:text-indigo-300 flex-shrink-0">
-                    Set up a check-in →
+                    {isZh ? "设置跟进 →" : "Set up a check-in →"}
                   </Link>
                 </div>
               )}
@@ -2109,7 +2172,7 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
                       <summary className="flex items-center gap-2 mb-3 cursor-pointer list-none border-l-2 border-indigo-500 pl-2">
                         <span className="text-[10px] text-fg-muted transition-transform group-open:rotate-90">▸</span>
                         <SectionLabel variant="primary" count={mineProposals.length}>
-                          Needs you
+                          {isZh ? "待您决策" : "Needs you"}
                         </SectionLabel>
                       </summary>
                       {startHereProposal ? (
@@ -2125,7 +2188,7 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
                               break the divider-row rhythm). */}
                           <div>
                             <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-300">
-                              Start here
+                              {isZh ? "首要行动" : "Start here"}
                             </div>
                             <ProposalCard
                               proposal={startHereProposal}
@@ -2156,13 +2219,17 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
                               className="w-full py-2 text-[11px] text-fg-muted hover:text-fg transition-colors"
                             >
                               {showAllNeedsYou
-                                ? "Show fewer"
-                                : `Show ${restProposals.length - NEEDS_YOU_VISIBLE} more`}
+                                ? (isZh ? "收起" : "Show fewer")
+                                : (isZh
+                                    ? `显示更多 (${restProposals.length - NEEDS_YOU_VISIBLE})`
+                                    : `Show ${restProposals.length - NEEDS_YOU_VISIBLE} more`)}
                             </button>
                           )}
                         </div>
                       ) : !isQuiet ? (
-                        <p className="text-sm text-fg-muted py-3">Nothing waiting on you.</p>
+                        <p className="text-sm text-fg-muted py-3">
+                          {isZh ? "暂无等待您处理的事项。" : "Nothing waiting on you."}
+                        </p>
                       ) : null}
                       {/* Relief valves: clear the old tail in one click, or ask
                           the Executive to re-judge everything right now. */}
@@ -2174,7 +2241,9 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
                               onClick={() => handleBulkDismiss(staleNeedsYouIds)}
                               className="text-[11px] text-fg-muted hover:text-rose-300 transition-colors"
                             >
-                              ✕ Dismiss {staleNeedsYouIds.length} older than {NEEDS_YOU_DISMISS_OLDER_THAN_DAYS} days
+                              {isZh
+                                ? `✕ 忽略 ${staleNeedsYouIds.length} 项超过 ${NEEDS_YOU_DISMISS_OLDER_THAN_DAYS} 天的待办`
+                                : `✕ Dismiss ${staleNeedsYouIds.length} older than ${NEEDS_YOU_DISMISS_OLDER_THAN_DAYS} days`}
                             </button>
                           )}
                           <button
@@ -2183,7 +2252,9 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
                             disabled={recheckBusy}
                             className="text-[11px] text-fg-muted hover:text-indigo-300 transition-colors disabled:opacity-50"
                           >
-                            {recheckBusy ? "⟳ Re-checking…" : "⟳ Re-check relevance"}
+                            {isZh
+                              ? (recheckBusy ? "⟳ 正在评估…" : "⟳ 重新评估优先级")
+                              : (recheckBusy ? "⟳ Re-checking…" : "⟳ Re-check relevance")}
                           </button>
                         </div>
                       )}
@@ -2217,28 +2288,26 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
                   <section id="sec-departments" className="rounded-xl border border-line bg-surface-elevated p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-1.5">
-                        <SectionLabel variant="ambient">Departments</SectionLabel>
+                        <SectionLabel variant="ambient">{isZh ? "部门架构" : "Departments"}</SectionLabel>
                         <InfoTip align="left">
-                          <span className="text-amber-300">At risk</span> /{" "}
-                          <span className="text-rose-300">off track</span> = goal
-                          health. <span className="text-sky-300">Awaiting</span> =
-                          items waiting on the department head.{" "}
-                          <span className="text-fg">Inactive</span> = no goals or
-                          check-ins set up yet.
+                          <span className="text-amber-300">{isZh ? "有风险" : "At risk"}</span> /{" "}
+                          <span className="text-rose-300">{isZh ? "偏离目标" : "off track"}</span> = {isZh ? "目标健康度。" : "goal health. "}
+                          <span className="text-sky-300">{isZh ? "待回复" : "Awaiting"}</span> = {isZh ? "等待部门负责人处理事项。" : "items waiting on the department head. "}
+                          <span className="text-fg">{isZh ? "未激活" : "Inactive"}</span> = {isZh ? "尚未设置目标或跟进。" : "no goals or check-ins set up yet."}
                         </InfoTip>
                       </div>
                       <Link href="/departments" className="text-xs text-indigo-400 hover:text-indigo-300">
-                        View all →
+                        {isZh ? "查看全部 →" : "View all →"}
                       </Link>
                     </div>
 
                     {activeDepts.length === 0 && (
                       <div className="py-3">
                         <p className="text-sm text-fg-muted mb-2">
-                          No department has a check-in set up yet.
+                          {isZh ? "暂无部门设置跟进周期。" : "No department has a check-in set up yet."}
                         </p>
                         <Link href="/departments" className="text-xs text-indigo-400 hover:text-indigo-300">
-                          Pick one to activate →
+                          {isZh ? "选择部门以激活 →" : "Pick one to activate →"}
                         </Link>
                       </div>
                     )}
@@ -2293,12 +2362,14 @@ export default function Briefing({ onContinue, showHeader = false, firstName }: 
                         return (
                           <div className="flex items-start justify-between gap-2 mb-3">
                             <div>
-                              <h3 className="text-sm font-semibold text-fg">People</h3>
+                              <h3 className="text-sm font-semibold text-fg">{isZh ? "组织成员" : "People"}</h3>
                               <p className={`text-xs mt-0.5 ${summary.hasOverdue ? "text-rose-300" : "text-fg-muted"}`}>
                                 {summary.text}
                               </p>
                             </div>
-                            <Link href="/people" className="flex-shrink-0 text-xs text-indigo-400 hover:text-indigo-300">View all</Link>
+                            <Link href="/people" className="flex-shrink-0 text-xs text-indigo-400 hover:text-indigo-300">
+                              {isZh ? "查看全部" : "View all"}
+                            </Link>
                           </div>
                         );
                       })()}

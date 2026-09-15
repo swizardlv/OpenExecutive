@@ -129,6 +129,8 @@ function summarizeShape(items: AuditEvent[]): { type: string; count: number }[] 
     });
 }
 
+import { useI18n } from "@/lib/i18n";
+
 // Friendly short label for the shape-summary badges. Matches what an
 // engineer would say out loud ("4 specialists" rather than
 // "4 specialist_consults"). Falls back to the raw event_type when no
@@ -144,8 +146,22 @@ const SHAPE_LABEL: Record<string, { singular: string; plural: string }> = {
   scheduled_action: { singular: "scheduled", plural: "scheduled" },
   alert: { singular: "alert", plural: "alerts" },
 };
-function shapeLabel(type: string, count: number): string {
-  const alias = SHAPE_LABEL[type];
+
+const SHAPE_LABEL_ZH: Record<string, { singular: string; plural: string }> = {
+  integration_inbound: { singular: "入站", plural: "入站" },
+  memory_snapshot: { singular: "记忆快照", plural: "记忆快照" },
+  chat_turn: { singular: "对话轮次", plural: "对话轮次" },
+  knowledge_retrieval: { singular: "知识检索", plural: "知识检索" },
+  specialist_consult: { singular: "专员咨询", plural: "专员咨询" },
+  tool_invocation: { singular: "工具调用", plural: "工具调用" },
+  cache_event: { singular: "缓存事件", plural: "缓存事件" },
+  scheduled_action: { singular: "定时任务", plural: "定时任务" },
+  alert: { singular: "告警", plural: "告警" },
+};
+
+function shapeLabel(type: string, count: number, isZh = false): string {
+  const table = isZh ? SHAPE_LABEL_ZH : SHAPE_LABEL;
+  const alias = table[type];
   if (!alias) return `${count} ${type}`;
   return `${count} ${count === 1 ? alias.singular : alias.plural}`;
 }
@@ -169,6 +185,8 @@ export default function AuditPage() {
 }
 
 function AuditPageInner() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const searchParams = useSearchParams();
   const [items, setItems] = useState<AuditEvent[]>([]);
   const [total, setTotal] = useState(0);
@@ -219,11 +237,11 @@ function AuditPageInner() {
       setTotal(res.total);
       setEventTypes(res.event_types);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(e instanceof Error ? e.message : (isZh ? "加载失败" : "Failed to load"));
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, isZh]);
 
   useEffect(() => {
     if (debounceRef.current !== null) {
@@ -265,7 +283,7 @@ function AuditPageInner() {
       })
       .catch((e) => {
         if (cancelled) return;
-        setDetailError(e instanceof Error ? e.message : "Failed to load detail");
+        setDetailError(e instanceof Error ? e.message : (isZh ? "加载详情失败" : "Failed to load detail"));
       })
       .finally(() => {
         if (!cancelled) setDetailLoadingId(null);
@@ -273,7 +291,7 @@ function AuditPageInner() {
     return () => {
       cancelled = true;
     };
-  }, [expandedId, details]);
+  }, [expandedId, details, isZh]);
 
   const hasPrev = offset > 0;
   const hasNext = offset + PAGE_SIZE < total;
@@ -352,13 +370,13 @@ function AuditPageInner() {
         key: "unattributed",
         sessionId: null,
         actor: null,
-        channel: "unattributed",
+        channel: isZh ? "未归属" : "unattributed",
         firstTs,
         lastTs,
         items: merged,
       },
     ];
-  }, [groupBySession, sessionGroups]);
+  }, [groupBySession, sessionGroups, isZh]);
 
   const renderEventRow = (evt: AuditEvent) => {
     const isOpen = expandedId === evt.id;
@@ -393,7 +411,7 @@ function AuditPageInner() {
                   focusSession(evt.session_id ?? "");
                 }}
                 className="text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline"
-                title={`Filter by session ${evt.session_id}`}
+                title={isZh ? `按会话 ${evt.session_id} 筛选` : `Filter by session ${evt.session_id}`}
               >
                 {evt.session_id.slice(0, 8)}
               </button>
@@ -412,23 +430,25 @@ function AuditPageInner() {
                 <div>ts: <span className="text-fg font-mono">{evt.ts}</span></div>
               </div>
               <div className="text-[10px] uppercase tracking-wide text-fg-muted mb-1">
-                Details (summary)
+                {isZh ? "详情 (摘要)" : "Details (summary)"}
               </div>
               <pre className="text-xs text-fg bg-black/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
 {JSON.stringify(evt.details, null, 2)}
               </pre>
               {detailLoadingId === evt.id && !details[evt.id] && (
-                <div className="mt-3 text-xs text-fg-muted">Loading full payload…</div>
+                <div className="mt-3 text-xs text-fg-muted">
+                  {isZh ? "正在加载完整载荷…" : "Loading full payload…"}
+                </div>
               )}
               {detailError && expandedId === evt.id && !details[evt.id] && (
                 <div className="mt-3 text-xs text-rose-300">
-                  Failed to load full payload: {detailError}
+                  {isZh ? `加载完整载荷失败：${detailError}` : `Failed to load full payload: ${detailError}`}
                 </div>
               )}
               {details[evt.id]?.full && (
                 <>
                   <div className="text-[10px] uppercase tracking-wide text-fg-muted mt-4 mb-1">
-                    Full payload
+                    {isZh ? "完整载荷" : "Full payload"}
                   </div>
                   <pre className="text-xs text-fg bg-black/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words max-h-[60vh]">
 {JSON.stringify(details[evt.id].full, null, 2)}
@@ -449,7 +469,7 @@ function AuditPageInner() {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
             <input
               type="search"
-              placeholder="Search summary…"
+              placeholder={isZh ? "搜索摘要…" : "Search summary…"}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               className="md:col-span-2 px-3 py-1.5 rounded-lg bg-surface-elevated border border-line text-sm focus:outline-none focus:border-indigo-500 placeholder-fg-subtle"
@@ -459,7 +479,7 @@ function AuditPageInner() {
               onChange={(e) => setEventType(e.target.value)}
               className="px-3 py-1.5 rounded-lg bg-surface-elevated border border-line text-sm focus:outline-none focus:border-indigo-500"
             >
-              <option value="">All event types</option>
+              <option value="">{isZh ? "全部事件类型" : "All event types"}</option>
               {eventTypes.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -468,7 +488,7 @@ function AuditPageInner() {
             </select>
             <input
               type="text"
-              placeholder="Session id"
+              placeholder={isZh ? "会话 ID" : "Session id"}
               value={sessionId}
               onChange={(e) => setSessionId(e.target.value)}
               className="px-3 py-1.5 rounded-lg bg-surface-elevated border border-line text-sm focus:outline-none focus:border-indigo-500 placeholder-fg-subtle"
@@ -483,13 +503,13 @@ function AuditPageInner() {
               }}
               className="px-3 py-1.5 rounded-lg bg-surface-overlay hover:bg-surface-input text-sm border border-line-strong"
             >
-              Clear filters
+              {isZh ? "清除筛选" : "Clear filters"}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
             <label className="text-xs text-fg-muted flex flex-col gap-1">
-              From
+              {isZh ? "起始时间" : "From"}
               <input
                 type="datetime-local"
                 value={since}
@@ -498,7 +518,7 @@ function AuditPageInner() {
               />
             </label>
             <label className="text-xs text-fg-muted flex flex-col gap-1">
-              Until
+              {isZh ? "截止时间" : "Until"}
               <input
                 type="datetime-local"
                 value={until}
@@ -507,7 +527,9 @@ function AuditPageInner() {
               />
             </label>
             <div className="text-xs text-fg-muted self-end pb-1">
-              {loading ? "Loading…" : `${total.toLocaleString()} events`}
+              {loading
+                ? (isZh ? "加载中…" : "Loading…")
+                : (isZh ? `${total.toLocaleString()} 条事件` : `${total.toLocaleString()} events`)}
             </div>
             {/* Segmented view switcher — communicates "these are distinct
                 surfaces" rather than the checkbox's "annotation on top".
@@ -515,7 +537,7 @@ function AuditPageInner() {
                 grouped card list. */}
             <div
               role="tablist"
-              aria-label="View mode"
+              aria-label={isZh ? "视图模式" : "View mode"}
               className="self-end pb-1 inline-flex rounded-lg bg-surface-elevated border border-line p-0.5 text-xs"
             >
               <button
@@ -530,7 +552,7 @@ function AuditPageInner() {
                     : "text-fg-muted hover:text-fg",
                 ].join(" ")}
               >
-                Events
+                {isZh ? "事件列表" : "Events"}
               </button>
               <button
                 type="button"
@@ -544,7 +566,7 @@ function AuditPageInner() {
                     : "text-fg-muted hover:text-fg",
                 ].join(" ")}
               >
-                Sessions
+                {isZh ? "会话分组" : "Sessions"}
               </button>
             </div>
           </div>
@@ -562,13 +584,13 @@ function AuditPageInner() {
             <div className="flex flex-col gap-3">
               {sessionCards.length === 0 && !loading && (
                 <div className="rounded-xl border border-line bg-surface-elevated/30 px-4 py-8 text-center text-sm text-fg-muted">
-                  No sessions match these filters.{" "}
+                  {isZh ? "没有符合筛选条件的会话。" : "No sessions match these filters."}{" "}
                   <button
                     type="button"
                     onClick={() => setGroupBySession(false)}
                     className="text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline"
                   >
-                    Switch to Events view
+                    {isZh ? "切换至事件列表视图" : "Switch to Events view"}
                   </button>
                 </div>
               )}
@@ -602,12 +624,12 @@ function AuditPageInner() {
                           type="button"
                           onClick={() => focusSession(g.sessionId ?? "")}
                           className="font-mono text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline truncate max-w-[40ch]"
-                          title={`Filter by ${g.sessionId}`}
+                          title={isZh ? `按 ${g.sessionId} 筛选` : `Filter by ${g.sessionId}`}
                         >
                           {g.sessionId}
                         </button>
                       ) : (
-                        <span className="font-mono text-fg-muted italic">unattributed</span>
+                        <span className="font-mono text-fg-muted italic">{isZh ? "未归属" : "unattributed"}</span>
                       )}
                       <span className="text-fg-subtle">·</span>
                       <span
@@ -619,16 +641,16 @@ function AuditPageInner() {
                       {g.firstTs !== g.lastTs && (
                         <>
                           <span className="text-fg-subtle">·</span>
-                          <span className="text-fg-muted">span {formatSpan(g.firstTs, g.lastTs)}</span>
+                          <span className="text-fg-muted">{isZh ? "跨度 " : "span "}{formatSpan(g.firstTs, g.lastTs)}</span>
                         </>
                       )}
                       {g.sessionId && (
                         <Link
                           href={`/audit/session/${encodeURIComponent(g.sessionId)}`}
                           className="ml-auto text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline whitespace-nowrap"
-                          title="Open the session flow chart"
+                          title={isZh ? "查看该会话流向图" : "Open the session flow chart"}
                         >
-                          Open flow chart →
+                          {isZh ? "打开流向图 →" : "Open flow chart →"}
                         </Link>
                       )}
                     </div>
@@ -644,7 +666,7 @@ function AuditPageInner() {
                           title={`${count} × ${type}`}
                         >
                           <span className="tabular-nums">{count}</span>
-                          <span className="opacity-80">{shapeLabel(type, count).replace(/^\d+\s+/, "")}</span>
+                          <span className="opacity-80">{shapeLabel(type, count, isZh).replace(/^\d+\s+/, "")}</span>
                         </span>
                       ))}
                     </div>
@@ -682,23 +704,25 @@ function AuditPageInner() {
                                   <div>ts: <span className="text-fg font-mono">{evt.ts}</span></div>
                                 </div>
                                 <div className="text-[10px] uppercase tracking-wide text-fg-muted mb-1">
-                                  Details (summary)
+                                  {isZh ? "详情 (摘要)" : "Details (summary)"}
                                 </div>
                                 <pre className="text-xs text-fg bg-black/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
 {JSON.stringify(evt.details, null, 2)}
                                 </pre>
                                 {detailLoadingId === evt.id && !details[evt.id] && (
-                                  <div className="mt-3 text-xs text-fg-muted">Loading full payload…</div>
+                                  <div className="mt-3 text-xs text-fg-muted">
+                                    {isZh ? "正在加载完整载荷…" : "Loading full payload…"}
+                                  </div>
                                 )}
                                 {detailError && expandedId === evt.id && !details[evt.id] && (
                                   <div className="mt-3 text-xs text-rose-300">
-                                    Failed to load full payload: {detailError}
+                                    {isZh ? `加载完整载荷失败：${detailError}` : `Failed to load full payload: ${detailError}`}
                                   </div>
                                 )}
                                 {details[evt.id]?.full && (
                                   <>
                                     <div className="text-[10px] uppercase tracking-wide text-fg-muted mt-4 mb-1">
-                                      Full payload
+                                      {isZh ? "完整载荷" : "Full payload"}
                                     </div>
                                     <pre className="text-xs text-fg bg-black/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words max-h-[60vh]">
 {JSON.stringify(details[evt.id].full, null, 2)}
@@ -717,7 +741,7 @@ function AuditPageInner() {
                             onClick={() => toggleSessionCollapsed(g.key)}
                             className="w-full text-left px-3 py-1.5 text-fg-muted hover:text-fg hover:bg-surface-elevated/60"
                           >
-                            + {hiddenCount} earlier event{hiddenCount === 1 ? "" : "s"}
+                            + {isZh ? `展开更早的 ${hiddenCount} 条事件` : `${hiddenCount} earlier event${hiddenCount === 1 ? "" : "s"}`}
                           </button>
                         </li>
                       )}
@@ -728,7 +752,7 @@ function AuditPageInner() {
                             onClick={() => toggleSessionCollapsed(g.key)}
                             className="w-full text-left px-3 py-1.5 text-fg-muted hover:text-fg hover:bg-surface-elevated/60"
                           >
-                            ▴ Collapse
+                            {isZh ? "▴ 收起" : "▴ Collapse"}
                           </button>
                         </li>
                       )}
@@ -743,18 +767,18 @@ function AuditPageInner() {
               <table className="w-full text-sm">
                 <thead className="bg-surface-elevated/60 text-fg-muted text-xs uppercase">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium">Time</th>
-                    <th className="px-3 py-2 text-left font-medium">Type</th>
-                    <th className="px-3 py-2 text-left font-medium">Actor</th>
-                    <th className="px-3 py-2 text-left font-medium">Summary</th>
-                    <th className="px-3 py-2 text-left font-medium">Session</th>
+                    <th className="px-3 py-2 text-left font-medium">{isZh ? "时间" : "Time"}</th>
+                    <th className="px-3 py-2 text-left font-medium">{isZh ? "类型" : "Type"}</th>
+                    <th className="px-3 py-2 text-left font-medium">{isZh ? "执行者" : "Actor"}</th>
+                    <th className="px-3 py-2 text-left font-medium">{isZh ? "摘要" : "Summary"}</th>
+                    <th className="px-3 py-2 text-left font-medium">{isZh ? "会话" : "Session"}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.length === 0 && !loading && (
                     <tr>
                       <td colSpan={5} className="px-3 py-8 text-center text-fg-muted">
-                        No audit events match these filters.
+                        {isZh ? "没有匹配当前筛选条件的审计事件。" : "No audit events match these filters."}
                       </td>
                     </tr>
                   )}
@@ -766,8 +790,9 @@ function AuditPageInner() {
 
           <div className="flex items-center justify-between mt-4 text-sm">
             <div className="text-fg-muted">
-              Page {Math.floor(offset / PAGE_SIZE) + 1} of{" "}
-              {Math.max(1, Math.ceil(total / PAGE_SIZE))}
+              {isZh
+                ? `第 ${Math.floor(offset / PAGE_SIZE) + 1} 页，共 ${Math.max(1, Math.ceil(total / PAGE_SIZE))} 页`
+                : `Page ${Math.floor(offset / PAGE_SIZE) + 1} of ${Math.max(1, Math.ceil(total / PAGE_SIZE))}`}
             </div>
             <div className="flex gap-2">
               <button
@@ -775,14 +800,14 @@ function AuditPageInner() {
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
                 className="px-3 py-1.5 rounded-lg bg-surface-overlay hover:bg-surface-input disabled:opacity-40 disabled:cursor-not-allowed border border-line-strong"
               >
-                ← Prev
+                {isZh ? "← 上一页" : "← Prev"}
               </button>
               <button
                 disabled={!hasNext}
                 onClick={() => setOffset(offset + PAGE_SIZE)}
                 className="px-3 py-1.5 rounded-lg bg-surface-overlay hover:bg-surface-input disabled:opacity-40 disabled:cursor-not-allowed border border-line-strong"
               >
-                Next →
+                {isZh ? "下一页 →" : "Next →"}
               </button>
             </div>
           </div>

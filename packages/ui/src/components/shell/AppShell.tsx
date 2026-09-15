@@ -9,9 +9,15 @@ import AskOEPanel from "@/components/askoe/AskOEPanel";
 import BrandMark from "@/components/BrandMark";
 import Icon, { IconName } from "@/components/Icon";
 import UserBadge from "@/components/UserBadge";
+import { LanguageToggle, useI18n } from "@/lib/i18n";
 import {
   BRIEFING_DESCRIPTION,
   buildPrimaryNav,
+  getBriefingDescription,
+  getGuideNavItem,
+  getNewChatDescription,
+  getPulseNavItem,
+  getSettingsNavItem,
   GUIDE_NAV_ITEM,
   MOBILE_PRIMARY,
   NEW_CHAT_DESCRIPTION,
@@ -26,14 +32,39 @@ import {
 const EXEMPT_PREFIXES = ["/signin", "/onboard", "/api"];
 const EXEMPT_EXACT = new Set(["/"]);
 
-// Primary nav comes from the shared config (the same source the chat
-// home uses) so the two navs can never drift. The rail is only reached
-// post-onboarding, so the default `isOnboarded` is fine here.
-const NAV_GROUPS = buildPrimaryNav();
+const SEGMENT_LABELS_ZH: Record<string, string> = {
+  today: "今日待办",
+  talent: "人才管理",
+  candidates: "候选人",
+  searches: "人才搜寻",
+  engagements: "招聘流程",
+  review: "知识审查",
+  proposals: "决策建议",
+  people: "组织成员",
+  departments: "部门架构",
+  skills: "专员技能",
+  memories: "状态脉搏",
+  knowledge: "企业知识库",
+  jobs: "任务流",
+  artifacts: "文档产物",
+  runs: "执行记录",
+  new: "新建",
+  audit: "审计日志",
+  usage: "Token 消耗",
+  session: "对话会话",
+  council: "专员议会",
+  architecture: "系统架构",
+  "company-profile": "企业画像",
+  "staff-onboarding": "员工入职",
+  demo: "企业模拟器",
+  onboard: "企业初始化",
+  watchlist: "监控清单",
+  settings: "系统设置",
+  guide: "使用指南",
+  clients: "客户企业",
+};
 
-// Human-readable labels for path segments shown in the breadcrumb.
-// Dynamic segments (slugs / ids) are rendered raw and truncated by CSS.
-const SEGMENT_LABELS: Record<string, string> = {
+const SEGMENT_LABELS_EN: Record<string, string> = {
   today: "Today",
   talent: "Talent",
   candidates: "Candidate",
@@ -65,8 +96,9 @@ const SEGMENT_LABELS: Record<string, string> = {
   clients: "Client Companies",
 };
 
-function labelFor(segment: string): string {
-  return SEGMENT_LABELS[segment] ?? segment;
+function labelFor(segment: string, locale: "zh" | "en" = "zh"): string {
+  const dict = locale === "zh" ? SEGMENT_LABELS_ZH : SEGMENT_LABELS_EN;
+  return dict[segment] ?? segment;
 }
 
 // Is `href` the active section for the current pathname? Active when
@@ -142,6 +174,12 @@ function Rail({
   drawerOpen: boolean;
   onClose: () => void;
 }) {
+  const { locale, t } = useI18n();
+  const navGroups = buildPrimaryNav({ locale });
+  const pulseItem = getPulseNavItem(locale);
+  const guideItem = getGuideNavItem(locale);
+  const settingsItem = getSettingsNavItem(locale);
+
   return (
     <aside
       className={`
@@ -172,44 +210,36 @@ function Rail({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
-        {/* New chat — the single most-used action in a chat-first
-            product, so it lives at the top of the rail on every route.
-            `/?new=1` is consumed by the chat home, which resets state
-            and strips the query. Never marked active (it's an action,
-            not a destination). */}
+        {/* New chat */}
         <RailLink
           href="/?new=1"
-          label="New chat"
+          label={t("nav.newChat", "New chat")}
           icon="plus"
-          description={NEW_CHAT_DESCRIPTION}
+          description={getNewChatDescription(locale)}
           active={false}
           onClick={onClose}
           accent
         />
-        {/* Briefing — `/` lands on the briefing surface (main's
-            briefing-first refactor); the chat is reached from there via
-            "New chat" or by selecting a recent session. Labelled
-            accordingly so the rail doesn't promise something else. */}
+        {/* Briefing */}
         <RailLink
           href="/"
-          label="Briefing"
+          label={t("nav.briefing", "Briefing")}
           icon="clipboard"
-          description={BRIEFING_DESCRIPTION}
+          description={getBriefingDescription(locale)}
           active={pathname === "/"}
           onClick={onClose}
         />
-        {/* Pulse — pinned beside Briefing as an always-visible destination,
-            not buried in the Knowledge group. */}
+        {/* Pulse */}
         <RailLink
-          href={PULSE_NAV_ITEM.href}
-          label={PULSE_NAV_ITEM.label}
-          icon={PULSE_NAV_ITEM.icon}
-          description={PULSE_NAV_ITEM.description}
-          active={isActive(PULSE_NAV_ITEM.href, pathname)}
+          href={pulseItem.href}
+          label={pulseItem.label}
+          icon={pulseItem.icon}
+          description={pulseItem.description}
+          active={isActive(pulseItem.href, pathname)}
           onClick={onClose}
         />
 
-        {NAV_GROUPS.map((group) => (
+        {navGroups.map((group) => (
           <div key={group.key}>
             <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-fg-subtle">
               {group.label}
@@ -231,26 +261,29 @@ function Rail({
         ))}
       </nav>
 
-      {/* Footer — User Guide (always-visible help) and Settings (the hub
-          for admin/power tools), kept out of the primary groups above so
-          day-to-day nav stays focused. Pinned just above the user badge. */}
+      {/* Footer — User Guide and Settings */}
       <div className="px-2 pb-1 border-t border-line pt-2 space-y-0.5">
         <RailLink
-          href={GUIDE_NAV_ITEM.href}
-          label={GUIDE_NAV_ITEM.label}
-          icon={GUIDE_NAV_ITEM.icon}
-          description={GUIDE_NAV_ITEM.description}
-          active={isActive(GUIDE_NAV_ITEM.href, pathname)}
+          href={guideItem.href}
+          label={guideItem.label}
+          icon={guideItem.icon}
+          description={guideItem.description}
+          active={isActive(guideItem.href, pathname)}
           onClick={onClose}
         />
         <RailLink
-          href={SETTINGS_NAV_ITEM.href}
-          label={SETTINGS_NAV_ITEM.label}
-          icon={SETTINGS_NAV_ITEM.icon}
-          description={SETTINGS_NAV_ITEM.description}
-          active={isActive(SETTINGS_NAV_ITEM.href, pathname)}
+          href={settingsItem.href}
+          label={settingsItem.label}
+          icon={settingsItem.icon}
+          description={settingsItem.description}
+          active={isActive(settingsItem.href, pathname)}
           onClick={onClose}
         />
+      </div>
+
+      <div className="px-3 py-2 border-t border-line flex items-center justify-between bg-surface/40">
+        <span className="text-[11px] text-fg-subtle">{t("shell.language", "语言")}</span>
+        <LanguageToggle />
       </div>
 
       <UserBadge variant="sidebar" />
@@ -270,14 +303,11 @@ function RailLink({
   href: string;
   label: string;
   icon: IconName;
-  /** Tooltip explaining the destination — shown via `title` on hover. */
   description?: string;
   active: boolean;
   onClick: () => void;
   accent?: boolean;
 }) {
-  // Active styling: filled overlay + bolder text. Accent (used for the
-  // Chat entry) gets a subtle indigo tint to mark the primary action.
   const base =
     "px-3 py-2 min-h-touch rounded-lg flex items-center gap-2.5 text-sm transition-colors cursor-pointer";
   const tone = active
@@ -302,16 +332,11 @@ function TopBar({
   segments: string[];
   onOpenDrawer: () => void;
 }) {
-  // Breadcrumb chain. Only the top-level section (segment[0]) is a real
-  // route in this app — intermediate segments like `runs` in
-  // `/jobs/runs/<id>` or `session` in `/audit/session/<id>` are not
-  // navigable pages, so we render them as plain text to avoid linking
-  // to a 404. Dynamic segments (slugs/uuids) also render as-is — pages
-  // own their own H1 with the entity name.
+  const { locale } = useI18n();
   const crumbs = segments.map((segment, idx) => {
     const linkable = idx === 0;
     const href = linkable ? "/" + segment : null;
-    return { href, label: labelFor(segment) };
+    return { href, label: labelFor(segment, locale) };
   });
 
   return (
@@ -358,7 +383,8 @@ function TopBar({
           )}
         </nav>
       </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <LanguageToggle />
         <AskOEButton />
       </div>
     </header>

@@ -12,8 +12,11 @@ import {
   type SkillMeta,
   type SkillSearchHit,
 } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 export default function SkillsBrowser() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [skills, setSkills] = useState<SkillMeta[]>([]);
   const [selected, setSelected] = useState<SkillDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,9 +29,9 @@ export default function SkillsBrowser() {
       const data = await listSkills();
       setSkills(data);
     } catch {
-      setError("Failed to load skills");
+      setError(isZh ? "加载技能列表失败" : "Failed to load skills");
     }
-  }, []);
+  }, [isZh]);
 
   useEffect(() => {
     load();
@@ -40,20 +43,23 @@ export default function SkillsBrowser() {
       const data = await getSkill(name);
       setSelected(data);
     } catch {
-      setError("Failed to load skill");
+      setError(isZh ? "加载技能详情失败" : "Failed to load skill");
     }
   }
 
   async function handleDelete() {
     if (!selected) return;
     if (selected.source === "builtin") return;
-    if (!confirm(`Delete skill "${selected.name}"? This cannot be undone.`)) return;
+    const confirmMsg = isZh
+      ? `确定删除技能 "${selected.name}"？此操作不可撤销。`
+      : `Delete skill "${selected.name}"? This cannot be undone.`;
+    if (!confirm(confirmMsg)) return;
     try {
       await deleteSkill(selected.name);
       setSelected(null);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to delete skill");
+      setError(e instanceof Error ? e.message : (isZh ? "删除技能失败" : "Failed to delete skill"));
     }
   }
 
@@ -69,7 +75,7 @@ export default function SkillsBrowser() {
       const hits = await searchSkills(searchQuery.trim(), 10);
       setSearchHits(hits);
     } catch {
-      setError("Search failed");
+      setError(isZh ? "搜索失败" : "Search failed");
     } finally {
       setIsSearching(false);
     }
@@ -99,7 +105,7 @@ export default function SkillsBrowser() {
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search skills semantically (e.g. 'cash forecast for next quarter')"
+          placeholder={isZh ? "语义搜索技能（例如：'预测下季度现金流'）" : "Search skills semantically (e.g. 'cash forecast for next quarter')"}
           className="flex-1 rounded-lg border border-line-strong bg-surface-elevated px-3 py-2 text-sm text-fg placeholder-fg-subtle focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
         />
         <button
@@ -107,7 +113,7 @@ export default function SkillsBrowser() {
           disabled={isSearching}
           className="px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white text-sm font-medium transition-colors"
         >
-          {isSearching ? "Searching…" : "Search"}
+          {isSearching ? (isZh ? "搜索中…" : "Searching…") : (isZh ? "搜索" : "Search")}
         </button>
         {searchHits !== null && (
           <button
@@ -115,7 +121,7 @@ export default function SkillsBrowser() {
             onClick={clearSearch}
             className="px-3 py-2 border border-line-strong text-fg-muted hover:text-fg text-sm rounded-lg transition-colors"
           >
-            Clear
+            {isZh ? "清除" : "Clear"}
           </button>
         )}
       </form>
@@ -132,10 +138,10 @@ export default function SkillsBrowser() {
           {searchHits !== null ? (
             <div>
               <p className="text-xs font-semibold text-fg-muted uppercase tracking-widest mb-1.5 px-1">
-                Results
+                {isZh ? "搜索结果" : "Results"}
               </p>
               {searchHits.length === 0 ? (
-                <p className="text-xs text-fg-subtle px-1">No matches</p>
+                <p className="text-xs text-fg-subtle px-1">{isZh ? "无匹配项" : "No matches"}</p>
               ) : (
                 searchHits.map((hit) => (
                   <button
@@ -160,7 +166,7 @@ export default function SkillsBrowser() {
           ) : (
             <>
               <SkillSection
-                title="Built-in"
+                title={isZh ? "内置技能" : "Built-in"}
                 grouped={builtinGrouped}
                 selectedName={selected?.name}
                 selectedSource={selected?.source}
@@ -168,13 +174,13 @@ export default function SkillsBrowser() {
                 onSelect={handleSelect}
               />
               <SkillSection
-                title="Yours"
+                title={isZh ? "自定义技能" : "Yours"}
                 grouped={userGrouped}
                 selectedName={selected?.name}
                 selectedSource={selected?.source}
                 expectedSource="company"
                 onSelect={handleSelect}
-                emptyMessage="Skills you save will appear here."
+                emptyMessage={isZh ? "您保存的技能将显示在此处。" : "Skills you save will appear here."}
               />
             </>
           )}
@@ -186,9 +192,13 @@ export default function SkillsBrowser() {
             <SkillView skill={selected} onDelete={handleDelete} />
           ) : (
             <div className="flex flex-col items-center justify-center h-64 text-fg-subtle text-sm gap-2">
-              <p>Select a skill to view its procedure.</p>
+              <p>{isZh ? "选择一项技能以查看其执行流程。" : "Select a skill to view its procedure."}</p>
               <p className="text-xs text-fg-subtle">
-                The Executive will call <code className="text-indigo-400">search_skills</code> when relevant.
+                {isZh ? (
+                  <>Executive 会在相关时自动调用 <code className="text-indigo-400">search_skills</code>。</>
+                ) : (
+                  <>The Executive will call <code className="text-indigo-400">search_skills</code> when relevant.</>
+                )}
               </p>
             </div>
           )}
@@ -217,6 +227,8 @@ function SkillSection({
   onSelect,
   emptyMessage,
 }: SkillSectionProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const categories = Object.keys(grouped).sort();
   const isEmpty = categories.length === 0;
 
@@ -226,7 +238,7 @@ function SkillSection({
         {title}
       </p>
       {isEmpty ? (
-        <p className="text-xs text-fg-subtle px-1">{emptyMessage ?? "None"}</p>
+        <p className="text-xs text-fg-subtle px-1">{emptyMessage ?? (isZh ? "无" : "None")}</p>
       ) : (
         categories.map((cat) => (
           <div key={cat} className="mb-3">
@@ -259,6 +271,8 @@ interface SkillViewProps {
 }
 
 function SkillView({ skill, onDelete }: SkillViewProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex items-start justify-between gap-4">
@@ -268,7 +282,7 @@ function SkillView({ skill, onDelete }: SkillViewProps) {
               {skill.category}
             </span>
             <span className="text-[10px] uppercase tracking-wider text-fg-subtle px-2 py-0.5 border border-line rounded">
-              {skill.source}
+              {skill.source === "builtin" ? (isZh ? "内置" : "builtin") : (isZh ? "自定义" : "company")}
             </span>
           </div>
           <h2 className="text-base font-semibold text-fg mt-1 break-words">
@@ -276,7 +290,7 @@ function SkillView({ skill, onDelete }: SkillViewProps) {
           </h2>
           <p className="text-sm text-fg-muted mt-1">{skill.description}</p>
           <p className="text-xs text-fg-muted italic mt-1">
-            When to use: {skill.when_to_use}
+            {isZh ? "适用场景：" : "When to use: "}{skill.when_to_use}
           </p>
         </div>
         {skill.source === "company" && (
@@ -284,7 +298,7 @@ function SkillView({ skill, onDelete }: SkillViewProps) {
             onClick={onDelete}
             className="px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 text-xs hover:bg-red-500/10 transition-colors flex-shrink-0"
           >
-            Delete
+            {isZh ? "删除" : "Delete"}
           </button>
         )}
       </div>

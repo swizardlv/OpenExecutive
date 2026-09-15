@@ -12,12 +12,19 @@
  * without sprinkling guards everywhere. Invalid input falls back to ""
  * for the same reason; we never throw from a display helper.
  */
-export function formatRelativeTime(iso: string): string {
+export function formatRelativeTime(iso: string, locale: "zh" | "en" = "en"): string {
   if (!iso) return "";
   const ts = new Date(iso).getTime();
   if (!Number.isFinite(ts)) return "";
   const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
+  if (locale === "zh") {
+    if (mins < 1) return "刚刚";
+    if (mins < 60) return `${mins}分钟前`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}小时前`;
+    return `${Math.floor(hrs / 24)}天前`;
+  }
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);

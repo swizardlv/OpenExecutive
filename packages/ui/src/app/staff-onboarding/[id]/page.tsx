@@ -14,9 +14,13 @@ import {
   getOnboardingPlan,
   setOnboardingTaskStatus,
 } from "@/lib/api";
-import { PHASE_LABEL, PHASE_ORDER, STATUS_META } from "@/components/onboarding/meta";
+import { PHASE_LABEL, PHASE_LABEL_ZH, PHASE_ORDER, STATUS_META } from "@/components/onboarding/meta";
+import { useI18n } from "@/lib/i18n";
 
 export default function OnboardingPlanDetailPage() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+
   const params = useParams();
   const planId = Number(params.id);
 
@@ -29,9 +33,9 @@ export default function OnboardingPlanDetailPage() {
     setLoading(true);
     getOnboardingPlan(planId)
       .then(setPlan)
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load"))
+      .catch((err) => setError(err instanceof Error ? err.message : (isZh ? "加载失败" : "Failed to load")))
       .finally(() => setLoading(false));
-  }, [planId]);
+  }, [planId, isZh]);
 
   useEffect(() => {
     if (!Number.isNaN(planId)) load();
@@ -44,7 +48,7 @@ export default function OnboardingPlanDetailPage() {
       await fn();
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Action failed");
+      setError(err instanceof Error ? err.message : (isZh ? "操作失败" : "Action failed"));
     } finally {
       setBusy(false);
     }
@@ -57,13 +61,13 @@ export default function OnboardingPlanDetailPage() {
   }
 
   if (loading) {
-    return <div className="p-6 text-sm text-fg-muted">Loading…</div>;
+    return <div className="p-6 text-sm text-fg-muted">{isZh ? "加载中…" : "Loading…"}</div>;
   }
   if (error && !plan) {
     return (
       <div className="p-6">
         <Link href="/staff-onboarding" className="text-indigo-300 hover:text-indigo-200 text-sm">
-          ← Back
+          {isZh ? "← 返回" : "← Back"}
         </Link>
         <p className="mt-4 text-sm text-rose-300">{error}</p>
       </div>
@@ -85,7 +89,7 @@ export default function OnboardingPlanDetailPage() {
             href="/staff-onboarding"
             className="text-indigo-300 hover:text-indigo-200 text-sm"
           >
-            ← All plans
+            {isZh ? "← 全部方案" : "← All plans"}
           </Link>
 
           <div className="mt-3 flex items-start justify-between gap-4 flex-wrap">
@@ -96,13 +100,13 @@ export default function OnboardingPlanDetailPage() {
               </h1>
               <div className="mt-1 flex items-center gap-2 text-sm">
                 <span className={`px-2 py-0.5 text-[11px] rounded-full border ${meta.cls}`}>
-                  {meta.label}
+                  {isZh ? meta.labelZh : meta.label}
                 </span>
                 <span className="text-fg-subtle">
-                  {PHASE_LABEL[plan.current_phase] ?? plan.current_phase}
+                  {isZh ? (PHASE_LABEL_ZH[plan.current_phase] ?? plan.current_phase) : (PHASE_LABEL[plan.current_phase] ?? plan.current_phase)}
                 </span>
-                <span className="text-fg-subtle">· starts {plan.start_date}</span>
-                <span className="text-fg-subtle">· {plan.completion_pct}% complete</span>
+                <span className="text-fg-subtle">· {isZh ? `入职日期 ${plan.start_date}` : `starts ${plan.start_date}`}</span>
+                <span className="text-fg-subtle">· {isZh ? `已完成 ${plan.completion_pct}%` : `${plan.completion_pct}% complete`}</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -112,7 +116,7 @@ export default function OnboardingPlanDetailPage() {
                   disabled={busy}
                   className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white"
                 >
-                  Activate
+                  {isZh ? "启用方案" : "Activate"}
                 </button>
               )}
               <button
@@ -120,7 +124,7 @@ export default function OnboardingPlanDetailPage() {
                 disabled={busy}
                 className="px-3 py-1.5 text-sm rounded-lg bg-surface-input border border-line hover:border-indigo-500 disabled:opacity-50"
               >
-                Advance phase
+                {isZh ? "推进阶段" : "Advance phase"}
               </button>
             </div>
           </div>
@@ -134,16 +138,16 @@ export default function OnboardingPlanDetailPage() {
           {/* Tasks */}
           <section className="mt-6">
             <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-3">
-              Checklist
+              {isZh ? "任务清单" : "Checklist"}
             </h2>
             {tasksByPhase.length === 0 && (
-              <p className="text-sm text-fg-subtle">No tasks on this plan.</p>
+              <p className="text-sm text-fg-subtle">{isZh ? "此方案暂无任务。" : "No tasks on this plan."}</p>
             )}
             <div className="space-y-4">
               {tasksByPhase.map(({ phase, tasks }) => (
                 <div key={phase}>
                   <div className="text-[11px] font-semibold text-fg-subtle uppercase tracking-wide mb-1.5">
-                    {PHASE_LABEL[phase]}
+                    {isZh ? (PHASE_LABEL_ZH[phase] ?? phase) : PHASE_LABEL[phase]}
                   </div>
                   <div className="space-y-1.5">
                     {tasks.map((t) => (
@@ -169,11 +173,11 @@ export default function OnboardingPlanDetailPage() {
                         </span>
                         {t.due_date && (
                           <span className="text-[11px] text-fg-subtle tabular-nums">
-                            due {t.due_date}
+                            {isZh ? `截止 ${t.due_date}` : `due ${t.due_date}`}
                           </span>
                         )}
                         {t.status === "skipped" && (
-                          <span className="text-[11px] text-fg-subtle">skipped</span>
+                          <span className="text-[11px] text-fg-subtle">{isZh ? "已跳过" : "skipped"}</span>
                         )}
                       </label>
                     ))}
@@ -187,7 +191,7 @@ export default function OnboardingPlanDetailPage() {
           {plan.reading_list.length > 0 && (
             <section className="mt-6">
               <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-2">
-                Suggested reading
+                {isZh ? "推荐阅读资料" : "Suggested reading"}
               </h2>
               <ul className="list-disc list-inside text-sm text-fg-muted space-y-0.5">
                 {plan.reading_list.map((r) => (
@@ -201,12 +205,12 @@ export default function OnboardingPlanDetailPage() {
           {plan.ramp_segments.length > 0 && (
             <section className="mt-6">
               <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-2">
-                Ramp drip
+                {isZh ? "渐进式培训推送" : "Ramp drip"}
               </h2>
               <p className="text-sm text-fg-muted">
-                {plan.ramp_segments.length} daily message
-                {plan.ramp_segments.length === 1 ? "" : "s"} ·{" "}
-                {plan.ramp_next_index} sent
+                {isZh
+                  ? `${plan.ramp_segments.length} 条每日消息 · 已发送 ${plan.ramp_next_index} 条`
+                  : `${plan.ramp_segments.length} daily message${plan.ramp_segments.length === 1 ? "" : "s"} · ${plan.ramp_next_index} sent`}
               </p>
             </section>
           )}
@@ -214,7 +218,7 @@ export default function OnboardingPlanDetailPage() {
           {/* Welcome brief */}
           <section className="mt-6">
             <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-2">
-              Welcome brief
+              {isZh ? "入职欢迎简报" : "Welcome brief"}
             </h2>
             {plan.brief_artifact ? (
               <div
@@ -229,8 +233,9 @@ export default function OnboardingPlanDetailPage() {
               </div>
             ) : (
               <p className="text-sm text-fg-subtle">
-                No brief generated yet — ask the Executive to “start onboarding for{" "}
-                {plan.full_name}” in chat to generate the role-tailored welcome brief.
+                {isZh
+                  ? `尚未生成欢迎简报 — 可在聊天中让 Executive “开始为 ${plan.full_name} 办理入职”以生成岗位定制的欢迎简报。`
+                  : `No brief generated yet — ask the Executive to “start onboarding for ${plan.full_name}” in chat to generate the role-tailored welcome brief.`}
               </p>
             )}
           </section>

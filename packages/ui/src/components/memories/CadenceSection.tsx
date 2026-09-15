@@ -9,6 +9,7 @@ import {
   type ScheduledAction,
 } from "@/lib/api";
 import Icon, { type IconName } from "@/components/Icon";
+import { useI18n } from "@/lib/i18n";
 import {
   LivePulse,
   STATUS_PILL,
@@ -38,6 +39,8 @@ const FETCH_LIMIT = 500;
 // ---------------------------------------------------------------------------
 
 export default function CadenceSection() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [rows, setRows] = useState<ScheduledAction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,30 +90,43 @@ export default function CadenceSection() {
           </div>
         ) : !hasRhythm ? (
           <div className="rounded-lg border border-line bg-surface-elevated/40 px-4 py-6 text-sm text-fg-muted">
-            No recurring cadence is scheduled yet. The heartbeat starts once the
-            scheduler is running and a company profile is set.
+            {isZh
+              ? "尚未安排周期性节律任务。当调度服务运行且已设置企业画像后，节拍将自动启动。"
+              : "No recurring cadence is scheduled yet. The heartbeat starts once the scheduler is running and a company profile is set."}
           </div>
         ) : (
           <div className="max-h-[32rem] overflow-y-auto pr-1 space-y-6">
             <RhythmBlock
-              title="Daily rhythm"
-              subtitle="Your daily briefing cycle — the morning brief and end-of-day digest land in your inbox; the reflection sets up the morning brief."
+              title={isZh ? "日常节律" : "Daily rhythm"}
+              subtitle={
+                isZh
+                  ? "每日简报执行闭环 — 晨间简报与日终摘要，反思复盘将用于生成次日简报。"
+                  : "Your daily briefing cycle — the morning brief and end-of-day digest land in your inbox; the reflection sets up the morning brief."
+              }
               icon="clipboard"
-              tag="Once a day · for you"
+              tag={isZh ? "每日一次 · 呈报给您" : "Once a day · for you"}
               tagTone="info"
               actions={groups.daily}
             />
             <RhythmBlock
-              title="Department check-ins"
-              subtitle="Each team's cadence — the next scheduled check-in per department."
+              title={isZh ? "部门巡检" : "Department check-ins"}
+              subtitle={
+                isZh
+                  ? "各业务团队巡检节奏 — 各部门下一次预定检查时间。"
+                  : "Each team's cadence — the next scheduled check-in per department."
+              }
               icon="grid"
               actions={groups.departments}
               showDepartment
             />
 
             <RhythmBlock
-              title="Awaiting people"
-              subtitle="Paused workflows and nudges waiting on a reply."
+              title={isZh ? "等待人员回复" : "Awaiting people"}
+              subtitle={
+                isZh
+                  ? "处于暂停状态、正等待人员回复的工作流与提醒。"
+                  : "Paused workflows and nudges waiting on a reply."
+              }
               icon="bell"
               actions={groups.awaiting}
             />
@@ -227,14 +243,15 @@ function RecentActivity() {
       </div>
     );
   }
-  if (items.length === 0) return null;
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
 
   return (
     <div className="rounded-xl border border-line bg-surface-elevated p-4">
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <Icon name="activity" size="w-4 h-4" className="text-emerald-400" />
-          <h3 className="text-sm font-semibold text-fg">Recent activity</h3>
+          <h3 className="text-sm font-semibold text-fg">{isZh ? "近期动态" : "Recent activity"}</h3>
         </div>
         <LivePulse />
       </div>
@@ -331,6 +348,8 @@ function RhythmCard({
   action: ScheduledAction;
   showDepartment: boolean;
 }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const meta = metaFor(action);
   const { absolute, relative } = formatRunAt(action.run_at);
   const isPending = action.status === "pending";
@@ -359,7 +378,7 @@ function RhythmCard({
       <div className="text-right whitespace-nowrap shrink-0">
         {isPending ? (
           <div className="text-xs text-sky-300" title={absolute}>
-            {relative ? `next ${relative}` : absolute}
+            {relative ? (isZh ? `下次: ${relative}` : `next ${relative}`) : absolute}
           </div>
         ) : (
           <div className="flex flex-col items-end gap-1">
@@ -390,18 +409,24 @@ function RhythmCard({
 const SYSTEM_PULSE_CAP = 50;
 
 function SystemPulse({ actions }: { actions: ScheduledAction[] }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   if (actions.length === 0) return null;
   const shown = actions.slice(0, SYSTEM_PULSE_CAP);
   const hidden = actions.length - shown.length;
   return (
     <section>
       <SectionHeading
-        title="System pulse"
+        title={isZh ? "系统脉搏" : "System pulse"}
         count={actions.length}
         icon="activity"
-        tag="Internal · continuous"
+        tag={isZh ? "内部机制 · 持续运行" : "Internal · continuous"}
         tagTone="muted"
-        subtitle="Background scans that run every few minutes to keep the Executive aware of change. Nothing here is sent to you — findings surface later as proposals or nudges."
+        subtitle={
+          isZh
+            ? "每隔几分钟在后台执行的环境变动扫描，让执行团队随时感知外部变化。扫描结果不会直接打扰您，而是转化为后续的提案或提醒。"
+            : "Background scans that run every few minutes to keep the Executive aware of change. Nothing here is sent to you — findings surface later as proposals or nudges."
+        }
       />
       <div className="divide-y divide-line">
         {shown.map((a) => (
@@ -409,7 +434,9 @@ function SystemPulse({ actions }: { actions: ScheduledAction[] }) {
         ))}
       </div>
       {hidden > 0 && (
-        <div className="text-xs text-fg-subtle mt-2">+{hidden} more not shown</div>
+        <div className="text-xs text-fg-subtle mt-2">
+          {isZh ? `+还有 ${hidden} 项未展开` : `+${hidden} more not shown`}
+        </div>
       )}
     </section>
   );
@@ -422,6 +449,8 @@ function SystemPulse({ actions }: { actions: ScheduledAction[] }) {
 // there are no pending follow-ups, like the rhythm blocks.
 // ---------------------------------------------------------------------------
 export function FollowUpsCard() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [rows, setRows] = useState<ScheduledAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
@@ -451,18 +480,18 @@ export function FollowUpsCard() {
   }, [refresh, reloadNonce]);
 
   const handleCancel = useCallback(async (id: number) => {
-    if (!window.confirm("Cancel this follow-up? It won't fire.")) return;
+    if (!window.confirm(isZh ? "确认取消该跟进事项？取消后将不再触发。" : "Cancel this follow-up? It won't fire.")) return;
     setCancellingId(id);
     try {
       await cancelScheduledAction(id);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Failed to cancel.");
+      window.alert(err instanceof Error ? err.message : (isZh ? "取消失败。" : "Failed to cancel."));
       setCancellingId(null);
       return;
     }
     setCancellingId(null);
     setReloadNonce((n) => n + 1);
-  }, []);
+  }, [isZh]);
 
   // ad_hoc one-offs, soonest-first (groupByRhythm deliberately drops these).
   const followups = useMemo(() => {
@@ -484,10 +513,10 @@ export function FollowUpsCard() {
   return (
     <div className="rounded-xl border border-line bg-surface-elevated p-4">
       <SectionHeading
-        title="Follow-ups"
+        title={isZh ? "待跟进事项" : "Follow-ups"}
         count={followups.length}
         icon="flag"
-        subtitle="One-off commitments the Executive scheduled for you."
+        subtitle={isZh ? "执行团队为您安排的单次承诺与跟进事项。" : "One-off commitments the Executive scheduled for you."}
       />
       <div className="max-h-[32rem] overflow-y-auto pr-1 divide-y divide-line">
         {followups.map((a) => (
@@ -512,6 +541,8 @@ function FollowUpRow({
   cancelling: boolean;
   onCancel: () => void;
 }) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const { absolute, relative } = formatRunAt(action.run_at);
   const pill = STATUS_PILL[action.status] ?? STATUS_PILL.cancelled;
   return (
@@ -528,7 +559,9 @@ function FollowUpRow({
           <span className="text-fg-muted font-mono text-[11px] truncate max-w-[12rem]" title={action.channel_ref}>{action.channel_ref}</span>
           <span title={absolute}>{relative || absolute}</span>
           {action.attempts > 0 && (
-            <span className="text-amber-400">{action.attempts} attempt{action.attempts === 1 ? "" : "s"}</span>
+            <span className="text-amber-400">
+              {isZh ? `已尝试 ${action.attempts} 次` : `${action.attempts} attempt${action.attempts === 1 ? "" : "s"}`}
+            </span>
           )}
         </div>
         {action.status === "pending" && (
@@ -537,7 +570,7 @@ function FollowUpRow({
             disabled={cancelling}
             className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0"
           >
-            {cancelling ? "Cancelling…" : "Cancel"}
+            {cancelling ? (isZh ? "正在取消…" : "Cancelling…") : (isZh ? "取消" : "Cancel")}
           </button>
         )}
       </div>

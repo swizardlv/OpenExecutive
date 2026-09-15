@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface NewFileFormProps {
   domains: string[];
@@ -17,6 +18,8 @@ export default function NewFileForm({
   onSave,
   onCancel,
 }: NewFileFormProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [domain, setDomain] = useState(initialDomain);
   const [filename, setFilename] = useState("");
   const [content, setContent] = useState("");
@@ -27,7 +30,7 @@ export default function NewFileForm({
     const trimmed = filename.trim();
     const fullName = trimmed.endsWith(".md") ? trimmed : `${trimmed}.md`;
     if (!/^[a-zA-Z0-9_\-]+\.md$/.test(fullName)) {
-      setError("Filename must be alphanumeric with dashes or underscores");
+      setError(isZh ? "文件名必须为英文字母、数字、破折号或下划线" : "Filename must be alphanumeric with dashes or underscores");
       return;
     }
     setIsSaving(true);
@@ -35,16 +38,20 @@ export default function NewFileForm({
     try {
       await onSave(domain, fullName, content);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create file");
+      setError(e instanceof Error ? e.message : (isZh ? "创建文件失败" : "Failed to create file"));
       setIsSaving(false);
     }
   }
 
-  const title = variant === "failure" ? "New failure case" : "New playbook file";
+  const title = variant === "failure"
+    ? (isZh ? "新建失败教训案例" : "New failure case")
+    : (isZh ? "新建最佳实践文件" : "New playbook file");
   const placeholder =
     variant === "failure"
-      ? "# Company X: <one-line failure summary>\n\n## Situation\n\n## What Happened\n\n## Root Cause\n\n## Key Decision Failures\n"
-      : "# Title\n\nWrite your knowledge here…";
+      ? (isZh
+          ? "# 案例主体: <一句话教训概要>\n\n## 背景与现状\n\n## 发生了什么\n\n## 根本原因\n\n## 关键决策失误\n"
+          : "# Company X: <one-line failure summary>\n\n## Situation\n\n## What Happened\n\n## Root Cause\n\n## Key Decision Failures\n")
+      : (isZh ? "# 标题\n\n在此输入知识内容…" : "# Title\n\nWrite your knowledge here…");
 
   return (
     <div className="flex flex-col gap-4">
@@ -85,13 +92,13 @@ export default function NewFileForm({
           disabled={!filename.trim() || !content.trim() || isSaving}
           className="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white text-sm font-medium rounded-xl transition-colors"
         >
-          {isSaving ? "Creating…" : "Create file"}
+          {isSaving ? (isZh ? "创建中…" : "Creating…") : (isZh ? "创建文件" : "Create file")}
         </button>
         <button
           onClick={onCancel}
           className="px-4 py-2 border border-line-strong text-fg-muted hover:text-fg text-sm rounded-xl transition-colors"
         >
-          Cancel
+          {isZh ? "取消" : "Cancel"}
         </button>
       </div>
     </div>

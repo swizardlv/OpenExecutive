@@ -19,6 +19,7 @@ import {
   type PeriodType,
 } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { useI18n } from "@/lib/i18n";
 
 // Auto-refresh cadence for the detail page. The `dept_cadence` scheduler
 // fires at most once per department per cadence (default daily), so any
@@ -57,23 +58,29 @@ const AUTHORITY_OPTS: DepartmentConfig["authority_level"][] = [
   "escalate",
 ];
 
-const AUTHORITY_META: Record<
-  DepartmentConfig["authority_level"],
-  { label: string; hint: string }
-> = {
-  auto_execute: {
-    label: "Acts on its own",
-    hint: "The specialist runs actions in its scope without asking. You'll see them in the audit log.",
-  },
-  propose_only: {
-    label: "Proposes, you approve",
-    hint: "The specialist drafts actions and routes them to a person for approval before anything happens.",
-  },
-  escalate: {
-    label: "Escalates to a human",
-    hint: "The specialist will not act — it forwards everything to a human.",
-  },
-};
+function getAuthorityMeta(level: DepartmentConfig["authority_level"], isZh: boolean) {
+  const meta = {
+    auto_execute: {
+      label: isZh ? "自主执行" : "Acts on its own",
+      hint: isZh
+        ? "专员在职责范围内自主执行操作，无需提前请示。所有操作记录在审计日志中。"
+        : "The specialist runs actions in its scope without asking. You'll see them in the audit log.",
+    },
+    propose_only: {
+      label: isZh ? "提议方案，人工审批" : "Proposes, you approve",
+      hint: isZh
+        ? "专员拟定行动计划，并在执行前提交指定责任人审批。"
+        : "The specialist drafts actions and routes them to a person for approval before anything happens.",
+    },
+    escalate: {
+      label: isZh ? "移交人工处理" : "Escalates to a human",
+      hint: isZh
+        ? "专员不会自主行动 — 将所有事项转交人工负责。"
+        : "The specialist will not act — it forwards everything to a human.",
+    },
+  };
+  return meta[level];
+}
 
 function cls(...parts: (string | false | undefined)[]) {
   return parts.filter(Boolean).join(" ");
@@ -94,12 +101,24 @@ interface GoalRowProps {
   onEditingChange?: (editing: boolean) => void;
 }
 
-function _formatPeriodLabel(g: Goal): string {
-  if (g.period_type === "ongoing") return g.period_value || "Ongoing";
-  return `${g.period_type.charAt(0).toUpperCase() + g.period_type.slice(1)}: ${g.period_value}`;
+function _formatPeriodLabel(g: Goal, isZh: boolean): string {
+  const typeMap: Record<string, string> = {
+    ongoing: "持续推进",
+    quarter: "季度",
+    half: "半年度",
+    year: "年度",
+    month: "月度",
+  };
+  if (g.period_type === "ongoing") return isZh ? (g.period_value || "持续推进") : (g.period_value || "Ongoing");
+  const typeLabel = isZh
+    ? (typeMap[g.period_type] ?? g.period_type)
+    : `${g.period_type.charAt(0).toUpperCase() + g.period_type.slice(1)}`;
+  return `${typeLabel}: ${g.period_value}`;
 }
 
 function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -113,6 +132,12 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
     status: goal.status as GoalStatus,
   });
 
+  const statusLabels: Record<GoalStatus, string> = {
+    on_track: isZh ? "正常推进" : "on track",
+    at_risk: isZh ? "存在风险" : "at risk",
+    off_track: isZh ? "偏离目标" : "off track",
+  };
+
   // Centralise the editing transition so save/cancel/enter all notify
   // the parent — avoids forgetting the call in one branch.
   function setEditingAndNotify(next: boolean) {
@@ -120,13 +145,6 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
     onEditingChange?.(next);
   }
 
-  // Belt-and-suspenders: if the row unmounts while still in edit mode
-  // (e.g. parent replaces the goals list and drops this row), the
-  // parent's edit counter would otherwise stay incremented and pause
-  // polling forever. Read latest `editing` via a ref so the unmount
-  // cleanup sees the current value, not the value captured at mount.
-  // The parent's Math.max(0, …) guards against a double-decrement if
-  // the row also ran its own cancel path before unmount.
   const editingRef = useRef(editing);
   useEffect(() => {
     editingRef.current = editing;
@@ -154,23 +172,25 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
             STATUS_COLORS[goal.status]
           )}
         >
-          {goal.status.replace("_", " ")}
+          {statusLabels[goal.status as GoalStatus] ?? goal.status.replace("_", " ")}
         </span>
         <div className="flex-1 min-w-0">
           <div className="text-sm text-fg font-medium">{goal.key_result}</div>
           <div className="text-xs text-fg-muted mt-0.5">
-            Target: {goal.target}
-            {goal.current ? ` — Current: ${goal.current}` : ""}
+            {isZh ? "预期目标：" : "Target: "}{goal.target}
+            {goal.current ? ` — ${isZh ? "当前进展：" : "Current: "}${goal.current}` : ""}
           </div>
           <div className="text-xs text-fg-subtle mt-0.5 flex items-center gap-2 flex-wrap">
-            <span>{_formatPeriodLabel(goal)}</span>
+            <span>{_formatPeriodLabel(goal, isZh)}</span>
             <span aria-hidden="true">·</span>
             {goal.last_reviewed_at ? (
               <span className={cls(stale && "text-amber-400")}>
-                Last reviewed {formatRelativeTime(goal.last_reviewed_at)}
+                {isZh
+                  ? `最近审查于 ${formatRelativeTime(goal.last_reviewed_at, locale)}`
+                  : `Last reviewed ${formatRelativeTime(goal.last_reviewed_at)}`}
               </span>
             ) : (
-              <span className="italic">Never reviewed</span>
+              <span className="italic">{isZh ? "尚未审查" : "Never reviewed"}</span>
             )}
           </div>
         </div>
@@ -180,25 +200,25 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
               onClick={() => setEditingAndNotify(true)}
               className="px-2 py-1 text-xs rounded bg-surface-overlay hover:bg-surface-input border border-line"
             >
-              Edit
+              {isZh ? "编辑" : "Edit"}
             </button>
             <button
               disabled={deleting}
               onClick={async () => {
-                if (!window.confirm("Delete this Goal?")) return;
+                if (!window.confirm(isZh ? "确定删除此目标？" : "Delete this Goal?")) return;
                 setDeleting(true);
                 setErr(null);
                 try {
                   await deleteGoal(slug, goal.id!);
                   onDeleted(goal.id!);
                 } catch (e) {
-                  setErr(e instanceof Error ? e.message : "Delete failed");
+                  setErr(e instanceof Error ? e.message : (isZh ? "删除失败" : "Delete failed"));
                   setDeleting(false);
                 }
               }}
               className="px-2 py-1 text-xs rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 disabled:opacity-50"
             >
-              {deleting ? "…" : "Delete"}
+              {deleting ? "…" : (isZh ? "删除" : "Delete")}
             </button>
           </div>
           {err && <span className="text-[10px] text-rose-300">{err}</span>}
@@ -216,7 +236,7 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
         size="compact"
       />
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        Status
+        {isZh ? "状态" : "Status"}
         <select
           value={form.status}
           onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as GoalStatus }))}
@@ -224,36 +244,36 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
         >
           {STATUS_OPTS.map((s) => (
             <option key={s} value={s}>
-              {s.replace("_", " ")}
+              {statusLabels[s]}
             </option>
           ))}
         </select>
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        Key result
+        {isZh ? "关键结果" : "Key result"}
         <input
           value={form.key_result}
           onChange={(e) => setForm((f) => ({ ...f, key_result: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder="Close Series A by Jun 30"
+          placeholder={isZh ? "例如：在 6 月 30 日前完成 A 轮融资" : "Close Series A by Jun 30"}
         />
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        Target
+        {isZh ? "预期目标" : "Target"}
         <input
           value={form.target}
           onChange={(e) => setForm((f) => ({ ...f, target: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder="What does done look like?"
+          placeholder={isZh ? "完成的目标标准是什么？" : "What does done look like?"}
         />
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        Current
+        {isZh ? "当前进展" : "Current"}
         <input
           value={form.current}
           onChange={(e) => setForm((f) => ({ ...f, current: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder="Where are we now?"
+          placeholder={isZh ? "目前进展如何？" : "Where are we now?"}
         />
       </label>
       {err && <p className="text-xs text-rose-300">{err}</p>}
@@ -268,14 +288,14 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
               onSaved(updated);
               setEditingAndNotify(false);
             } catch (e) {
-              setErr(e instanceof Error ? e.message : "Save failed");
+              setErr(e instanceof Error ? e.message : (isZh ? "保存失败" : "Save failed"));
             } finally {
               setSaving(false);
             }
           }}
           className="px-3 py-1.5 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save"}
+          {saving ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存" : "Save")}
         </button>
         <button
           disabled={saving}
@@ -293,7 +313,7 @@ function GoalRow({ slug, goal, onSaved, onDeleted, onEditingChange }: GoalRowPro
           }}
           className="px-3 py-1.5 text-xs rounded-lg border border-line hover:bg-surface-overlay disabled:opacity-50"
         >
-          Cancel
+          {isZh ? "取消" : "Cancel"}
         </button>
       </div>
     </div>
@@ -311,6 +331,8 @@ interface AddGoalFormProps {
 }
 
 function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [form, setForm] = useState<{
     period_type: PeriodType;
     period_value: string;
@@ -330,13 +352,21 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
   const [err, setErr] = useState<string | null>(null);
   const firstRef = useRef<HTMLInputElement>(null);
 
+  const statusLabels: Record<GoalStatus, string> = {
+    on_track: isZh ? "正常推进" : "on track",
+    at_risk: isZh ? "存在风险" : "at risk",
+    off_track: isZh ? "偏离目标" : "off track",
+  };
+
   useEffect(() => {
     firstRef.current?.focus();
   }, []);
 
   return (
     <div className="py-3 border-b border-line space-y-2 bg-surface-overlay/30 px-4 -mx-4 rounded-lg">
-      <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-1">New Goal</div>
+      <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-1">
+        {isZh ? "新建目标" : "New Goal"}
+      </div>
       <TimeframePicker
         periodType={form.period_type}
         periodValue={form.period_value}
@@ -344,7 +374,7 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
         size="compact"
       />
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        Status
+        {isZh ? "状态" : "Status"}
         <select
           value={form.status}
           onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as GoalStatus }))}
@@ -352,37 +382,37 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
         >
           {STATUS_OPTS.map((s) => (
             <option key={s} value={s}>
-              {s.replace("_", " ")}
+              {statusLabels[s]}
             </option>
           ))}
         </select>
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        Key result
+        {isZh ? "关键结果" : "Key result"}
         <input
           ref={firstRef}
           value={form.key_result}
           onChange={(e) => setForm((f) => ({ ...f, key_result: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder="What do we want to achieve?"
+          placeholder={isZh ? "我们想要达成什么？" : "What do we want to achieve?"}
         />
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        Target
+        {isZh ? "预期目标" : "Target"}
         <input
           value={form.target}
           onChange={(e) => setForm((f) => ({ ...f, target: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder="Measurable target"
+          placeholder={isZh ? "可量化的目标指标" : "Measurable target"}
         />
       </label>
       <label className="text-xs text-fg-muted flex flex-col gap-1">
-        Current (optional)
+        {isZh ? "当前进展（可选）" : "Current (optional)"}
         <input
           value={form.current}
           onChange={(e) => setForm((f) => ({ ...f, current: e.target.value }))}
           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
-          placeholder="Current progress"
+          placeholder={isZh ? "当前进展情况" : "Current progress"}
         />
       </label>
       {err && <p className="text-xs text-rose-300">{err}</p>}
@@ -396,21 +426,21 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
               const goal = await createGoal(slug, form);
               onCreated(goal);
             } catch (e) {
-              setErr(e instanceof Error ? e.message : "Create failed");
+              setErr(e instanceof Error ? e.message : (isZh ? "创建失败" : "Create failed"));
             } finally {
               setSaving(false);
             }
           }}
           className="px-3 py-1.5 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50"
         >
-          {saving ? "Creating…" : "Add Goal"}
+          {saving ? (isZh ? "创建中…" : "Creating…") : (isZh ? "添加目标" : "Add Goal")}
         </button>
         <button
           disabled={saving}
           onClick={onCancel}
           className="px-3 py-1.5 text-xs rounded-lg border border-line hover:bg-surface-overlay disabled:opacity-50"
         >
-          Cancel
+          {isZh ? "取消" : "Cancel"}
         </button>
       </div>
     </div>
@@ -422,6 +452,8 @@ function AddGoalForm({ slug, onCreated, onCancel }: AddGoalFormProps) {
 // ---------------------------------------------------------------------------
 
 export default function DepartmentDetailPage() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const params = useParams();
   const slug = params?.slug as string;
   const router = useRouter();
@@ -459,12 +491,6 @@ export default function DepartmentDetailPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [addingGoal, setAddingGoal] = useState(false);
 
-  // Count of GoalRows currently in edit mode. Polling pauses while > 0
-  // so a snapshot replacing `goals` mid-edit doesn't flicker the view
-  // label or wipe the form state. The refs let the poll callback always
-  // read the live values without re-binding the interval — keeping the
-  // assignment in a `useEffect` (rather than the render body) keeps the
-  // render pure and is safe under React 18 concurrent rendering.
   const [editingGoalCount, setEditingGoalCount] = useState(0);
   const editingGoalCountRef = useRef(0);
   const editingSettingsRef = useRef(false);
@@ -486,14 +512,9 @@ export default function DepartmentDetailPage() {
     function applyDept(d: DepartmentState, isInitial: boolean) {
       if (cancelled) return;
       setDept(d);
-      // Don't replace `goals` while any row is being edited — the row
-      // owns its form state and a server snapshot would flicker the
-      // visible label. Initial load always wins (the user hasn't had
-      // a chance to start editing yet).
       if (isInitial || editingGoalCountRef.current === 0) {
         setGoals(d.goals);
       }
-      // Same guard for the big settings form.
       if (isInitial || !editingSettingsRef.current) {
         setSettingsForm({
           authority_level: d.config.authority_level,
@@ -516,15 +537,12 @@ export default function DepartmentDetailPage() {
     getDepartment(slug)
       .then((d) => applyDept(d, /* isInitial */ true))
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load");
+        if (!cancelled) setError(e instanceof Error ? e.message : (isZh ? "加载失败" : "Failed to load"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
 
-    // Poll for cross-tab edits and (Phase A's whole point) status
-    // updates from the department_check_in workflow firing in the
-    // background. Pause while any inline form is open.
     const interval = window.setInterval(() => {
       if (
         editingGoalCountRef.current > 0
@@ -535,23 +553,20 @@ export default function DepartmentDetailPage() {
       }
       getDepartment(slug)
         .then((d) => applyDept(d, /* isInitial */ false))
-        .catch(() => {
-          // Swallow transient errors — the next tick retries.
-        });
+        .catch(() => {});
     }, POLL_INTERVAL_MS);
 
     return () => {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [slug]);
+  }, [slug, isZh]);
 
-  // Load people whenever the user opens edit mode (if not already loaded).
   useEffect(() => {
     if (editingSettings && people.length === 0) {
       listPeople().then(setPeople).catch(() => {});
     }
-  }, [editingSettings]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [editingSettings, people.length]);
 
   async function saveSettings() {
     if (!dept) return;
@@ -571,11 +586,9 @@ export default function DepartmentDetailPage() {
         headcount: headcountNum,
         budget_usd: budgetNum,
         head_person_id: settingsForm.head_person_id,
-        // Empty string → null clears the channel; non-empty trim sends the new id.
         slack_channel_id: settingsForm.slack_channel_id.trim() || null,
         discord_channel_id: settingsForm.discord_channel_id.trim() || null,
         telegram_chat_id: settingsForm.telegram_chat_id.trim() || null,
-        // Always sent: an emptied textarea clears the list.
         watched_entities: settingsForm.watched_entities
           .split("\n")
           .map((line) => line.trim())
@@ -584,7 +597,7 @@ export default function DepartmentDetailPage() {
       setDept(updated);
       setEditingSettings(false);
     } catch (e) {
-      setSettingsErr(e instanceof Error ? e.message : "Save failed");
+      setSettingsErr(e instanceof Error ? e.message : (isZh ? "保存设置失败" : "Save failed"));
     } finally {
       setSavingSettings(false);
     }
@@ -594,7 +607,7 @@ export default function DepartmentDetailPage() {
     <div className="flex flex-col h-full bg-surface">
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-6 py-6">
-          {loading && <p className="text-fg-muted text-sm">Loading…</p>}
+          {loading && <p className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</p>}
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm">
               {error}
@@ -608,9 +621,9 @@ export default function DepartmentDetailPage() {
                   <h1 className="text-xl font-semibold text-fg">{dept.config.title}</h1>
                   <div className="text-xs text-fg-muted mt-1">
                     {dept.config.specialist_key ? (
-                      <>Specialist: <code className="font-mono text-fg">{dept.config.specialist_key}</code></>
+                      <>{isZh ? "专员智能体：" : "Specialist: "}<code className="font-mono text-fg">{dept.config.specialist_key}</code></>
                     ) : (
-                      <span className="italic">Informational department (no specialist agent)</span>
+                      <span className="italic">{isZh ? "信息类部门（未配置专属专员智能体）" : "Informational department (no specialist agent)"}</span>
                     )}
                   </div>
                 </div>
@@ -618,7 +631,6 @@ export default function DepartmentDetailPage() {
                   <button
                     onClick={() => {
                       if (editingSettings) {
-                        // reset
                         setSettingsForm({
                           authority_level: dept.config.authority_level,
                           mission: dept.config.charter.mission,
@@ -637,27 +649,28 @@ export default function DepartmentDetailPage() {
                     }}
                     className="px-3 py-1.5 text-xs rounded-lg border border-line hover:bg-surface-overlay transition-colors"
                   >
-                    {editingSettings ? "Cancel" : "Edit settings"}
+                    {editingSettings ? (isZh ? "取消编辑" : "Cancel") : (isZh ? "编辑设置" : "Edit settings")}
                   </button>
                   <button
                     disabled={deleting}
                     onClick={async () => {
-                      if (!window.confirm(
-                        `Delete "${dept.config.title}"? This will also remove all its Goals and cannot be undone.`
-                      )) return;
+                      const confirmMsg = isZh
+                        ? `确定删除 "${dept.config.title}"？这也将删除其所有目标，且无法撤销。`
+                        : `Delete "${dept.config.title}"? This will also remove all its Goals and cannot be undone.`;
+                      if (!window.confirm(confirmMsg)) return;
                       setDeleting(true);
                       setDeleteErr(null);
                       try {
                         await deleteDepartment(slug);
                         router.push("/departments");
                       } catch (e) {
-                        setDeleteErr(e instanceof Error ? e.message : "Delete failed");
+                        setDeleteErr(e instanceof Error ? e.message : (isZh ? "删除失败" : "Delete failed"));
                         setDeleting(false);
                       }
                     }}
                     className="px-3 py-1.5 text-xs rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 disabled:opacity-50 transition-colors"
                   >
-                    {deleting ? "Deleting…" : "Delete department"}
+                    {deleting ? (isZh ? "删除中…" : "Deleting…") : (isZh ? "删除部门" : "Delete department")}
                   </button>
                 </div>
               </div>
@@ -672,9 +685,11 @@ export default function DepartmentDetailPage() {
                 <div className="space-y-4 mb-6">
                   {/* Card 1: Charter */}
                   <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">Charter</h3>
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">
+                      {isZh ? "部门章程" : "Charter"}
+                    </h3>
                     <label className="text-xs text-fg-muted flex flex-col gap-1">
-                      Mission
+                      {isZh ? "使命愿景" : "Mission"}
                       <textarea
                         value={settingsForm.mission}
                         onChange={(e) =>
@@ -688,10 +703,12 @@ export default function DepartmentDetailPage() {
 
                   {/* Card 2: How it acts */}
                   <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">How it acts</h3>
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">
+                      {isZh ? "行动准则与授权" : "How it acts"}
+                    </h3>
                     <div className="space-y-3">
                       <label className="text-xs text-fg-muted flex flex-col gap-1">
-                        Department head
+                        {isZh ? "部门负责人" : "Department head"}
                         <select
                           value={settingsForm.head_person_id ?? ""}
                           onChange={(e) =>
@@ -702,20 +719,22 @@ export default function DepartmentDetailPage() {
                           }
                           className="px-2 py-1.5 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
                         >
-                          <option value="">— None —</option>
+                          <option value="">{isZh ? "— 未设置 —" : "— None —"}</option>
                           {people.map((p) => (
                             <option key={p.id} value={p.id}>
-                              {p.full_name}{p.role ? ` — ${p.role}` : ""}{p.is_principal ? " (you)" : ""}
+                              {p.full_name}{p.role ? ` — ${p.role}` : ""}{p.is_principal ? (isZh ? " (您)" : " (you)") : ""}
                             </option>
                           ))}
                         </select>
                         <span className="text-[10px] text-fg-muted">
-                          The Executive surfaces this person as the department owner in routing decisions.
+                          {isZh
+                            ? "Executive 会在路由决策中将该成员视作部门负责人。"
+                            : "The Executive surfaces this person as the department owner in routing decisions."}
                         </span>
                       </label>
                       <div className="space-y-1.5">
                         {AUTHORITY_OPTS.map((a) => {
-                          const meta = AUTHORITY_META[a];
+                          const meta = getAuthorityMeta(a, isZh);
                           const checked = settingsForm.authority_level === a;
                           return (
                             <label
@@ -747,7 +766,7 @@ export default function DepartmentDetailPage() {
                       </div>
 
                       <div>
-                        <div className="text-xs text-fg-muted mb-1">Recurring check-in</div>
+                        <div className="text-xs text-fg-muted mb-1">{isZh ? "日常定时汇报" : "Recurring check-in"}</div>
                         {Object.entries(settingsForm.cadences).map(([name, spec]) => (
                           <div key={name} className="flex items-center gap-2 mb-1.5">
                             <input
@@ -769,8 +788,9 @@ export default function DepartmentDetailPage() {
                           </div>
                         ))}
                         <p className="text-[10px] text-fg-muted mt-1">
-                          When set, the specialist posts a check-in on this schedule. You'll see it in Today.
-                          Example: <code className="font-mono">daily@09:00</code>, <code className="font-mono">mondays@09:00</code>.
+                          {isZh
+                            ? "设置后，专员将按此日程定期发布汇报，呈现在“今日聚焦”中。例如：daily@09:00、mondays@09:00。"
+                            : "When set, the specialist posts a check-in on this schedule. You'll see it in Today. Example: daily@09:00, mondays@09:00."}
                         </p>
                       </div>
                     </div>
@@ -778,10 +798,12 @@ export default function DepartmentDetailPage() {
 
                   {/* Card 3: Numbers */}
                   <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">Numbers</h3>
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">
+                      {isZh ? "编制与预算" : "Numbers"}
+                    </h3>
                     <div className="grid grid-cols-2 gap-2">
                       <label className="text-xs text-fg-muted flex flex-col gap-1">
-                        Headcount
+                        {isZh ? "团队编制" : "Headcount"}
                         <input
                           type="number"
                           min={0}
@@ -793,7 +815,7 @@ export default function DepartmentDetailPage() {
                         />
                       </label>
                       <label className="text-xs text-fg-muted flex flex-col gap-1">
-                        Budget (USD)
+                        {isZh ? "预算 (USD)" : "Budget (USD)"}
                         <input
                           type="number"
                           min={0}
@@ -809,11 +831,13 @@ export default function DepartmentDetailPage() {
 
                   {/* Card 4: Broadcast channels — OE can post to these team rooms */}
                   <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-1">Team channels</h3>
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-1">
+                      {isZh ? "团队协同频道" : "Team channels"}
+                    </h3>
                     <p className="text-[10px] text-fg-muted mb-3">
-                      When set, the Executive can post department-scoped updates to these rooms via{" "}
-                      <code className="font-mono">send_department_message</code>. Leave blank to have OE
-                      fall back to DMing the department head.
+                      {isZh
+                        ? "设置后，Executive 可通过 send_department_message 向这些频道广播部门级更新。留空则私信部门负责人。"
+                        : "When set, the Executive can post department-scoped updates to these rooms via send_department_message. Leave blank to have OE fall back to DMing the department head."}
                     </p>
                     <div className="space-y-2">
                       <label className="text-xs text-fg-muted flex flex-col gap-1">
@@ -855,16 +879,18 @@ export default function DepartmentDetailPage() {
                     </div>
                   </section>
 
-                  {/* Card 5: Watched entities — strong grounding for the research watch policy */}
+                  {/* Card 5: Watched entities */}
                   <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-1">Watched entities</h3>
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-1">
+                      {isZh ? "关注实体" : "Watched entities"}
+                    </h3>
                     <p className="text-[10px] text-fg-muted mb-3">
-                      Vendors, competitors or tickers this department cares about, one per line. Named here,
-                      the Executive will start watching their status pages, filings and feeds on its own and
-                      route what it finds to this department and its head.
+                      {isZh
+                        ? "该部门关心的供应商、竞争对手或股票代码，每行一个。在此设置后，Executive 将自主监控其状态页、申报文件与资讯，并汇总推送给该部门及负责人。"
+                        : "Vendors, competitors or tickers this department cares about, one per line. Named here, the Executive will start watching their status pages, filings and feeds on its own and route what it finds to this department and its head."}
                     </p>
                     <label className="text-xs text-fg-muted flex flex-col gap-1">
-                      Watched entities (one per line)
+                      {isZh ? "关注实体（每行一个）" : "Watched entities (one per line)"}
                       <textarea
                         value={settingsForm.watched_entities}
                         onChange={(e) =>
@@ -883,35 +909,35 @@ export default function DepartmentDetailPage() {
                     onClick={saveSettings}
                     className="px-4 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50"
                   >
-                    {savingSettings ? "Saving…" : "Save settings"}
+                    {savingSettings ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存设置" : "Save settings")}
                   </button>
                 </div>
               ) : (
                 <section className="rounded-xl border border-line bg-surface-elevated px-4 py-4 mb-6">
                   <div className="divide-y divide-line">
                     <div className="flex items-start gap-3 py-2">
-                      <div className="w-36 flex-shrink-0 text-xs text-fg-muted pt-0.5">How it acts</div>
+                      <div className="w-36 flex-shrink-0 text-xs text-fg-muted pt-0.5">{isZh ? "行动授权" : "How it acts"}</div>
                       <div>
                         <div className="text-sm text-fg">
-                          {AUTHORITY_META[dept.config.authority_level].label}
+                          {getAuthorityMeta(dept.config.authority_level, isZh).label}
                         </div>
                         <div className="text-[10px] text-fg-muted mt-0.5">
-                          {AUTHORITY_META[dept.config.authority_level].hint}
+                          {getAuthorityMeta(dept.config.authority_level, isZh).hint}
                         </div>
                       </div>
                     </div>
                     {[
-                      ["Mission", dept.config.charter.mission || "—"],
+                      [isZh ? "使命愿景" : "Mission", dept.config.charter.mission || "—"],
                       ...(dept.config.head_person_id != null
-                        ? [["Head", people.find((p) => p.id === dept.config.head_person_id)?.full_name ?? `Person #${dept.config.head_person_id}`]]
+                        ? [[isZh ? "负责人" : "Head", people.find((p) => p.id === dept.config.head_person_id)?.full_name ?? `Person #${dept.config.head_person_id}`]]
                         : []),
-                      ...(dept.headcount != null ? [["Headcount", String(dept.headcount)]] : []),
-                      ...(dept.budget_usd != null ? [["Budget", `$${dept.budget_usd.toLocaleString()}`]] : []),
-                      ...(dept.config.slack_channel_id ? [["Slack channel", dept.config.slack_channel_id]] : []),
-                      ...(dept.config.discord_channel_id ? [["Discord channel", dept.config.discord_channel_id]] : []),
-                      ...(dept.config.telegram_chat_id ? [["Telegram chat", dept.config.telegram_chat_id]] : []),
+                      ...(dept.headcount != null ? [[isZh ? "团队编制" : "Headcount", String(dept.headcount)]] : []),
+                      ...(dept.budget_usd != null ? [[isZh ? "财务预算" : "Budget", `$${dept.budget_usd.toLocaleString()}`]] : []),
+                      ...(dept.config.slack_channel_id ? [[isZh ? "Slack 频道" : "Slack channel", dept.config.slack_channel_id]] : []),
+                      ...(dept.config.discord_channel_id ? [[isZh ? "Discord 频道" : "Discord channel", dept.config.discord_channel_id]] : []),
+                      ...(dept.config.telegram_chat_id ? [[isZh ? "Telegram 群组" : "Telegram chat", dept.config.telegram_chat_id]] : []),
                       ...((dept.config.watched_entities ?? []).length > 0
-                        ? [["Watched entities", (dept.config.watched_entities ?? []).join(", ")]]
+                        ? [[isZh ? "关注实体" : "Watched entities", (dept.config.watched_entities ?? []).join(", ")]]
                         : []),
                     ].map(([label, value]) => (
                       <div key={label} className="flex items-start gap-3 py-2">
@@ -921,7 +947,7 @@ export default function DepartmentDetailPage() {
                     ))}
                     {Object.entries(dept.config.cadences).length > 0 && (
                       <div className="flex items-start gap-3 py-2">
-                        <div className="w-36 flex-shrink-0 text-xs text-fg-muted pt-0.5">Recurring check-in</div>
+                        <div className="w-36 flex-shrink-0 text-xs text-fg-muted pt-0.5">{isZh ? "定时日常汇报" : "Recurring check-in"}</div>
                         <div className="flex flex-wrap gap-1.5">
                           {Object.entries(dept.config.cadences).map(([n, s]) => (
                             <span key={n} className="px-2 py-0.5 rounded bg-surface-overlay border border-line text-xs font-mono text-fg">
@@ -940,7 +966,9 @@ export default function DepartmentDetailPage() {
                 <section className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {dept.config.charter.scope.length > 0 && (
                     <div>
-                      <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-2">In Scope</h2>
+                      <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-2">
+                        {isZh ? "职责范围内" : "In Scope"}
+                      </h2>
                       <ul className="list-disc list-inside space-y-1">
                         {dept.config.charter.scope.map((s, i) => (
                           <li key={i} className="text-sm text-fg">{s}</li>
@@ -950,7 +978,9 @@ export default function DepartmentDetailPage() {
                   )}
                   {dept.config.charter.out_of_scope.length > 0 && (
                     <div>
-                      <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-2">Out of Scope</h2>
+                      <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-2">
+                        {isZh ? "职责范围外" : "Out of Scope"}
+                      </h2>
                       <ul className="list-disc list-inside space-y-1">
                         {dept.config.charter.out_of_scope.map((s, i) => (
                           <li key={i} className="text-sm text-fg-muted">{s}</li>
@@ -965,14 +995,14 @@ export default function DepartmentDetailPage() {
               <section>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
-                    Goals ({goals.length})
+                    {isZh ? `工作目标 (${goals.length})` : `Goals (${goals.length})`}
                   </h2>
                   {!addingGoal && (
                     <button
                       onClick={() => setAddingGoal(true)}
                       className="px-3 py-1 text-xs rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30"
                     >
-                      + Add Goal
+                      {isZh ? "+ 新增目标" : "+ Add Goal"}
                     </button>
                   )}
                 </div>
@@ -990,12 +1020,12 @@ export default function DepartmentDetailPage() {
                   )}
                   {goals.length === 0 && !addingGoal ? (
                     <p className="py-6 text-sm text-fg-muted text-center">
-                      No Goals yet.{" "}
+                      {isZh ? "暂无工作目标。" : "No Goals yet."}{" "}
                       <button
                         onClick={() => setAddingGoal(true)}
                         className="text-indigo-400 hover:underline"
                       >
-                        Add one →
+                        {isZh ? "添加一个 →" : "Add one →"}
                       </button>
                     </p>
                   ) : (

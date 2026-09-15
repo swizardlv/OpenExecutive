@@ -8,13 +8,23 @@ export interface SessionGroup {
   items: SessionSummary[];
 }
 
-const GROUP_ORDER: { key: GroupKey; label: string }[] = [
-  { key: "today", label: "Today" },
-  { key: "yesterday", label: "Yesterday" },
-  { key: "prev7", label: "Previous 7 Days" },
-  { key: "prev30", label: "Previous 30 Days" },
-  { key: "older", label: "Older" },
-];
+const GROUP_LABELS_ZH: Record<GroupKey, string> = {
+  today: "今天",
+  yesterday: "昨天",
+  prev7: "过去 7 天",
+  prev30: "过去 30 天",
+  older: "更早之前",
+};
+
+const GROUP_LABELS_EN: Record<GroupKey, string> = {
+  today: "Today",
+  yesterday: "Yesterday",
+  prev7: "Previous 7 Days",
+  prev30: "Previous 30 Days",
+  older: "Older",
+};
+
+const GROUP_KEYS: GroupKey[] = ["today", "yesterday", "prev7", "prev30", "older"];
 
 const DAY_MS = 86_400_000;
 
@@ -28,6 +38,7 @@ const DAY_MS = 86_400_000;
 export function groupSessionsByDate(
   sessions: SessionSummary[],
   now: Date = new Date(),
+  locale: "zh" | "en" = "zh",
 ): SessionGroup[] {
   const startOfToday = new Date(
     now.getFullYear(),
@@ -65,9 +76,11 @@ export function groupSessionsByDate(
     buckets[key].push(s);
   }
 
-  return GROUP_ORDER.map(({ key, label }) => ({
+  const labelDict = locale === "zh" ? GROUP_LABELS_ZH : GROUP_LABELS_EN;
+
+  return GROUP_KEYS.map((key) => ({
     key,
-    label,
+    label: labelDict[key],
     items: buckets[key],
   })).filter((g) => g.items.length > 0);
 }

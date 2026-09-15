@@ -1,3 +1,5 @@
+"use client";
+
 // Shared helpers for the Pulse page (memory + cadence). Extracted from the
 // former single-file EpisodicMemories component so the Cadence and Memory
 // sections — and the redesigned PulseHeader — can reuse them without
@@ -7,6 +9,7 @@
 
 import Icon, { type IconName } from "@/components/Icon";
 import type { ScheduledAction } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 export const DOMAINS = [
   "strategy",
@@ -224,6 +227,23 @@ export function Tag({ label, tone = "muted" }: { label: string; tone?: TagTone }
   );
 }
 
+const TITLE_MAP_ZH: Record<string, string> = {
+  "In flight": "正在执行",
+  "Executive search": "高管猎聘",
+  "Across your clients": "客户企业",
+  "Staff onboarding": "员工入职",
+  "Monitoring": "监控清单",
+  "Across the team": "团队其他事项",
+  "Needs you": "待您处理",
+  "Recent activity": "最近动态",
+  "Cadence": "运行节拍",
+  "Episodic memory": "情景记忆",
+  "Handled": "已处理事项",
+  "Departments": "部门架构",
+  "People": "组织成员",
+  "Follow-ups": "跟进事项",
+};
+
 /** Section header: optional icon, title, optional count badge, optional tag pill, optional subtitle. */
 export function SectionHeading({
   title,
@@ -240,11 +260,14 @@ export function SectionHeading({
   tagTone?: TagTone;
   subtitle?: string;
 }) {
+  const { locale } = useI18n();
+  const displayTitle = locale === "zh" ? (TITLE_MAP_ZH[title] ?? title) : title;
+
   return (
     <div className="mb-3">
       <div className="flex items-center gap-2 flex-wrap">
         {icon && <Icon name={icon} size="w-4 h-4" className="text-fg-subtle" />}
-        <h3 className="text-sm font-semibold text-fg">{title}</h3>
+        <h3 className="text-sm font-semibold text-fg">{displayTitle}</h3>
         {count != null && (
           <span className="text-xs font-normal tabular-nums text-fg-subtle">{count}</span>
         )}

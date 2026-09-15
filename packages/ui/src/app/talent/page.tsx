@@ -11,8 +11,12 @@ import {
 } from "@/lib/api";
 import { CandidateCard } from "@/components/talent/CandidateCard";
 import { STAGE_META, PIPELINE_STAGES } from "@/components/talent/stages";
+import { useI18n } from "@/lib/i18n";
 
 export default function TalentPage() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [engagements, setEngagements] = useState<Engagement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,9 +29,9 @@ export default function TalentPage() {
         setCandidates(c);
         setEngagements(e);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load"))
+      .catch((err) => setError(err instanceof Error ? err.message : (isZh ? "加载失败" : "Failed to load")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isZh]);
 
   const filtered = useMemo(() => {
     if (!engagementFilter) return candidates;
@@ -49,13 +53,15 @@ export default function TalentPage() {
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-baseline justify-between mb-6 gap-4 flex-wrap">
             <div>
-              <h1 className="text-xl font-semibold text-fg">Talent Pipeline</h1>
+              <h1 className="text-xl font-semibold text-fg">
+                {isZh ? "人才招聘管线" : "Talent Pipeline"}
+              </h1>
               <p className="text-sm text-fg-muted mt-0.5">
-                Candidates across all searches, by stage. Manage open roles under{" "}
+                {isZh ? "按阶段展示所有招聘职位的候选人。管理开放职位请前往 " : "Candidates across all searches, by stage. Manage open roles under "}
                 <Link href="/talent/searches" className="text-indigo-300 hover:text-indigo-200">
-                  Searches
+                  {isZh ? "职位列表" : "Searches"}
                 </Link>
-                .
+                。
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -64,7 +70,7 @@ export default function TalentPage() {
                 onChange={(e) => setEngagementFilter(e.target.value)}
                 className="px-3 py-2 rounded-lg bg-surface-input border border-line text-sm focus:outline-none focus:border-indigo-500"
               >
-                <option value="">All engagements</option>
+                <option value="">{isZh ? "全部招聘职位" : "All engagements"}</option>
                 {engagements.map((e) => (
                   <option key={e.id} value={String(e.id)}>
                     {e.role_title}
@@ -75,12 +81,12 @@ export default function TalentPage() {
                 href="/talent/searches"
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium"
               >
-                Searches →
+                {isZh ? "职位列表 →" : "Searches →"}
               </Link>
             </div>
           </div>
 
-          {loading && <p className="text-fg-muted text-sm">Loading…</p>}
+          {loading && <p className="text-fg-muted text-sm">{isZh ? "加载中…" : "Loading…"}</p>}
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm mb-4">
               {error}
@@ -88,12 +94,12 @@ export default function TalentPage() {
           )}
           {!loading && !error && candidates.length === 0 && (
             <div className="rounded-xl border border-line bg-surface-elevated p-8 text-center">
-              <p className="text-fg-muted text-sm mb-3">No candidates yet.</p>
+              <p className="text-fg-muted text-sm mb-3">{isZh ? "暂无候选人。" : "No candidates yet."}</p>
               <Link
                 href="/talent/searches"
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white"
               >
-                Open a search →
+                {isZh ? "发起新招聘 →" : "Open a search →"}
               </Link>
             </div>
           )}
@@ -107,7 +113,7 @@ export default function TalentPage() {
                     <div key={stage} className="flex flex-col">
                       <div className="flex items-center justify-between mb-2 px-1">
                         <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">
-                          {STAGE_META[stage].label}
+                          {isZh ? STAGE_META[stage].labelZh : STAGE_META[stage].label}
                         </span>
                         <span className="text-xs text-fg-subtle tabular-nums">{items.length}</span>
                       </div>
@@ -117,7 +123,7 @@ export default function TalentPage() {
                         ))}
                         {items.length === 0 && (
                           <div className="rounded-xl border border-dashed border-line p-4 text-center text-[11px] text-fg-subtle">
-                            None
+                            {isZh ? "无" : "None"}
                           </div>
                         )}
                       </div>
@@ -129,7 +135,7 @@ export default function TalentPage() {
               {rejected.length > 0 && (
                 <div className="mt-8">
                   <div className="text-xs font-semibold text-fg-muted uppercase tracking-wide mb-2">
-                    Rejected ({rejected.length})
+                    {isZh ? `已淘汰 (${rejected.length})` : `Rejected (${rejected.length})`}
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     {rejected.map((c) => (

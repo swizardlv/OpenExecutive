@@ -17,6 +17,7 @@ import {
   listPeople,
   updateCustomWorkflow,
 } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 const SECTIONS: WorkflowSection[] = [
   "Board",
@@ -27,6 +28,16 @@ const SECTIONS: WorkflowSection[] = [
   "Risk, Legal & Crisis",
   "Operating Cadence",
 ];
+
+const SECTION_ORDER_ZH: Record<WorkflowSection, string> = {
+  Board: "董事会",
+  "Capital & Investors": "资本与投资人",
+  "Growth & GTM": "业务增长与GTM",
+  Product: "产品策略",
+  People: "组织与团队",
+  "Risk, Legal & Crisis": "风控法务与危机",
+  "Operating Cadence": "运营节拍",
+};
 
 type StepKind = DynamicStep["kind"];
 
@@ -128,6 +139,9 @@ function coerceSteps(raw: unknown): DynamicStep[] | null {
 }
 
 function BuilderInner() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const editName = searchParams.get("edit");
@@ -184,46 +198,49 @@ function BuilderInner() {
   // on every render.
   const { suggestedCls, clearSuggested } = useAskOEFormContext({
     formId: "workflow_builder",
-    title: editName ? "Edit workflow" : "New workflow",
-    description:
-      "Builds a reusable executive job from specialist steps, optional approval gates, and a final synthesis step.",
+    title: editName
+      ? isZh ? "编辑工作流" : "Edit workflow"
+      : isZh ? "新建工作流" : "New workflow",
+    description: isZh
+      ? "通过组合专家步骤、审批门禁以及最终综合步骤，构建可复用的高管任务流。"
+      : "Builds a reusable executive job from specialist steps, optional approval gates, and a final synthesis step.",
     getFields: (): PageFormField[] => [
       {
         name: "name",
-        label: "Name (snake_case, unique)",
+        label: isZh ? "标识名 (下划线小写，唯一)" : "Name (snake_case, unique)",
         type: "text",
         value: name,
         required: true,
         description: editName
-          ? "Immutable — this workflow already exists."
-          : "snake_case unique identifier, e.g. weekly_competitor_watch.",
+          ? (isZh ? "不可更改 — 该工作流已存在。" : "Immutable — this workflow already exists.")
+          : (isZh ? "下划线小写唯一标识名，例如 weekly_competitor_watch。" : "snake_case unique identifier, e.g. weekly_competitor_watch."),
       },
-      { name: "title", label: "Title", type: "text", value: title, required: true },
-      { name: "description", label: "Description", type: "text", value: description },
+      { name: "title", label: isZh ? "工作流标题" : "Title", type: "text", value: title, required: true },
+      { name: "description", label: isZh ? "描述" : "Description", type: "text", value: description },
       {
         name: "section",
-        label: "Section",
+        label: isZh ? "所属板块" : "Section",
         type: "select",
         options: [...SECTIONS],
         value: section,
       },
       {
         name: "estimated_minutes",
-        label: "Estimated minutes",
+        label: isZh ? "预估耗时 (分钟)" : "Estimated minutes",
         type: "number",
         value: estimatedMinutes,
         description: "1-120.",
       },
       {
         name: "input_fields",
-        label: "Input fields",
+        label: isZh ? "输入字段" : "Input fields",
         type: "json",
         value: fields,
         description: INPUT_FIELDS_SCHEMA,
       },
       {
         name: "steps",
-        label: "Steps",
+        label: isZh ? "执行步骤" : "Steps",
         type: "json",
         value: steps,
         required: true,
@@ -231,24 +248,24 @@ function BuilderInner() {
       },
       {
         name: "cadence_enabled",
-        label: "Run on a schedule",
+        label: isZh ? "定时周期执行" : "Run on a schedule",
         type: "boolean",
         value: cadenceEnabled,
       },
       {
         name: "cadence",
-        label: "Cadence",
+        label: isZh ? "周期规则" : "Cadence",
         type: "text",
         value: cadence,
         description: "daily@HH:MM / weekly@DOW@HH:MM / quarterly@DD-HH:MM, UTC.",
       },
       {
         name: "cadence_person_id",
-        label: "Deliver artifact to (person id)",
+        label: isZh ? "成果交付给 (人员ID)" : "Deliver artifact to (person id)",
         type: "number",
         value: cadencePersonId,
         description:
-          people.map((p) => `${p.id} = ${p.full_name}`).join("; ") || "No people yet.",
+          people.map((p) => `${p.id} = ${p.full_name}`).join("; ") || (isZh ? "暂无团队成员。" : "No people yet."),
       },
     ],
     applyPatch: (values) => {
@@ -386,17 +403,33 @@ function BuilderInner() {
   }
 
   if (loading) {
-    return <div className="text-sm text-fg-muted">Loading…</div>;
+    return <div className="text-sm text-fg-muted">{isZh ? "加载中…" : "Loading…"}</div>;
   }
 
   return (
     <div className="space-y-8">
+      <div>
+        <Link href="/jobs" className="text-xs text-fg-muted hover:text-fg">
+          {isZh ? "← 返回任务流列表" : "← Back to jobs"}
+        </Link>
+        <h1 className="text-2xl font-semibold text-fg mt-2 mb-1">
+          {editName
+            ? isZh ? `编辑工作流：${title || editName}` : `Edit workflow: ${title || editName}`
+            : isZh ? "新建工作流" : "New workflow"}
+        </h1>
+        <p className="text-sm text-fg-muted">
+          {isZh
+            ? "通过组合专家步骤、审批门禁以及最终综合步骤，构建可复用的高管任务流。您也可以在聊天中让 Executive 协助创建。"
+            : "Build a reusable executive job from specialist steps, optional approval gates, and a final synthesis step. You can also ask the Executive in chat to create one for you."}
+        </p>
+      </div>
+
       {/* Metadata */}
       <section className="space-y-4">
-        <h2 className="text-base font-semibold text-fg">Details</h2>
+        <h2 className="text-base font-semibold text-fg">{isZh ? "基本信息" : "Details"}</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Name (snake_case, unique)</label>
+            <label className={labelCls}>{isZh ? "标识名 (下划线小写，唯一)" : "Name (snake_case, unique)"}</label>
             <input
               className={`${inputCls} ${suggestedCls("name")}`}
               value={name}
@@ -406,27 +439,27 @@ function BuilderInner() {
             />
           </div>
           <div>
-            <label className={labelCls}>Title</label>
+            <label className={labelCls}>{isZh ? "工作流标题" : "Title"}</label>
             <input
               className={`${inputCls} ${suggestedCls("title")}`}
               value={title}
               onChange={(e) => { setTitle(e.target.value); clearSuggested("title"); }}
-              placeholder="Weekly Competitor Watch"
+              placeholder={isZh ? "每周竞品监控简报" : "Weekly Competitor Watch"}
             />
           </div>
         </div>
         <div>
-          <label className={labelCls}>Description</label>
+          <label className={labelCls}>{isZh ? "描述" : "Description"}</label>
           <input
             className={`${inputCls} ${suggestedCls("description")}`}
             value={description}
             onChange={(e) => { setDescription(e.target.value); clearSuggested("description"); }}
-            placeholder="What this workflow produces"
+            placeholder={isZh ? "说明此工作流的产出成果与应用场景" : "What this workflow produces"}
           />
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Section</label>
+            <label className={labelCls}>{isZh ? "所属板块" : "Section"}</label>
             <select
               className={`${inputCls} ${suggestedCls("section")}`}
               value={section}
@@ -434,13 +467,13 @@ function BuilderInner() {
             >
               {SECTIONS.map((s) => (
                 <option key={s} value={s}>
-                  {s}
+                  {isZh ? SECTION_ORDER_ZH[s] : s}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className={labelCls}>Estimated minutes</label>
+            <label className={labelCls}>{isZh ? "预估耗时 (分钟)" : "Estimated minutes"}</label>
             <input
               type="number"
               min={1}
@@ -459,7 +492,7 @@ function BuilderInner() {
         onInput={() => clearSuggested("input_fields")}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-fg">Input fields</h2>
+          <h2 className="text-base font-semibold text-fg">{isZh ? "输入字段" : "Input fields"}</h2>
           <button
             type="button"
             className="text-xs text-indigo-400 hover:text-indigo-300"
@@ -470,15 +503,16 @@ function BuilderInner() {
               ])
             }
           >
-            + Add field
+            {isZh ? "+ 添加字段" : "+ Add field"}
           </button>
         </div>
         <p className="text-xs text-fg-muted">
-          Free-text fields the user fills when running. Reference them in step
-          goals with <code>{"{field_name}"}</code>.
+          {isZh
+            ? "运行时由用户填写的自由文本字段。在步骤目标中可以通过 {field_name} 进行引用。"
+            : "Free-text fields the user fills when running. Reference them in step goals with {field_name}."}
         </p>
         {fields.length === 0 && (
-          <p className="text-xs text-fg-subtle">No input fields.</p>
+          <p className="text-xs text-fg-subtle">{isZh ? "暂无输入字段。" : "No input fields."}</p>
         )}
         {fields.map((f, i) => (
           <div
@@ -486,7 +520,7 @@ function BuilderInner() {
             className="rounded-md border border-line bg-surface/30 p-3 grid sm:grid-cols-[1fr_1fr_auto] gap-3 items-end"
           >
             <div>
-              <label className={labelCls}>Field name</label>
+              <label className={labelCls}>{isZh ? "字段标识" : "Field name"}</label>
               <input
                 className={inputCls}
                 value={f.name}
@@ -495,12 +529,12 @@ function BuilderInner() {
               />
             </div>
             <div>
-              <label className={labelCls}>Label</label>
+              <label className={labelCls}>{isZh ? "字段标签" : "Label"}</label>
               <input
                 className={inputCls}
                 value={f.label}
                 onChange={(e) => updateField(i, { label: e.target.value })}
-                placeholder="Topic"
+                placeholder={isZh ? "主题" : "Topic"}
               />
             </div>
             <div className="flex items-center gap-3 pb-1.5">
@@ -510,14 +544,14 @@ function BuilderInner() {
                   checked={f.required}
                   onChange={(e) => updateField(i, { required: e.target.checked })}
                 />
-                Required
+                {isZh ? "必填" : "Required"}
               </label>
               <button
                 type="button"
                 className="text-xs text-fg-muted hover:text-red-400"
                 onClick={() => setFields((fs) => fs.filter((_, idx) => idx !== i))}
               >
-                Remove
+                {isZh ? "删除" : "Remove"}
               </button>
             </div>
           </div>
@@ -530,7 +564,7 @@ function BuilderInner() {
         onInput={() => clearSuggested("steps")}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-fg">Steps</h2>
+          <h2 className="text-base font-semibold text-fg">{isZh ? "执行步骤" : "Steps"}</h2>
           <div className="flex gap-2">
             <button
               type="button"
@@ -539,7 +573,7 @@ function BuilderInner() {
                 setSteps((ss) => [...ss, newStep("specialist", ss.length)])
               }
             >
-              + Specialist
+              {isZh ? "+ 专家步骤" : "+ Specialist"}
             </button>
             <button
               type="button"
@@ -548,13 +582,14 @@ function BuilderInner() {
                 setSteps((ss) => [...ss, newStep("approval_gate", ss.length)])
               }
             >
-              + Approval gate
+              {isZh ? "+ 审批门禁" : "+ Approval gate"}
             </button>
           </div>
         </div>
         <p className="text-xs text-fg-muted">
-          Steps run in order. The last step must be a <b>synthesis</b> step that
-          assembles the artifact. Place any approval gate just before it.
+          {isZh
+            ? "步骤按顺序执行。最后一步必须为负责组装成品的综合撰写 (synthesis) 步骤。若有审批门禁，请置于其前。"
+            : "Steps run in order. The last step must be a synthesis step that assembles the artifact. Place any approval gate just before it."}
         </p>
         {steps.map((s, i) => (
           <StepEditor
@@ -563,6 +598,7 @@ function BuilderInner() {
             index={i}
             total={steps.length}
             people={people}
+            isZh={isZh}
             onChange={(patch) => updateStep(i, patch)}
             onMove={(dir) => moveStep(i, dir)}
             onRemove={() => setSteps((ss) => ss.filter((_, idx) => idx !== i))}
@@ -578,13 +614,13 @@ function BuilderInner() {
             checked={cadenceEnabled}
             onChange={(e) => setCadenceEnabled(e.target.checked)}
           />
-          Run on a schedule
+          {isZh ? "定时周期执行" : "Run on a schedule"}
         </label>
         {cadenceEnabled && (
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>
-                Cadence (daily@HH:MM / weekly@DOW@HH:MM / quarterly@DD-HH:MM, UTC)
+                {isZh ? "周期 (daily@HH:MM / weekly@DOW@HH:MM / quarterly@DD-HH:MM, UTC时间)" : "Cadence (daily@HH:MM / weekly@DOW@HH:MM / quarterly@DD-HH:MM, UTC)"}
               </label>
               <input
                 className={`${inputCls} ${suggestedCls("cadence")}`}
@@ -594,13 +630,13 @@ function BuilderInner() {
               />
             </div>
             <div>
-              <label className={labelCls}>Deliver artifact to</label>
+              <label className={labelCls}>{isZh ? "成果交付给" : "Deliver artifact to"}</label>
               <select
                 className={`${inputCls} ${suggestedCls("cadence_person_id")}`}
                 value={cadencePersonId}
                 onChange={(e) => { setCadencePersonId(Number(e.target.value)); clearSuggested("cadence_person_id"); }}
               >
-                <option value={0}>Select a person…</option>
+                <option value={0}>{isZh ? "选择人员…" : "Select a person…"}</option>
                 {people.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.full_name} — {p.role}
@@ -609,8 +645,9 @@ function BuilderInner() {
               </select>
             </div>
             <p className="sm:col-span-2 text-xs text-fg-subtle">
-              Scheduled runs supply no inputs, so a scheduled workflow must have
-              no <b>required</b> input fields.
+              {isZh
+                ? "定时执行不提供用户输入，因此定时工作流不可包含【必填】输入字段。"
+                : "Scheduled runs supply no inputs, so a scheduled workflow must have no required input fields."}
             </p>
           </div>
         )}
@@ -629,10 +666,10 @@ function BuilderInner() {
           onClick={handleSave}
           className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50 transition"
         >
-          {saving ? "Saving…" : editName ? "Save changes" : "Create workflow"}
+          {saving ? (isZh ? "保存中…" : "Saving…") : editName ? (isZh ? "保存修改" : "Save changes") : (isZh ? "创建工作流" : "Create workflow")}
         </button>
         <Link href="/jobs" className="text-sm text-fg-muted hover:text-fg">
-          Cancel
+          {isZh ? "取消" : "Cancel"}
         </Link>
       </div>
     </div>
@@ -644,6 +681,7 @@ function StepEditor({
   index,
   total,
   people,
+  isZh,
   onChange,
   onMove,
   onRemove,
@@ -652,15 +690,22 @@ function StepEditor({
   index: number;
   total: number;
   people: Person[];
+  isZh?: boolean;
   onChange: (patch: Partial<DynamicStep>) => void;
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
 }) {
+  const kindLabel = {
+    specialist: isZh ? "专家任务" : "specialist",
+    approval_gate: isZh ? "审批门禁" : "approval gate",
+    synthesis: isZh ? "成果综合" : "synthesis",
+  }[step.kind] ?? step.kind.replace("_", " ");
+
   return (
     <div className="rounded-md border border-line bg-surface/30 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
-          {index + 1}. {step.kind.replace("_", " ")}
+          {index + 1}. {kindLabel}
         </span>
         <div className="flex items-center gap-2 text-xs text-fg-muted">
           <button type="button" onClick={() => onMove(-1)} disabled={index === 0}>
@@ -678,14 +723,14 @@ function StepEditor({
             className="hover:text-red-400"
             onClick={onRemove}
           >
-            Remove
+            {isZh ? "删除" : "Remove"}
           </button>
         </div>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
-          <label className={labelCls}>Step id</label>
+          <label className={labelCls}>{isZh ? "步骤标识 (ID)" : "Step id"}</label>
           <input
             className={inputCls}
             value={step.id}
@@ -693,7 +738,7 @@ function StepEditor({
           />
         </div>
         <div>
-          <label className={labelCls}>Title</label>
+          <label className={labelCls}>{isZh ? "步骤标题" : "Title"}</label>
           <input
             className={inputCls}
             value={step.title}
@@ -705,7 +750,7 @@ function StepEditor({
       {step.kind === "specialist" && (
         <>
           <div>
-            <label className={labelCls}>Specialist</label>
+            <label className={labelCls}>{isZh ? "负责专家" : "Specialist"}</label>
             <select
               className={inputCls}
               value={step.specialist}
@@ -719,7 +764,7 @@ function StepEditor({
             </select>
           </div>
           <div>
-            <label className={labelCls}>Goal (use {"{field}"} placeholders)</label>
+            <label className={labelCls}>{isZh ? "执行目标 (可使用 {field} 占位符)" : "Goal (use {field} placeholders)"}</label>
             <textarea
               className={`${inputCls} min-h-[80px]`}
               value={step.goal}
@@ -727,7 +772,7 @@ function StepEditor({
             />
           </div>
           <div>
-            <label className={labelCls}>Knowledge base query (optional)</label>
+            <label className={labelCls}>{isZh ? "知识库检索词 (可选)" : "Knowledge base query (optional)"}</label>
             <input
               className={inputCls}
               value={step.rag_query ?? ""}
@@ -740,13 +785,13 @@ function StepEditor({
       {step.kind === "approval_gate" && (
         <>
           <div>
-            <label className={labelCls}>Ask which person</label>
+            <label className={labelCls}>{isZh ? "审批负责人" : "Ask which person"}</label>
             <select
               className={inputCls}
               value={step.person_id}
               onChange={(e) => onChange({ person_id: Number(e.target.value) })}
             >
-              <option value={0}>Select a person…</option>
+              <option value={0}>{isZh ? "选择审批人…" : "Select a person…"}</option>
               {people.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.full_name} — {p.role}
@@ -755,7 +800,7 @@ function StepEditor({
             </select>
           </div>
           <div>
-            <label className={labelCls}>Question</label>
+            <label className={labelCls}>{isZh ? "审批问题" : "Question"}</label>
             <textarea
               className={`${inputCls} min-h-[60px]`}
               value={step.question}
@@ -764,7 +809,7 @@ function StepEditor({
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Timeout (hours)</label>
+              <label className={labelCls}>{isZh ? "超时时间 (小时)" : "Timeout (hours)"}</label>
               <input
                 type="number"
                 min={1}
@@ -775,7 +820,7 @@ function StepEditor({
               />
             </div>
             <div>
-              <label className={labelCls}>On timeout</label>
+              <label className={labelCls}>{isZh ? "超时动作" : "On timeout"}</label>
               <select
                 className={inputCls}
                 value={step.on_timeout ?? "escalate"}
@@ -785,9 +830,9 @@ function StepEditor({
                   })
                 }
               >
-                <option value="escalate">escalate</option>
-                <option value="auto_proceed">auto_proceed</option>
-                <option value="fail">fail</option>
+                <option value="escalate">{isZh ? "升级汇报 (escalate)" : "escalate"}</option>
+                <option value="auto_proceed">{isZh ? "自动放行 (auto_proceed)" : "auto_proceed"}</option>
+                <option value="fail">{isZh ? "标记失败 (fail)" : "fail"}</option>
               </select>
             </div>
           </div>
@@ -797,7 +842,7 @@ function StepEditor({
       {step.kind === "synthesis" && (
         <>
           <div>
-            <label className={labelCls}>Synthesis specialist</label>
+            <label className={labelCls}>{isZh ? "成果综合专家" : "Synthesis specialist"}</label>
             <select
               className={inputCls}
               value={step.specialist ?? "cso"}
@@ -812,7 +857,7 @@ function StepEditor({
           </div>
           <div>
             <label className={labelCls}>
-              Instructions (optional — leave blank to just concatenate sections)
+              {isZh ? "组装说明 (可选 — 留空则默认直接合并各节)" : "Instructions (optional — leave blank to just concatenate sections)"}
             </label>
             <textarea
               className={`${inputCls} min-h-[60px]`}
@@ -831,19 +876,6 @@ export default function NewWorkflowPage() {
     <div className="flex flex-col h-full bg-surface text-fg">
       <main className="flex-1 overflow-y-auto px-6 py-8">
         <div className="max-w-3xl mx-auto">
-          <div className="mb-6">
-            <Link href="/jobs" className="text-xs text-fg-muted hover:text-fg">
-              ← Back to jobs
-            </Link>
-            <h1 className="text-2xl font-semibold text-fg mt-2 mb-1">
-              New workflow
-            </h1>
-            <p className="text-sm text-fg-muted">
-              Build a reusable executive job from specialist steps, optional
-              approval gates, and a final synthesis step. You can also ask the
-              Executive in chat to create one for you.
-            </p>
-          </div>
           <Suspense fallback={null}>
             <BuilderInner />
           </Suspense>

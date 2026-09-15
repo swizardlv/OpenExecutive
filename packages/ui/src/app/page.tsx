@@ -10,8 +10,9 @@ import Icon from "@/components/Icon";
 import RecentSessions from "@/components/RecentSessions";
 import SidebarNav from "@/components/SidebarNav";
 import { MobileBottomNav } from "@/components/shell/AppShell";
-import { buildPrimaryNav, GUIDE_NAV_ITEM, SETTINGS_NAV_ITEM } from "@/components/shell/navConfig";
+import { buildPrimaryNav, getGuideNavItem, getSettingsNavItem } from "@/components/shell/navConfig";
 import UserBadge from "@/components/UserBadge";
+import { LanguageToggle, useI18n } from "@/lib/i18n";
 import { ChatMessage, DebugEvent, ReviewStats, SessionSummary, deleteSession, getReviewStats, getSessionMessages, listSessions } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -186,12 +187,17 @@ export default function HomePage() {
 
   const reviewBadge = reviewStats != null ? reviewStats.pending + reviewStats.needs_revision : 0;
   // Primary nav is built from the shared config in
+  const { locale, t } = useI18n();
+  const guideItem = getGuideNavItem(locale);
+  const settingsItem = getSettingsNavItem(locale);
+
+  // Primary nav comes from the shared buildPrimaryNav helper in
   // `components/shell/navConfig.ts` — the single source of truth the
   // AppShell rail also uses, so the two navs can never drift. Admin /
   // power tools are NOT here; they live on the Settings hub (linked from
   // the footer below). "Today" is intentionally omitted — the Briefing
   // button above is the in-app way back to that content.
-  const navSections = buildPrimaryNav({ isOnboarded, reviewBadge });
+  const navSections = buildPrimaryNav({ isOnboarded, reviewBadge, locale });
 
   return (
     <div className="flex h-full relative">
@@ -268,28 +274,32 @@ export default function HomePage() {
         {/* Spacer — pins the footer to the bottom now that Recent is content-sized */}
         <div className="flex-1 min-h-0" />
 
-        {/* Footer — User Guide (always-visible help) and Settings (the hub
-            for admin/power tools), kept out of the primary groups above so
-            day-to-day nav stays focused. */}
+        {/* Footer — User Guide and Settings */}
         <div className="px-2 py-2 border-t border-line flex-shrink-0 space-y-0.5">
           <Link
-            href={GUIDE_NAV_ITEM.href}
+            href={guideItem.href}
             onClick={() => setMobileNavOpen(false)}
-            title={GUIDE_NAV_ITEM.description}
+            title={guideItem.description}
             className="px-3 py-2.5 min-h-touch rounded-lg hover:bg-surface-overlay text-fg-muted hover:text-fg flex items-center gap-2.5 text-sm transition-colors cursor-pointer"
           >
-            <Icon name={GUIDE_NAV_ITEM.icon} size="w-4 h-4" />
-            <span className="flex-1">{GUIDE_NAV_ITEM.label}</span>
+            <Icon name={guideItem.icon} size="w-4 h-4" />
+            <span className="flex-1">{guideItem.label}</span>
           </Link>
           <Link
-            href={SETTINGS_NAV_ITEM.href}
+            href={settingsItem.href}
             onClick={() => setMobileNavOpen(false)}
-            title={SETTINGS_NAV_ITEM.description}
+            title={settingsItem.description}
             className="px-3 py-2.5 min-h-touch rounded-lg hover:bg-surface-overlay text-fg-muted hover:text-fg flex items-center gap-2.5 text-sm transition-colors cursor-pointer"
           >
-            <Icon name={SETTINGS_NAV_ITEM.icon} size="w-4 h-4" />
-            <span className="flex-1">{SETTINGS_NAV_ITEM.label}</span>
+            <Icon name={settingsItem.icon} size="w-4 h-4" />
+            <span className="flex-1">{settingsItem.label}</span>
           </Link>
+        </div>
+
+        {/* Language switcher */}
+        <div className="px-3 py-2 border-t border-line flex items-center justify-between bg-surface/40">
+          <span className="text-[11px] text-fg-subtle">{t("shell.language", "语言")}</span>
+          <LanguageToggle />
         </div>
 
         {/* Signed-in user */}
@@ -315,7 +325,8 @@ export default function HomePage() {
               {isOnboarded && companyName ? `${companyName} · Executive` : "Executive"}
             </span>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <LanguageToggle />
             <button
               type="button"
               onClick={() => setDebugOpen((o) => !o)}
@@ -327,7 +338,11 @@ export default function HomePage() {
               aria-label={debugOpen ? "Hide agent activity" : "Show agent activity"}
             >
               <Icon name="activity" size="w-4 h-4" />
-              <span className="hidden sm:inline">{debugOpen ? "Hide activity" : "Agent activity"}</span>
+              <span className="hidden sm:inline">
+                {locale === "zh"
+                  ? debugOpen ? "隐藏专员动态" : "专员动态"
+                  : debugOpen ? "Hide activity" : "Agent activity"}
+              </span>
             </button>
           </div>
         </div>

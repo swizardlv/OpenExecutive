@@ -4,6 +4,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { BuiltinFileContent } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 interface FileEditorProps {
   file: BuiltinFileContent;
@@ -29,6 +30,8 @@ export default function FileEditor({
   onSave,
   onDelete,
 }: FileEditorProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [mode, setMode] = useState<"edit" | "preview">("preview");
   const isFailure = variant === "failure";
   const accent = isFailure ? "text-rose-400" : "text-indigo-400";
@@ -38,7 +41,7 @@ export default function FileEditor({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <span className={`text-xs font-semibold uppercase tracking-widest ${accent}`}>
-            {isFailure ? "Failure · " : ""}
+            {isFailure ? (isZh ? "失败案例 · " : "Failure · ") : ""}
             {file.domain}
           </span>
           <h2 className="text-base font-semibold text-fg mt-0.5">{file.filename}</h2>
@@ -55,7 +58,7 @@ export default function FileEditor({
                     : "text-fg-muted hover:text-fg"
                 }`}
               >
-                {m}
+                {isZh ? (m === "edit" ? "编辑" : "预览") : m}
               </button>
             ))}
           </div>
@@ -63,14 +66,14 @@ export default function FileEditor({
             onClick={onDelete}
             className="px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 text-xs hover:bg-red-500/10 transition-colors"
           >
-            Delete
+            {isZh ? "删除" : "Delete"}
           </button>
           <button
             onClick={onSave}
             disabled={!isDirty || isSaving}
             className="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white text-xs font-medium transition-colors"
           >
-            {isSaving ? "Saving…" : isDirty ? "Save" : "Saved"}
+            {isSaving ? (isZh ? "保存中…" : "Saving…") : isDirty ? (isZh ? "保存" : "Save") : (isZh ? "已保存" : "Saved")}
           </button>
         </div>
       </div>

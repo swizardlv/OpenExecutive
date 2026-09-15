@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAskOEFormContext } from "@/components/askoe/AskOEContext";
+import { useI18n } from "@/lib/i18n";
 import {
   getCompanyProfile,
   updateCompanyProfile,
@@ -95,11 +96,15 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 function FieldValue({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm text-fg">{children || <span className="text-fg-subtle italic">Not set</span>}</p>;
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+  return <p className="text-sm text-fg">{children || <span className="text-fg-subtle italic">{isZh ? "未设置" : "Not set"}</span>}</p>;
 }
 
 function Pills({ items }: { items: string[] }) {
-  if (!items.length) return <span className="text-sm text-fg-subtle italic">Not set</span>;
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+  if (!items.length) return <span className="text-sm text-fg-subtle italic">{isZh ? "未设置" : "Not set"}</span>;
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((item, i) => (
@@ -176,6 +181,8 @@ function Section({
   editing: editingProp,
   onEditingChange,
 }: SectionProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [editingState, setEditingState] = useState(false);
   const editing = editingProp ?? editingState;
   const setEditing = onEditingChange ?? setEditingState;
@@ -187,7 +194,7 @@ function Section({
       await onSave();
       setEditing(false);
     } catch {
-      setError("Save failed. Please try again.");
+      setError(isZh ? "保存失败，请重试。" : "Save failed. Please try again.");
     }
   }
 
@@ -200,7 +207,7 @@ function Section({
             onClick={() => setEditing(true)}
             className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
           >
-            Edit
+            {isZh ? "编辑" : "Edit"}
           </button>
         )}
       </div>
@@ -216,14 +223,14 @@ function Section({
               disabled={saving}
               className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 text-white text-xs font-medium rounded-lg transition-colors"
             >
-              {saving ? "Saving…" : "Save"}
+              {saving ? (isZh ? "保存中…" : "Saving…") : (isZh ? "保存" : "Save")}
             </button>
             <button
               onClick={() => { setEditing(false); setError(null); }}
               disabled={saving}
               className="px-3 py-1.5 border border-line-strong text-fg-muted hover:text-fg text-xs rounded-lg transition-colors disabled:opacity-40"
             >
-              Cancel
+              {isZh ? "取消" : "Cancel"}
             </button>
           </div>
         </>
@@ -260,6 +267,8 @@ function usePendingSection(
 // ── page ─────────────────────────────────────────────────────────────────────
 
 export default function CompanyProfilePage() {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -296,10 +305,10 @@ export default function CompanyProfilePage() {
     profile
       ? {
           formId: "company_profile",
-          title: "Company profile",
-          description:
-            "The structured company profile the Executive grounds every answer in. " +
-            "Applied values open the matching section in edit mode; the user saves per section.",
+          title: isZh ? "公司画像" : "Company profile",
+          description: isZh
+            ? "Executive 依据的公司画像结构化数据。应用的值将在对应区域展开编辑模式；由用户逐区保存。"
+            : "The structured company profile the Executive grounds every answer in. Applied values open the matching section in edit mode; the user saves per section.",
           getFields: (): PageFormField[] => {
             const flat = snapshotProfile(profile);
             const label = (k: string) => k.replaceAll("_", " ");
@@ -312,7 +321,7 @@ export default function CompanyProfilePage() {
                   ? ("json" as const)
                   : ("text" as const),
               value,
-              description: LIST_FIELDS.has(name) ? "JSON array of strings." : "",
+              description: LIST_FIELDS.has(name) ? (isZh ? "字符串 JSON 数组。" : "JSON array of strings.") : "",
             }));
           },
           applyPatch: (values) => {
@@ -367,9 +376,9 @@ export default function CompanyProfilePage() {
 
           {notFound && (
             <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-5 py-4 flex items-center justify-between">
-              <p className="text-sm text-fg">No company profile set up yet.</p>
+              <p className="text-sm text-fg">{isZh ? "尚未设置公司画像。" : "No company profile set up yet."}</p>
               <Link href="/onboard" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
-                Complete setup →
+                {isZh ? "完成设置 →" : "Complete setup →"}
               </Link>
             </div>
           )}
@@ -382,7 +391,7 @@ export default function CompanyProfilePage() {
                   <p className="text-sm text-fg-muted mt-0.5">{[profile.industry, profile.stage].filter(Boolean).join(" · ")}</p>
                 </div>
                 <Link href="/onboard" className="text-xs text-fg-muted hover:text-fg-muted transition-colors">
-                  Re-run setup wizard →
+                  {isZh ? "重新运行设置向导 →" : "Re-run setup wizard →"}
                 </Link>
               </div>
 
@@ -427,6 +436,8 @@ export default function CompanyProfilePage() {
 // ── section components ────────────────────────────────────────────────────────
 
 function CompanyBasicsSection({ profile, saving, onSave, pending }: SectionComponentProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [name, setName] = useState(profile.name);
   const [industry, setIndustry] = useState(profile.industry);
   const [stage, setStage] = useState(profile.stage);
@@ -452,7 +463,7 @@ function CompanyBasicsSection({ profile, saving, onSave, pending }: SectionCompo
 
   return (
     <Section
-      title="Company Basics"
+      title={isZh ? "公司基本信息" : "Company Basics"}
       editing={editing}
       onEditingChange={setEditing}
       saving={saving}
@@ -464,22 +475,22 @@ function CompanyBasicsSection({ profile, saving, onSave, pending }: SectionCompo
       })}
       viewContent={
         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          <div><FieldLabel>Name</FieldLabel><FieldValue>{profile.name}</FieldValue></div>
-          <div><FieldLabel>Industry</FieldLabel><FieldValue>{profile.industry}</FieldValue></div>
-          <div><FieldLabel>Stage</FieldLabel><FieldValue>{profile.stage}</FieldValue></div>
-          <div><FieldLabel>Founded</FieldLabel><FieldValue>{profile.founding_year?.toString()}</FieldValue></div>
-          <div><FieldLabel>Headcount</FieldLabel><FieldValue>{profile.headcount?.toString()}</FieldValue></div>
-          <div><FieldLabel>ARR</FieldLabel><FieldValue>{profile.annual_revenue_arr != null ? `$${profile.annual_revenue_arr.toLocaleString()}` : undefined}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "名称" : "Name"}</FieldLabel><FieldValue>{profile.name}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "行业" : "Industry"}</FieldLabel><FieldValue>{profile.industry}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "阶段" : "Stage"}</FieldLabel><FieldValue>{profile.stage}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "成立年份" : "Founded"}</FieldLabel><FieldValue>{profile.founding_year?.toString()}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "团队规模" : "Headcount"}</FieldLabel><FieldValue>{profile.headcount?.toString()}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "年度营收 (ARR)" : "ARR"}</FieldLabel><FieldValue>{profile.annual_revenue_arr != null ? `$${profile.annual_revenue_arr.toLocaleString()}` : undefined}</FieldValue></div>
         </div>
       }
       editContent={
         <div className="grid grid-cols-2 gap-3">
-          <div><FieldLabel>Name</FieldLabel><Input value={name} onChange={setName} placeholder="Acme Corp" /></div>
-          <div><FieldLabel>Industry</FieldLabel><Input value={industry} onChange={setIndustry} placeholder="B2B SaaS" /></div>
-          <div><FieldLabel>Stage</FieldLabel><Input value={stage} onChange={setStage} placeholder="Series A" /></div>
-          <div><FieldLabel>Founded</FieldLabel><Input value={foundingYear} onChange={setFoundingYear} type="number" placeholder="2022" /></div>
-          <div><FieldLabel>Headcount</FieldLabel><Input value={headcount} onChange={setHeadcount} type="number" placeholder="40" /></div>
-          <div><FieldLabel>ARR ($)</FieldLabel><Input value={arr} onChange={setArr} type="number" placeholder="500000" /></div>
+          <div><FieldLabel>{isZh ? "名称" : "Name"}</FieldLabel><Input value={name} onChange={setName} placeholder="Acme Corp" /></div>
+          <div><FieldLabel>{isZh ? "行业" : "Industry"}</FieldLabel><Input value={industry} onChange={setIndustry} placeholder="B2B SaaS" /></div>
+          <div><FieldLabel>{isZh ? "阶段" : "Stage"}</FieldLabel><Input value={stage} onChange={setStage} placeholder="Series A" /></div>
+          <div><FieldLabel>{isZh ? "成立年份" : "Founded"}</FieldLabel><Input value={foundingYear} onChange={setFoundingYear} type="number" placeholder="2022" /></div>
+          <div><FieldLabel>{isZh ? "团队规模" : "Headcount"}</FieldLabel><Input value={headcount} onChange={setHeadcount} type="number" placeholder="40" /></div>
+          <div><FieldLabel>{isZh ? "ARR ($)" : "ARR ($)"}</FieldLabel><Input value={arr} onChange={setArr} type="number" placeholder="500000" /></div>
         </div>
       }
     />
@@ -487,6 +498,8 @@ function CompanyBasicsSection({ profile, saving, onSave, pending }: SectionCompo
 }
 
 function MissionSection({ profile, saving, onSave, pending }: SectionComponentProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [mission, setMission] = useState(profile.mission);
   const [vision, setVision] = useState(profile.vision);
   useEffect(() => { setMission(profile.mission); setVision(profile.vision); }, [profile]);
@@ -498,21 +511,21 @@ function MissionSection({ profile, saving, onSave, pending }: SectionComponentPr
 
   return (
     <Section
-      title="Mission & Vision"
+      title={isZh ? "使命与愿景" : "Mission & Vision"}
       editing={editing}
       onEditingChange={setEditing}
       saving={saving}
       onSave={() => onSave({ mission, vision })}
       viewContent={
         <div className="space-y-4">
-          <div><FieldLabel>Mission</FieldLabel><FieldValue>{profile.mission}</FieldValue></div>
-          <div><FieldLabel>Vision</FieldLabel><FieldValue>{profile.vision}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "使命" : "Mission"}</FieldLabel><FieldValue>{profile.mission}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "愿景" : "Vision"}</FieldLabel><FieldValue>{profile.vision}</FieldValue></div>
         </div>
       }
       editContent={
         <div className="space-y-3">
-          <div><FieldLabel>Mission</FieldLabel><Textarea value={mission} onChange={setMission} rows={2} placeholder="Why does this company exist?" /></div>
-          <div><FieldLabel>Vision</FieldLabel><Textarea value={vision} onChange={setVision} rows={2} placeholder="Where are you in 5 years?" /></div>
+          <div><FieldLabel>{isZh ? "使命" : "Mission"}</FieldLabel><Textarea value={mission} onChange={setMission} rows={2} placeholder={isZh ? "这家公司为什么存在？" : "Why does this company exist?"} /></div>
+          <div><FieldLabel>{isZh ? "愿景" : "Vision"}</FieldLabel><Textarea value={vision} onChange={setVision} rows={2} placeholder={isZh ? "5 年后你们将在哪里？" : "Where are you in 5 years?"} /></div>
         </div>
       }
     />
@@ -520,6 +533,8 @@ function MissionSection({ profile, saving, onSave, pending }: SectionComponentPr
 }
 
 function TargetCustomerSection({ profile, saving, onSave, pending }: SectionComponentProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [customerProfile, setCustomerProfile] = useState(profile.target_customer.profile);
   const [painPoints, setPainPoints] = useState(listToText(profile.target_customer.pain_points));
   useEffect(() => {
@@ -534,21 +549,21 @@ function TargetCustomerSection({ profile, saving, onSave, pending }: SectionComp
 
   return (
     <Section
-      title="Target Customer"
+      title={isZh ? "目标客户" : "Target Customer"}
       editing={editing}
       onEditingChange={setEditing}
       saving={saving}
       onSave={() => onSave({ target_customer: { profile: customerProfile, pain_points: textToList(painPoints) } })}
       viewContent={
         <div className="space-y-4">
-          <div><FieldLabel>Customer Profile</FieldLabel><FieldValue>{profile.target_customer.profile}</FieldValue></div>
-          <div><FieldLabel>Pain Points</FieldLabel><Pills items={profile.target_customer.pain_points} /></div>
+          <div><FieldLabel>{isZh ? "客户画像" : "Customer Profile"}</FieldLabel><FieldValue>{profile.target_customer.profile}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "痛点" : "Pain Points"}</FieldLabel><Pills items={profile.target_customer.pain_points} /></div>
         </div>
       }
       editContent={
         <div className="space-y-3">
-          <div><FieldLabel>Customer Profile</FieldLabel><Textarea value={customerProfile} onChange={setCustomerProfile} rows={2} placeholder="Who is your ideal customer?" /></div>
-          <div><FieldLabel>Pain Points (one per line)</FieldLabel><Textarea value={painPoints} onChange={setPainPoints} rows={3} placeholder={"Too slow to onboard\nNo visibility into data"} /></div>
+          <div><FieldLabel>{isZh ? "客户画像" : "Customer Profile"}</FieldLabel><Textarea value={customerProfile} onChange={setCustomerProfile} rows={2} placeholder={isZh ? "谁是你们的理想客户？" : "Who is your ideal customer?"} /></div>
+          <div><FieldLabel>{isZh ? "痛点（每行一个）" : "Pain Points (one per line)"}</FieldLabel><Textarea value={painPoints} onChange={setPainPoints} rows={3} placeholder={isZh ? "上线太慢\n缺乏数据可见性" : "Too slow to onboard\nNo visibility into data"} /></div>
         </div>
       }
     />
@@ -556,6 +571,8 @@ function TargetCustomerSection({ profile, saving, onSave, pending }: SectionComp
 }
 
 function CompetitiveSection({ profile, saving, onSave, pending }: SectionComponentProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [competitors, setCompetitors] = useState(listToText(profile.competitive_landscape.primary_competitors));
   const [advantages, setAdvantages] = useState(listToText(profile.competitive_landscape.competitive_advantages));
   useEffect(() => {
@@ -570,21 +587,21 @@ function CompetitiveSection({ profile, saving, onSave, pending }: SectionCompone
 
   return (
     <Section
-      title="Competitive Landscape"
+      title={isZh ? "竞争格局" : "Competitive Landscape"}
       editing={editing}
       onEditingChange={setEditing}
       saving={saving}
       onSave={() => onSave({ competitive_landscape: { primary_competitors: textToList(competitors), competitive_advantages: textToList(advantages) } })}
       viewContent={
         <div className="space-y-4">
-          <div><FieldLabel>Primary Competitors</FieldLabel><Pills items={profile.competitive_landscape.primary_competitors} /></div>
-          <div><FieldLabel>Our Advantages</FieldLabel><Pills items={profile.competitive_landscape.competitive_advantages} /></div>
+          <div><FieldLabel>{isZh ? "主要竞争对手" : "Primary Competitors"}</FieldLabel><Pills items={profile.competitive_landscape.primary_competitors} /></div>
+          <div><FieldLabel>{isZh ? "核心优势" : "Our Advantages"}</FieldLabel><Pills items={profile.competitive_landscape.competitive_advantages} /></div>
         </div>
       }
       editContent={
         <div className="space-y-3">
-          <div><FieldLabel>Competitors (one per line)</FieldLabel><Textarea value={competitors} onChange={setCompetitors} rows={3} placeholder={"Salesforce\nHubSpot"} /></div>
-          <div><FieldLabel>Our Advantages (one per line)</FieldLabel><Textarea value={advantages} onChange={setAdvantages} rows={3} placeholder={"10x faster onboarding\nOpen source"} /></div>
+          <div><FieldLabel>{isZh ? "竞争对手（每行一个）" : "Competitors (one per line)"}</FieldLabel><Textarea value={competitors} onChange={setCompetitors} rows={3} placeholder={"Salesforce\nHubSpot"} /></div>
+          <div><FieldLabel>{isZh ? "优势（每行一个）" : "Our Advantages (one per line)"}</FieldLabel><Textarea value={advantages} onChange={setAdvantages} rows={3} placeholder={isZh ? "上线快 10 倍\n完全开源" : "10x faster onboarding\nOpen source"} /></div>
         </div>
       }
     />
@@ -592,6 +609,8 @@ function CompetitiveSection({ profile, saving, onSave, pending }: SectionCompone
 }
 
 function ExternalDependenciesSection({ profile, saving, onSave, pending }: SectionComponentProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [vendors, setVendors] = useState(listToText(profile.vendors ?? []));
   const [tickers, setTickers] = useState(listToText(profile.tickers ?? []));
   useEffect(() => {
@@ -606,7 +625,7 @@ function ExternalDependenciesSection({ profile, saving, onSave, pending }: Secti
 
   return (
     <Section
-      title="External Dependencies"
+      title={isZh ? "外部依赖与监控" : "External Dependencies"}
       editing={editing}
       onEditingChange={setEditing}
       saving={saving}
@@ -614,18 +633,18 @@ function ExternalDependenciesSection({ profile, saving, onSave, pending }: Secti
       viewContent={
         <div className="space-y-4">
           <p className="text-xs text-fg-subtle">
-            Named here, a vendor or ticker counts as company data: the Executive
-            will start watching its status page or filings on its own instead of
-            asking you first.
+            {isZh
+              ? "在此列出的供应商或股票代码将被视为公司数据：Executive 将自动关注其状态页或公开披露，而不会每次都询问您。"
+              : "Named here, a vendor or ticker counts as company data: the Executive will start watching its status page or filings on its own instead of asking you first."}
           </p>
-          <div><FieldLabel>Vendors &amp; dependencies</FieldLabel><Pills items={profile.vendors ?? []} /></div>
-          <div><FieldLabel>Tracked tickers</FieldLabel><Pills items={profile.tickers ?? []} /></div>
+          <div><FieldLabel>{isZh ? "供应商与外部依赖" : "Vendors & dependencies"}</FieldLabel><Pills items={profile.vendors ?? []} /></div>
+          <div><FieldLabel>{isZh ? "关注的股票代码" : "Tracked tickers"}</FieldLabel><Pills items={profile.tickers ?? []} /></div>
         </div>
       }
       editContent={
         <div className="space-y-3">
-          <div><FieldLabel>Vendors (one per line)</FieldLabel><Textarea value={vendors} onChange={setVendors} rows={3} placeholder={"Stripe\nAWS"} /></div>
-          <div><FieldLabel>Tickers (one per line — yours and competitors&apos;)</FieldLabel><Textarea value={tickers} onChange={setTickers} rows={3} placeholder={"CRM\nHUBS"} /></div>
+          <div><FieldLabel>{isZh ? "供应商（每行一个）" : "Vendors (one per line)"}</FieldLabel><Textarea value={vendors} onChange={setVendors} rows={3} placeholder={"Stripe\nAWS"} /></div>
+          <div><FieldLabel>{isZh ? "股票代码（每行一个 — 自身与竞争对手）" : "Tickers (one per line — yours and competitors')"}</FieldLabel><Textarea value={tickers} onChange={setTickers} rows={3} placeholder={"CRM\nHUBS"} /></div>
         </div>
       }
     />
@@ -633,6 +652,8 @@ function ExternalDependenciesSection({ profile, saving, onSave, pending }: Secti
 }
 
 function PrioritiesSection({ profile, saving, onSave, pending }: SectionComponentProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [priorities, setPriorities] = useState(listToText(profile.strategic_priorities.current_year));
   const [northStar, setNorthStar] = useState(profile.strategic_priorities.north_star_metric);
   useEffect(() => {
@@ -647,21 +668,21 @@ function PrioritiesSection({ profile, saving, onSave, pending }: SectionComponen
 
   return (
     <Section
-      title="Strategic Priorities"
+      title={isZh ? "战略重点" : "Strategic Priorities"}
       editing={editing}
       onEditingChange={setEditing}
       saving={saving}
       onSave={() => onSave({ strategic_priorities: { current_year: textToList(priorities), north_star_metric: northStar } })}
       viewContent={
         <div className="space-y-4">
-          <div><FieldLabel>This Year's Priorities</FieldLabel><Pills items={profile.strategic_priorities.current_year} /></div>
-          <div><FieldLabel>North Star Metric</FieldLabel><FieldValue>{profile.strategic_priorities.north_star_metric}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "本年度重点工作" : "This Year's Priorities"}</FieldLabel><Pills items={profile.strategic_priorities.current_year} /></div>
+          <div><FieldLabel>{isZh ? "北极星指标" : "North Star Metric"}</FieldLabel><FieldValue>{profile.strategic_priorities.north_star_metric}</FieldValue></div>
         </div>
       }
       editContent={
         <div className="space-y-3">
-          <div><FieldLabel>Priorities (one per line)</FieldLabel><Textarea value={priorities} onChange={setPriorities} rows={3} placeholder={"Launch v1\nHire 3 engineers"} /></div>
-          <div><FieldLabel>North Star Metric</FieldLabel><Input value={northStar} onChange={setNorthStar} placeholder="MRR or DAU" /></div>
+          <div><FieldLabel>{isZh ? "重点工作（每行一个）" : "Priorities (one per line)"}</FieldLabel><Textarea value={priorities} onChange={setPriorities} rows={3} placeholder={isZh ? "发布 v1 版本\n招聘 3 名工程师" : "Launch v1\nHire 3 engineers"} /></div>
+          <div><FieldLabel>{isZh ? "北极星指标" : "North Star Metric"}</FieldLabel><Input value={northStar} onChange={setNorthStar} placeholder="MRR or DAU" /></div>
         </div>
       }
     />
@@ -669,6 +690,8 @@ function PrioritiesSection({ profile, saving, onSave, pending }: SectionComponen
 }
 
 function CultureSection({ profile, saving, onSave, pending }: SectionComponentProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [values, setValues] = useState(listToText(profile.culture.values));
   const [principles, setPrinciples] = useState(listToText(profile.culture.operating_principles));
   useEffect(() => {
@@ -683,21 +706,21 @@ function CultureSection({ profile, saving, onSave, pending }: SectionComponentPr
 
   return (
     <Section
-      title="Culture & Values"
+      title={isZh ? "文化与价值观" : "Culture & Values"}
       editing={editing}
       onEditingChange={setEditing}
       saving={saving}
       onSave={() => onSave({ culture: { values: textToList(values), operating_principles: textToList(principles) } })}
       viewContent={
         <div className="space-y-4">
-          <div><FieldLabel>Values</FieldLabel><Pills items={profile.culture.values} /></div>
-          <div><FieldLabel>Operating Principles</FieldLabel><Pills items={profile.culture.operating_principles} /></div>
+          <div><FieldLabel>{isZh ? "价值观" : "Values"}</FieldLabel><Pills items={profile.culture.values} /></div>
+          <div><FieldLabel>{isZh ? "行动准则" : "Operating Principles"}</FieldLabel><Pills items={profile.culture.operating_principles} /></div>
         </div>
       }
       editContent={
         <div className="space-y-3">
-          <div><FieldLabel>Values (one per line)</FieldLabel><Textarea value={values} onChange={setValues} rows={3} placeholder={"Transparency\nBias for action"} /></div>
-          <div><FieldLabel>Operating Principles (one per line)</FieldLabel><Textarea value={principles} onChange={setPrinciples} rows={3} placeholder={"Default to async\nWrite it down"} /></div>
+          <div><FieldLabel>{isZh ? "价值观（每行一个）" : "Values (one per line)"}</FieldLabel><Textarea value={values} onChange={setValues} rows={3} placeholder={isZh ? "公开透明\n积极行动" : "Transparency\nBias for action"} /></div>
+          <div><FieldLabel>{isZh ? "行动准则（每行一个）" : "Operating Principles (one per line)"}</FieldLabel><Textarea value={principles} onChange={setPrinciples} rows={3} placeholder={isZh ? "默认异步沟通\n凡事沉淀为文档" : "Default to async\nWrite it down"} /></div>
         </div>
       }
     />
@@ -705,6 +728,8 @@ function CultureSection({ profile, saving, onSave, pending }: SectionComponentPr
 }
 
 function OrgSection({ profile, saving, onSave, pending }: SectionComponentProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [departments, setDepartments] = useState(listToText(profile.org_structure.departments));
   const [leadership, setLeadership] = useState(listToText(profile.org_structure.leadership_team));
   useEffect(() => {
@@ -719,21 +744,21 @@ function OrgSection({ profile, saving, onSave, pending }: SectionComponentProps)
 
   return (
     <Section
-      title="Org Structure"
+      title={isZh ? "组织架构" : "Org Structure"}
       editing={editing}
       onEditingChange={setEditing}
       saving={saving}
       onSave={() => onSave({ org_structure: { departments: textToList(departments), leadership_team: textToList(leadership) } })}
       viewContent={
         <div className="space-y-4">
-          <div><FieldLabel>Departments</FieldLabel><Pills items={profile.org_structure.departments} /></div>
-          <div><FieldLabel>Leadership Team</FieldLabel><Pills items={profile.org_structure.leadership_team} /></div>
+          <div><FieldLabel>{isZh ? "部门" : "Departments"}</FieldLabel><Pills items={profile.org_structure.departments} /></div>
+          <div><FieldLabel>{isZh ? "领导团队" : "Leadership Team"}</FieldLabel><Pills items={profile.org_structure.leadership_team} /></div>
         </div>
       }
       editContent={
         <div className="space-y-3">
-          <div><FieldLabel>Departments (one per line)</FieldLabel><Textarea value={departments} onChange={setDepartments} rows={3} placeholder={"Engineering\nProduct\nGTM"} /></div>
-          <div><FieldLabel>Leadership Team (one per line)</FieldLabel><Textarea value={leadership} onChange={setLeadership} rows={3} placeholder={"Alice Chen, CEO\nBob Smith, CTO"} /></div>
+          <div><FieldLabel>{isZh ? "部门（每行一个）" : "Departments (one per line)"}</FieldLabel><Textarea value={departments} onChange={setDepartments} rows={3} placeholder={isZh ? "技术研发\n产品管理\n市场业务" : "Engineering\nProduct\nGTM"} /></div>
+          <div><FieldLabel>{isZh ? "领导团队（每行一个）" : "Leadership Team (one per line)"}</FieldLabel><Textarea value={leadership} onChange={setLeadership} rows={3} placeholder={"Alice Chen, CEO\nBob Smith, CTO"} /></div>
         </div>
       }
     />
@@ -741,6 +766,8 @@ function OrgSection({ profile, saving, onSave, pending }: SectionComponentProps)
 }
 
 function FinancialsSection({ profile, saving, onSave, pending }: SectionComponentProps) {
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
   const [burn, setBurn] = useState(profile.financials.burn_rate_monthly?.toString() ?? "");
   const [runway, setRunway] = useState(profile.financials.runway_months?.toString() ?? "");
   useEffect(() => {
@@ -755,7 +782,7 @@ function FinancialsSection({ profile, saving, onSave, pending }: SectionComponen
 
   return (
     <Section
-      title="Financials"
+      title={isZh ? "财务状况" : "Financials"}
       editing={editing}
       onEditingChange={setEditing}
       saving={saving}
@@ -768,14 +795,14 @@ function FinancialsSection({ profile, saving, onSave, pending }: SectionComponen
       })}
       viewContent={
         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          <div><FieldLabel>Monthly Burn</FieldLabel><FieldValue>{profile.financials.burn_rate_monthly != null ? `$${profile.financials.burn_rate_monthly.toLocaleString()}/mo` : undefined}</FieldValue></div>
-          <div><FieldLabel>Runway</FieldLabel><FieldValue>{profile.financials.runway_months != null ? `${profile.financials.runway_months} months` : undefined}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "月度支出（Burn Rate）" : "Monthly Burn"}</FieldLabel><FieldValue>{profile.financials.burn_rate_monthly != null ? `$${profile.financials.burn_rate_monthly.toLocaleString()}${isZh ? "/月" : "/mo"}` : undefined}</FieldValue></div>
+          <div><FieldLabel>{isZh ? "资金跑道（Runway）" : "Runway"}</FieldLabel><FieldValue>{profile.financials.runway_months != null ? `${profile.financials.runway_months} ${isZh ? "个月" : "months"}` : undefined}</FieldValue></div>
         </div>
       }
       editContent={
         <div className="grid grid-cols-2 gap-3">
-          <div><FieldLabel>Monthly Burn ($)</FieldLabel><Input value={burn} onChange={setBurn} type="number" placeholder="50000" /></div>
-          <div><FieldLabel>Runway (months)</FieldLabel><Input value={runway} onChange={setRunway} type="number" placeholder="18" /></div>
+          <div><FieldLabel>{isZh ? "月度支出 ($)" : "Monthly Burn ($)"}</FieldLabel><Input value={burn} onChange={setBurn} type="number" placeholder="50000" /></div>
+          <div><FieldLabel>{isZh ? "资金跑道 (月)" : "Runway (months)"}</FieldLabel><Input value={runway} onChange={setRunway} type="number" placeholder="18" /></div>
         </div>
       }
     />

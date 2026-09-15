@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import Icon from "@/components/Icon";
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { useI18n } from "@/lib/i18n";
 
 type KindFilter = "all" | "draft" | "workflow";
 type View = "active" | "archived";
@@ -324,10 +325,17 @@ export default function ArtifactsPage() {
     return Array.from(map.values());
   }, [visible, workflowTitleMap]);
 
+  const { locale } = useI18n();
+  const isZh = locale === "zh";
+
   const emptyMessage =
     view === "archived"
-      ? "Nothing archived. Artifacts you archive will collect here, ready to restore."
-      : "No artifacts yet. Reports and memos the Executive produces will collect here.";
+      ? (isZh
+          ? "暂无已归档产物。您归档的产物将保留在这里，可随时恢复。"
+          : "Nothing archived. Artifacts you archive will collect here, ready to restore.")
+      : (isZh
+          ? "暂无文档产物。执行官生成的报告与备忘录将汇总在这里。"
+          : "No artifacts yet. Reports and memos the Executive produces will collect here.");
 
   return (
     <div className="flex flex-col h-full bg-surface text-fg">
@@ -335,12 +343,12 @@ export default function ArtifactsPage() {
         <div className="max-w-5xl mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-fg mb-1">
-              Executive Artifacts
+              {isZh ? "文档产物库" : "Executive Artifacts"}
             </h1>
             <p className="text-sm text-fg-muted">
-              Every Markdown deliverable the Executive has produced — drafted
-              memos and market research alongside completed workflow outputs.
-              Archive what you&apos;re done with; delete clears it for good.
+              {isZh
+                ? "执行官生成的所有交付物 — 包含备忘录草案、行业市场研究及工作流的成果文档。已完成的项目可归档，彻底删除将永久移除。"
+                : "Every Markdown deliverable the Executive has produced — drafted memos and market research alongside completed workflow outputs. Archive what you're done with; delete clears it for good."}
             </p>
           </div>
 
@@ -360,15 +368,21 @@ export default function ArtifactsPage() {
                     : "text-fg-muted hover:text-fg"
                 }`}
               >
-                {v}
+                {isZh ? (v === "active" ? "活跃产物" : "归档产物") : v}
               </button>
             ))}
           </div>
 
           {loading && (
-            <div className="text-sm text-fg-muted">Loading artifacts…</div>
+            <div className="text-sm text-fg-muted">
+              {isZh ? "正在加载文档产物…" : "Loading artifacts…"}
+            </div>
           )}
-          {error && <div className="text-sm text-red-400 mb-4">Error: {error}</div>}
+          {error && (
+            <div className="text-sm text-red-400 mb-4">
+              {isZh ? "错误: " : "Error: "}{error}
+            </div>
+          )}
 
           {!loading && !error && artifacts.length === 0 && (
             <div className="text-sm text-fg-muted">{emptyMessage}</div>
@@ -380,19 +394,19 @@ export default function ArtifactsPage() {
                 <FilterButton
                   active={filter === "all"}
                   onClick={() => setFilter("all")}
-                  label="All"
+                  label={isZh ? "全部" : "All"}
                   count={counts.all}
                 />
                 <FilterButton
                   active={filter === "draft"}
                   onClick={() => setFilter("draft")}
-                  label="Drafts"
+                  label={isZh ? "草稿文档" : "Drafts"}
                   count={counts.draft}
                 />
                 <FilterButton
                   active={filter === "workflow"}
                   onClick={() => setFilter("workflow")}
-                  label="Workflows"
+                  label={isZh ? "工作流产物" : "Workflows"}
                   count={counts.workflow}
                 />
               </div>
@@ -400,6 +414,7 @@ export default function ArtifactsPage() {
               <div className="space-y-5">
                 {groups.map((group) => {
                   const isCollapsed = !!collapsed[group.key];
+                  const displayGroupLabel = group.key === "drafts" ? (isZh ? "草稿文档" : "Drafts") : group.label;
                   return (
                     <div key={group.key}>
                       <button
@@ -415,7 +430,7 @@ export default function ArtifactsPage() {
                           ▶
                         </span>
                         <span className="text-sm font-semibold text-fg">
-                          {group.label}
+                          {displayGroupLabel}
                         </span>
                         <span className="text-xs text-fg-muted">
                           {group.items.length}{" "}
