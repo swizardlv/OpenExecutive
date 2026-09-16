@@ -17,12 +17,6 @@ router = APIRouter()
 @router.get("/sessions", response_model=list[SessionSummary])
 def get_sessions(request: Request) -> list[SessionSummary]:
     caller_person_id = _resolve_caller_person_id(request)
-    if caller_person_id is None:
-        # Either a signed-in user whose email isn't in the roster, or no
-        # principal is configured yet (fresh install). Either way they
-        # have no chats to see — return empty rather than leaking the
-        # legacy NULL-owner rows.
-        return []
     return [SessionSummary(**s) for s in list_sessions(caller_person_id)]
 
 

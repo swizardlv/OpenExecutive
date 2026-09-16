@@ -90,30 +90,46 @@ def load_messages(session_id: str, db_path: Path = DB_PATH) -> list[dict[str, An
 
 
 def list_sessions(
-    caller_person_id: int,
+    caller_person_id: int | None,
     db_path: Path = DB_PATH,
 ) -> list[dict[str, Any]]:
-    """List sessions owned by `caller_person_id`, newest first.
+    """List sessions visible to `caller_person_id`, newest first.
 
-    Legacy rows with caller_person_id IS NULL (created before this column
-    existed) are excluded — the comparison `NULL = ?` never matches in
-    SQLite. They remain reachable by direct session_id URL.
+    - When `caller_person_id` is a known Person id: return rows owned by
+      that person PLUS any legacy NULL-owner rows (created before the
+      caller_person_id column existed, or created when the principal had
+      not yet been seeded into the DB).
+    - When `caller_person_id` is None (fresh install / unrostered user):
+      return all NULL-owner rows so the chat history is never invisible.
     """
     if not db_path.exists():
         return []
     with _get_conn(db_path) as conn:
-        rows = conn.execute(
-            """
-            SELECT s.session_id, s.title, s.created_at, s.updated_at,
-                   COUNT(m.id) AS message_count
-            FROM sessions s
-            LEFT JOIN chat_messages m ON m.session_id = s.session_id
-            WHERE s.caller_person_id = ?
-            GROUP BY s.session_id
-            ORDER BY s.updated_at DESC
-            """,
-            (caller_person_id,),
-        ).fetchall()
+        if caller_person_id is None:
+            rows = conn.execute(
+                """
+                SELECT s.session_id, s.title, s.created_at, s.updated_at,
+                       COUNT(m.id) AS message_count
+                FROM sessions s
+                LEFT JOIN chat_messages m ON m.session_id = s.session_id
+                WHERE s.caller_person_id IS NULL
+                GROUP BY s.session_id
+                ORDER BY s.updated_at DESC
+                """
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT s.session_id, s.title, s.created_at, s.updated_at,
+                       COUNT(m.id) AS message_count
+                FROM sessions s
+                LEFT JOIN chat_messages m ON m.session_id = s.session_id
+                WHERE s.caller_person_id = ? OR s.caller_person_id IS NULL
+                GROUP BY s.session_id
+                ORDER BY s.updated_at DESC
+                """,
+                (caller_person_id,),
+            ).fetchall()
     return [dict(row) for row in rows]
 
 
