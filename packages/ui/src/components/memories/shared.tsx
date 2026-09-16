@@ -10,6 +10,9 @@
 import Icon, { type IconName } from "@/components/Icon";
 import type { ScheduledAction } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { formatRunAt } from "@/lib/relativeTime";
+
+export { formatRunAt };
 
 export const DOMAINS = [
   "strategy",
@@ -28,24 +31,6 @@ export const STATUSES = ["active", "paused", "completed", "planned"];
 /** ISO timestamp → YYYY-MM-DD. */
 export function formatDate(iso: string): string {
   return iso.slice(0, 10);
-}
-
-/** ISO timestamp → an absolute string plus a coarse relative label ("in 5m", "3d ago"). */
-export function formatRunAt(iso: string): { absolute: string; relative: string } {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return { absolute: iso, relative: "" };
-  const absolute = d.toLocaleString();
-  const deltaMs = d.getTime() - Date.now();
-  const abs = Math.abs(deltaMs);
-  const mins = Math.round(abs / 60_000);
-  const hours = Math.round(abs / 3_600_000);
-  const days = Math.round(abs / 86_400_000);
-  let unit: string;
-  if (mins < 60) unit = `${mins}m`;
-  else if (hours < 48) unit = `${hours}h`;
-  else unit = `${days}d`;
-  const relative = deltaMs >= 0 ? `in ${unit}` : `${unit} ago`;
-  return { absolute, relative };
 }
 
 export const STATUS_PILL: Record<string, string> = {
@@ -113,13 +98,21 @@ export const KIND_META: Record<string, KindMeta> = {
   },
 };
 
-export function metaFor(action: ScheduledAction): KindMeta {
-  const meta = KIND_META[action.kind];
-  if (meta) return meta;
-  // Unknown kind: keep it visible rather than dropping it. Internal-channel
-  // rows are system plumbing; anything else is a pending commitment.
+export function metaFor(
+  action: ScheduledAction,
+  t?: (k: string, p?: any, fallback?: string) => string
+): KindMeta {
+  const base = KIND_META[action.kind];
+  if (base) {
+    if (!t) return base;
+    return {
+      group: base.group,
+      label: t(`memories.kind.${action.kind}.label`, base.label),
+      blurb: base.blurb ? t(`memories.kind.${action.kind}.blurb`, base.blurb) : undefined,
+    };
+  }
   return {
-    label: action.kind || "Scheduled action",
+    label: action.kind || (t ? t("memories.kind.scheduled_action", "Scheduled action") : "Scheduled action"),
     group: action.channel === "__internal__" ? "system" : "awaiting",
   };
 }
@@ -190,21 +183,23 @@ export function StatTile({
  * shows, so the indicator never disappears, it just stops animating.
  */
 export function LivePulse({
-  label = "Live",
+  label,
   className = "",
 }: {
   label?: string;
   className?: string;
 }) {
+  const { t } = useI18n();
+  const displayLabel = label ?? t("memories.live", "Live");
   return (
     <span className={`inline-flex items-center gap-1.5 ${className}`}>
       <span className="relative flex h-2 w-2" aria-hidden="true">
         <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping motion-reduce:hidden" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
       </span>
-      {label && (
+      {displayLabel && (
         <span className="text-[11px] font-medium uppercase tracking-wide text-emerald-300">
-          {label}
+          {displayLabel}
         </span>
       )}
     </span>
@@ -235,13 +230,13 @@ const TITLE_MAP_ZH: Record<string, string> = {
   "Monitoring": "监控清单",
   "Across the team": "团队其他事项",
   "Needs you": "待您处理",
-  "Recent activity": "最近动态",
+  "Recent activity": "近期动态",
   "Cadence": "运行节拍",
   "Episodic memory": "情景记忆",
   "Handled": "已处理事项",
   "Departments": "部门架构",
   "People": "组织成员",
-  "Follow-ups": "跟进事项",
+  "Follow-ups": "待跟进事项",
 };
 
 /** Section header: optional icon, title, optional count badge, optional tag pill, optional subtitle. */
@@ -261,7 +256,8 @@ export function SectionHeading({
   subtitle?: string;
 }) {
   const { t } = useI18n();
-  const displayTitle = t(`memories.section.${title}`, title);
+  const displayTitle = t(`memories.section.${title}`, TITLE_MAP_ZH[title] || title);
+  const displayTag = tag ? t(`memories.tag.${tag}`, tag) : undefined;
 
   return (
     <div className="mb-3">
@@ -271,7 +267,7 @@ export function SectionHeading({
         {count != null && (
           <span className="text-xs font-normal tabular-nums text-fg-subtle">{count}</span>
         )}
-        {tag && <Tag label={tag} tone={tagTone} />}
+        {displayTag && <Tag label={displayTag} tone={tagTone} />}
       </div>
       {subtitle && <p className="text-xs text-fg-muted mt-0.5">{subtitle}</p>}
     </div>

@@ -1,0 +1,7 @@
+{
+  "section_id": "nojargon_authority",
+  "title": "通俗解读：如何自主决策行动",
+  "markdown": "每当 Open Executive 可以采取行动时，它会从三种行动模式中选择其一。该模式的选择取决于工作有多常规且是否易于恢复，绝非随意揣测。\n\n| 模式 | 触发场景 | 执行流程 |\n|---|---|---|\n| **自主行动** | 常规且可逆的操作 — 早间巡检整理、会议日常催办、文档清理同步 | 自动执行并向您展示处理结果，无需事前审批。 |\n| **提请审批** | 涉及重要权责决策 — 新增供应商、人员录用、面向客户的公开发布 | 起草完整方案，放入相应权限负责人的审批队列；获批前绝不实际发送。 |\n| **升级呈报** | 突发或高优先信号 — 意向客户重要回复、竞品重大动作、董事会级别事件 | 即刻向您发出预警，并在同一节拍内准备好应急响应建议，绝不拖到次日晨报。 |\n\n提请审批的提案由**谁拥有匹配的审批权限标签决定，而非依据职位头衔**。团队名册中的每个人都带有对应的权限标签 — 例如“审批 $10k 以下支出”、“录用审批”、“引入新供应商”等。当提案需要签署时，Open Executive 会精准路由至持有匹配标签的人员。若无匹配人员，则自动回退呈报给您。您始终是最终裁决人。\n\n*另请参阅：具体工程实现请查看“组织架构”。*",
+  "mermaid": "flowchart TD\n  Action[\"待执行动作\"] --> Q{\"工作性质与<br/>风险级别？\"}\n  Q -->|\"常规且可逆\"| Act[\"自主行动\"]\n  Q -->|\"需要签字确认\"| Propose[\"提请审批\"]\n  Q -->|\"实时敏感信号\"| Escalate[\"升级呈报给您\"]\n  Act --> Done[\"执行完成 — 呈报动态\"]\n  Propose --> Approver[\"精准路由至<br/>匹配标签负责人\"]\n  Approver -->|\"无匹配人员\"| You([\"您 (最终裁决)\"])\n  Approver -->|\"审批通过\"| Done\n  Escalate --> You\n  Escalate --> Done\n  class Action entry\n  class Q compute\n  class Act compute\n  class Propose compute\n  class Escalate compute\n  class Approver compute\n  class You entry\n  class Done hot",
+  "generated_at": "2026-06-01T00:00:00+00:00"
+}

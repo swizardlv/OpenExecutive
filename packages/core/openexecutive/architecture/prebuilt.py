@@ -21,13 +21,13 @@ from openexecutive.utils.prebuilt_store import PrebuiltDocStore
 _STORE = PrebuiltDocStore(Path(__file__).parent / "prebuilt")
 
 
-def get_prebuilt(section_id: str) -> dict[str, Any] | None:
+def get_prebuilt(section_id: str, locale: str | None = None) -> dict[str, Any] | None:
     """Return the authored content dict for one section, or ``None`` if
     the file is absent or malformed."""
-    return _STORE.get(section_id)
+    return _STORE.get(section_id, locale=locale)
 
 
-def list_prebuilt() -> dict[str, dict[str, Any]]:
+def list_prebuilt(locale: str | None = None) -> dict[str, dict[str, Any]]:
     """Map of ``section_id`` -> authored content for every readable file
     in the prebuilt directory. Cheap; safe to call per request."""
-    return _STORE.list()
+    return _STORE.list(locale=locale)

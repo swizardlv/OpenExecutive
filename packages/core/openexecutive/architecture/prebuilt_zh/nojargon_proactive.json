@@ -1,0 +1,7 @@
+{
+  "section_id": "nojargon_proactive",
+  "title": "通俗解读：当你未关注时",
+  "markdown": "Open Executive 从不坐等指令。它按照既定节律自动运行，并在出现值得您关注的事项时主动与您联系。\n\n即使您一天之内没有发起过一次对话，通常的一天也是这样运转的：\n\n- **晨间高管简报**：每天一次，在您的首选通讯渠道发送 — 涵盖各业务部门当前状态以及需要您关注的关键问题。\n- **日终工作总结**：每天傍晚 — 汇总今日已落地的成果与仍在跟进的未决事项。\n- **部门例行业务巡检**：各业务团队按照自身周期（每周、每月）接受自动检视，并将巡检成果同步回团队沟通频道。\n- **主动催办提醒**：如果您向他人承诺周五前回复却迟迟未动，它会向您发出提醒。承诺的事项绝不脱节遗漏。\n- **外部信号监控巡查**：它持续监测邮件、Slack、Discord、Telegram 中的关键动态，在问题到达您案头前就已自动交由对口专员研判预热。\n\n所有这些动作绝非黑盒运作：每一次主动触发都有据可查，对于任何敏感操作一律提请您决策，绝不在未授权情况下擅自代发。\n\n*另请参阅：执行器与周期调度机制请查看“调度与心跳系统”。*",
+  "mermaid": "sequenceDiagram\n  participant Clock as 运行节律\n  participant OE as Open Executive\n  participant Team as 团队成员\n  participant You as 您\n  Clock->>OE: 早间\n  OE->>You: 晨间高管简报\n  Clock->>OE: 按各部门既定周期\n  OE->>Team: 部门例行巡检\n  Note over OE: 全天持续监听外部信号\n  OE->>You: 升级重大预警信号\n  OE->>You: 停滞承诺催办提醒\n  Clock->>OE: 傍晚\n  OE->>You: 日终工作总结",
+  "generated_at": "2026-06-01T00:00:00+00:00"
+}

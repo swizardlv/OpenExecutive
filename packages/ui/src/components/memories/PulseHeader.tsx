@@ -74,7 +74,7 @@ export default function PulseHeader() {
     };
   }, []);
 
-  const stats = useMemo(() => (data ? deriveStats(data, t) : null), [data, t]);
+  const stats = useMemo(() => (data ? deriveStats(data, t, locale) : null), [data, t, locale]);
 
   return (
     <header className="space-y-6">
@@ -135,7 +135,7 @@ interface Stat {
   tone?: "default" | "accent" | "emerald" | "amber";
 }
 
-function deriveStats({ pending, memoriesTotal, heatmap }: HeaderData, t: (k: string, p?: any) => string): Stat[] {
+function deriveStats({ pending, memoriesTotal, heatmap }: HeaderData, t: (k: string, p?: any) => string, locale: string): Stat[] {
   const groups = groupByRhythm(pending);
   const followups = pending.filter((a) => a.kind === "ad_hoc").length;
 
@@ -145,7 +145,7 @@ function deriveStats({ pending, memoriesTotal, heatmap }: HeaderData, t: (k: str
     return a.run_at.localeCompare(best.run_at) < 0 ? a : best;
   }, null);
   const nextBeat = soonest
-    ? { value: formatRunAt(soonest.run_at).relative || (t("memories.PulseHeader.soon")), hint: metaFor(soonest).label }
+    ? { value: formatRunAt(soonest.run_at, locale).relative || (t("memories.PulseHeader.soon")), hint: metaFor(soonest, t).label }
     : { value: "—", hint: t("memories.PulseHeader.nothing_scheduled") };
 
   // The heatmap is oldest → newest, so the last entry is today.

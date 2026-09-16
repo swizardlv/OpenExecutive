@@ -59,3 +59,24 @@ def test_get_prebuilt_rejects_path_traversal() -> None:
     assert prebuilt.get_prebuilt("../cache") is None
     assert prebuilt.get_prebuilt("..") is None
     assert prebuilt.get_prebuilt("a/b") is None
+
+
+def test_chinese_prebuilt_content_coverage_and_format() -> None:
+    for spec in SECTIONS:
+        data = prebuilt.get_prebuilt(spec.id, locale="zh")
+        assert data is not None, f"missing zh prebuilt content for {spec.id}"
+        assert set(data) >= _REQUIRED_KEYS, f"bad keys for zh {spec.id}"
+        assert data["section_id"] == spec.id
+        assert data["markdown"].strip(), f"empty markdown for zh {spec.id}"
+        assert not data["markdown"].lstrip().startswith("#"), f"zh {spec.id} markdown starts with #"
+        mermaid = data["mermaid"]
+        if not spec.wants_mermaid:
+            assert mermaid is None, f"zh {spec.id} should have no diagram"
+            continue
+        assert mermaid, f"zh {spec.id} wants a diagram but has none"
+        head = mermaid.lstrip().splitlines()[0]
+        if spec.diagram_kind == "sequence":
+            assert head.startswith("sequenceDiagram"), f"zh {spec.id}: {head!r}"
+        else:
+            assert head.startswith(("flowchart", "graph")), f"zh {spec.id}: {head!r}"
+

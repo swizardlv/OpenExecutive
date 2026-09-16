@@ -1,0 +1,7 @@
+{
+  "section_id": "caching",
+  "title": "提示词缓存机制",
+  "markdown": "Executive 系统提示词由 `openexecutive.prompts.cache_manager.build_system_blocks` 针对 Anthropic 提示词缓存进行严密的分片管理。系统严格输出最多两个 `cache_control` 标记块，以便在容纳工具定义与滚动消息历史的同时，不突破 Anthropic 单次请求最多 4 个缓存断点的硬性限制。\n\n- **Block 0 — 人设与核心背景（TTL 1小时，始终存在）**：包含虚拟高管基础人设（或管理员自定义配置）、`{VOICE_PERSONA}` 语气设定、联网与 MCP 扩展声明、身份凭证约束、时区以及全局知识索引概要（`KNOWLEDGE_INDEX_SUMMARY`）。这一块内容在进程运行期完全恒定，因此设置长效缓存。\n- **Block 1 — 企业画像与组织架构（TTL 5分钟，仅非空时生成）**：包含 `company_profile.to_prompt_block()` 以及 `render_org_block()`（部门、负责人、工作目标、权责章程）。设置较短的缓存时长，以保证组织架构调整后数分钟内迅速同步生效。\n\nRAG 召回的知识上下文**绝对禁止**置于缓存系统块中 — 每次提问召回的内容各不相同，一旦放入会直接导致缓存污染击穿。召回内容一律注入到**用户对话轮次**中。长会话中倒数第二轮的助手回复会被标记为临时缓存，以建立滑动窗口式缓存体系。\n\n工具定义严格按字母排序，保证序列化顺序跨请求绝对稳定；`web_search` 原生搜索工具置于排序列表之后，避免附带缓存控制标记。\n\n**核心不变量**：绝对不能将动态易变的内容放入 `cache_control` 缓存块中。任何一个微小的变动都会击穿缓存，使推理成本骤升近 10 倍。",
+  "mermaid": "flowchart TD\n  Tools[\"工具定义<br/>(严格字母排序)\"] --> B0\n  B0[\"Block 0: 人设 + 知识库索引<br/>cache_control 1小时\"] --> B1\n  B1[\"Block 1: 企业画像 + 组织架构<br/>cache_control 5分钟\"] --> Limit{{\"≤ 4 个 cache_control 断点\"}}\n  Roll[\"滚动会话历史<br/>(倒数第二轮临时缓存)\"] --> Limit\n  Limit --> Turn[\"用户轮次 (动态上下文)\"]\n  RAG[\"RAG 检索知识切片<br/>(随问题动态变化)\"] --> Turn\n  Turn --> API[\"Anthropic API / 提供商\"]\n  class B0 cache\n  class B1 cache\n  class RAG hot\n  class Turn hot\n  class Tools compute\n  class Roll cache\n  class API external",
+  "generated_at": "2026-06-01T00:00:00+00:00"
+}

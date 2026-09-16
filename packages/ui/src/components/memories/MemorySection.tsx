@@ -197,7 +197,9 @@ function DecisionRow({
     <div className="group py-3 hover:bg-surface-overlay/30 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 text-xs text-fg-muted">
-          <span className="px-2 py-0.5 rounded bg-surface-overlay text-fg font-medium">{editing ? domain : decision.domain}</span>
+          <span className="px-2 py-0.5 rounded bg-surface-overlay text-fg font-medium">
+            {t(`memories.domain.${editing ? domain : decision.domain}`, editing ? domain : decision.domain)}
+          </span>
           <span>{formatDate(decision.timestamp)}</span>
         </div>
         {!editing && (
@@ -214,7 +216,11 @@ function DecisionRow({
             onChange={(e) => setDomain(e.target.value)}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           >
-            {DOMAINS.map((d) => <option key={d} value={d}>{d}</option>)}
+            {DOMAINS.map((d) => (
+              <option key={d} value={d}>
+                {t(`memories.domain.${d}`, d)}
+              </option>
+            ))}
           </select>
           <input
             type="text"
@@ -365,7 +371,9 @@ function InitiativeRow({
     <div className="group py-3 hover:bg-surface-overlay/30 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 text-xs text-fg-muted">
-          <span className="px-2 py-0.5 rounded bg-surface-overlay text-fg font-medium capitalize">{editing ? status : initiative.status}</span>
+          <span className="px-2 py-0.5 rounded bg-surface-overlay text-fg font-medium capitalize">
+            {t(`memories.status.${editing ? status : initiative.status}`, editing ? status : initiative.status)}
+          </span>
           <span>{t("memories.MemorySection.updated_formatdate_initiative_updated_at", { formatDate_initiative_updated_at: formatDate(initiative.updated_at) })}</span>
         </div>
         {!editing && (
@@ -389,7 +397,11 @@ function InitiativeRow({
             onChange={(e) => setStatus(e.target.value)}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           >
-            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {t(`memories.status.${s}`, s)}
+              </option>
+            ))}
           </select>
           <textarea
             value={summary}
@@ -517,7 +529,9 @@ function AdviceRow({
     <div className="group py-3 hover:bg-surface-overlay/30 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 text-xs text-fg-muted">
-          <span className="px-2 py-0.5 rounded bg-surface-overlay text-fg font-medium">{editing ? domain : advice.domain}</span>
+          <span className="px-2 py-0.5 rounded bg-surface-overlay text-fg font-medium">
+            {t(`memories.domain.${editing ? domain : advice.domain}`, editing ? domain : advice.domain)}
+          </span>
           <span>{formatDate(advice.timestamp)}</span>
         </div>
         {!editing && (
@@ -534,7 +548,11 @@ function AdviceRow({
             onChange={(e) => setDomain(e.target.value)}
             className="w-full bg-surface border border-line rounded px-2 py-1.5 text-sm text-fg"
           >
-            {DOMAINS.map((d) => <option key={d} value={d}>{d}</option>)}
+            {DOMAINS.map((d) => (
+              <option key={d} value={d}>
+                {t(`memories.domain.${d}`, d)}
+              </option>
+            ))}
           </select>
           <input
             type="text"

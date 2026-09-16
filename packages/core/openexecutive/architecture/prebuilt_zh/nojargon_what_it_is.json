@@ -1,0 +1,7 @@
+{
+  "section_id": "nojargon_what_it_is",
+  "title": "通俗解读：它是什么",
+  "markdown": "Open Executive 是加入团队日常协作的虚拟高管。在其统一的发声背后，是一个由专业领域专员组成的小型专员委员会（战略、财务、产品、运营、法务、HR、市场营销与董事会沟通），针对提问中各个专员最擅长的专业部分各自提供深度分析。\n\n您只需要与一位执行官交流。它会静默按需引入当前问题所需的领域专员，融合各方见解，并以统一的声音向您汇报答复。您无需同时周旋于多个不同职能的智能体之间。\n\n它能真正为您做的事情：\n\n- **融入您的日常工作**：在您充分授权的领域自主推进，在未获充分授权时生成提案等待审批，并将真正关键需要您裁量的事项呈报给您。\n- **按需调用专家见解**：一个同时涉及资金与产品的跨领域问题，会并发调用财务与产品专员展开研判 — 它是并行推进，而非排队串行。\n- **杜绝黑盒运作**：它的推理过程、所协同的人员、遵循的权限规则全部公开透明且随时可配置。没有您无法审计或追溯的隐秘操作。\n\n您可以把它想象成一位已经与所有业务部门主管建立热线通话、随时能够拉通协同，且每一步都出示推导依据的幕僚长。\n\n*另请参阅：底层接线与组件拓扑请查看“系统全貌”。*",
+  "mermaid": "flowchart TD\n  You([\"您\"]) --> Exec[\"Executive 虚拟高管<br/>(统一发声)\"]\n  Exec --> Council{\"专员委员会<br/>(按需协同)\"}\n  Council --> Fin[\"财务专员\"]\n  Council --> Prod[\"产品产研\"]\n  Council --> Ops[\"运营专员\"]\n  Council --> More[\"...战略、法务、<br/>HR、市场、董事会\"]\n  Fin --> Exec\n  Prod --> Exec\n  Ops --> Exec\n  More --> Exec\n  Exec -->|\"融合统一答复\"| You\n  class You entry\n  class Exec compute\n  class Council compute\n  class Fin compute\n  class Prod compute\n  class Ops compute\n  class More compute",
+  "generated_at": "2026-06-01T00:00:00+00:00"
+}

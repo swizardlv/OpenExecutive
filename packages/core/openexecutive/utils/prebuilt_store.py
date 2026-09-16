@@ -10,7 +10,9 @@ Each file is a JSON object with the keys ``section_id``, ``title``,
 To update a section, edit its ``<id>.json`` file and ship it.
 
 ``PrebuiltDocStore`` is the shared loader behind those surfaces; each one
-points it at its own directory of section files.
+points it at its own directory of section files. It also supports localized
+subdirectories (e.g. ``prebuilt_zh`` or ``prebuilt/zh``) with automatic fallback
+to the base directory.
 """
 from __future__ import annotations
 
@@ -25,7 +27,7 @@ REQUIRED_KEYS = {"section_id", "title", "markdown", "mermaid", "generated_at"}
 
 
 class PrebuiltDocStore:
-    """Loads pre-authored section JSON from a single directory.
+    """Loads pre-authored section JSON from a single directory or localized directories.
 
     The store never trusts its caller's ``section_id``: it rejects path
     separators and dot segments so a section id can only ever resolve to a
@@ -47,17 +49,39 @@ class PrebuiltDocStore:
             return None
         return data
 
-    def get(self, section_id: str) -> dict[str, Any] | None:
+    def get(self, section_id: str, locale: str | None = None) -> dict[str, Any] | None:
         """Return the authored content dict for one section, or ``None`` if
-        the file is absent or malformed."""
+        the file is absent or malformed.
+
+        If ``locale`` is provided (e.g. "zh"), it first looks in localized
+        directories (e.g. ``<dir>_zh`` or ``<dir>/zh``), falling back to
+        the base directory if not found.
+        """
         if "/" in section_id or "\\" in section_id or section_id in ("", ".", ".."):
             return None
+
+        if locale:
+            lang = locale.split("-")[0].lower()
+            if lang != "en":
+                # Check sibling directory (e.g. prebuilt_zh) or child directory (e.g. prebuilt/zh)
+                candidate_dirs = [
+                    self._dir.parent / f"{self._dir.name}_{lang}",
+                    self._dir / lang,
+                ]
+                for c_dir in candidate_dirs:
+                    if c_dir.is_dir():
+                        loc_path = c_dir / f"{section_id}.json"
+                        if loc_path.is_file():
+                            data = self._read_file(loc_path)
+                            if data is not None:
+                                return data
+
         path = self._dir / f"{section_id}.json"
         if not path.is_file():
             return None
         return self._read_file(path)
 
-    def list(self) -> dict[str, dict[str, Any]]:
+    def list(self, locale: str | None = None) -> dict[str, dict[str, Any]]:
         """Map of ``section_id`` -> authored content for every readable file
         in the directory. Cheap; safe to call per request.
 
@@ -71,4 +95,19 @@ class PrebuiltDocStore:
             data = self._read_file(path)
             if data is not None:
                 out[path.stem] = data
+
+        if locale:
+            lang = locale.split("-")[0].lower()
+            if lang != "en":
+                candidate_dirs = [
+                    self._dir.parent / f"{self._dir.name}_{lang}",
+                    self._dir / lang,
+                ]
+                for c_dir in candidate_dirs:
+                    if c_dir.is_dir():
+                        for path in sorted(c_dir.glob("*.json")):
+                            data = self._read_file(path)
+                            if data is not None:
+                                out[path.stem] = data
+
         return out

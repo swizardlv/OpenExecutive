@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Query
 
 from openexecutive.architecture import prebuilt
 from openexecutive.architecture.sections import SECTIONS, get_section
@@ -23,13 +23,27 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+def _resolve_locale(locale: str | None, accept_language: str | None) -> str | None:
+    if locale:
+        return locale
+    if accept_language:
+        # e.g. "zh-CN,zh;q=0.9,en;q=0.8" -> "zh"
+        primary = accept_language.split(",")[0].strip()
+        return primary.split(";")[0].strip()
+    return None
+
+
 @router.get("/architecture/sections")
-async def list_sections() -> dict[str, Any]:
+async def list_sections(
+    locale: str | None = Query(default=None),
+    accept_language: str | None = Header(default=None),
+) -> dict[str, Any]:
     """Directory listing of architecture sections with availability.
 
     A cheap read of the pre-authored content files — generates nothing.
     `fresh` reports whether a section has authored content on disk."""
-    available = prebuilt.list_prebuilt()
+    loc = _resolve_locale(locale, accept_language)
+    available = prebuilt.list_prebuilt(locale=loc)
     out: list[dict[str, Any]] = []
     for spec in SECTIONS:
         content = available.get(spec.id)
@@ -48,14 +62,19 @@ async def list_sections() -> dict[str, Any]:
 
 
 @router.get("/architecture/sections/{section_id}")
-async def get_section_content(section_id: str) -> dict[str, Any]:
+async def get_section_content(
+    section_id: str,
+    locale: str | None = Query(default=None),
+    accept_language: str | None = Header(default=None),
+) -> dict[str, Any]:
     """Return the pre-authored content for one section."""
     try:
         spec = get_section(section_id)
     except KeyError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
-    content = prebuilt.get_prebuilt(spec.id)
+    loc = _resolve_locale(locale, accept_language)
+    content = prebuilt.get_prebuilt(spec.id, locale=loc)
     if content is None:
         logger.warning("architecture.prebuilt.missing section=%s", spec.id)
         raise HTTPException(

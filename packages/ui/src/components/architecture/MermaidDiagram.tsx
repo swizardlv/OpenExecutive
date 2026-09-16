@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useI18n } from '@/lib/i18n';
 
 interface Props {
   definition: string;
@@ -27,6 +28,7 @@ function withSharedStyles(definition: string): string {
 }
 
 export default function MermaidDiagram({ definition, id }: Props) {
+  const { t } = useI18n();
   // Holding the SVG in React state (instead of mutating the container's
   // innerHTML directly) is what lets React safely re-render this
   // component on regenerate. Prior implementations mutated the DOM
@@ -122,9 +124,9 @@ export default function MermaidDiagram({ definition, id }: Props) {
   if (error) {
     return (
       <div className="rounded-lg bg-surface border border-line px-4 py-3 text-xs text-fg-muted">
-        <span className="font-medium text-fg-muted">Diagram unavailable.</span>{' '}
+        <span className="font-medium text-fg-muted">{t("architecture.diagram.unavailable")}</span>{' '}
         <span className="text-fg-muted">
-          This diagram could not be rendered.
+          {t("architecture.diagram.could_not_render")}
         </span>
       </div>
     );
@@ -136,7 +138,7 @@ export default function MermaidDiagram({ definition, id }: Props) {
         className="rounded-lg bg-surface-elevated border border-line p-6 text-xs text-fg-subtle animate-pulse"
         style={{ minHeight: 200 }}
       >
-        Rendering diagram…
+        {t("architecture.diagram.rendering")}
       </div>
     );
   }

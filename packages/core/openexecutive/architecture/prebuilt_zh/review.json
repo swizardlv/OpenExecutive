@@ -1,0 +1,7 @@
+{
+  "section_id": "review",
+  "title": "专家知识评审",
+  "markdown": "流向检索系统的知识必须先经过领域业务专家（SME）的审核准入机制，才能正式影响 Executive 的决策推理。待审队列及其决策记录保存在 `openexecutive.knowledge.review_store.ReviewStore` 中，与情景记忆共享同一个 `./episodic_memory.db` SQLite 数据库。\n\n新增的知识条目在进入系统时处于待定状态，由业务专家进行裁定：\n\n- **待审核 (Pending)** — 处于等待业务专家裁决状态。Executive 无法检索此类条目；在专家确认前，所有检索路径完全屏蔽它们。\n- **已驳回 (Rejected)** — 永久移出检索范围。被驳回的条目绝不会出现在任何专员的上下文中。\n- **已采纳 (Approved)** — 准入参与检索，并可设置提升优先级，使其在召回结果中优先排在普通资料之前。\n\n### 对知识检索的影响\n\n评审准入机制是叠加在标准 RAG 路径之上的过滤器：只有已批准（或天然免审）的知识切片才能送达专员。驳回操作具备全局持久性 — 直接将其从所有后续查询中彻底剔除，而不仅仅是降低排序分数。而带有优先级提升的批准操作，能够让企业核心规范与高质量沉淀稳稳占据检索召回榜首。这确保了 Executive 所引用的永远是经过人工专家背书确认的可靠知识。",
+  "mermaid": "flowchart TD\n  In[\"新摄入的外部知识\"]\n  Queue[\"待审核知识队列<br/>ReviewStore\"]\n  SME{\"领域专家裁定\"}\n  Rej[\"已驳回<br/>永久移出检索范围\"]\n  App[\"已采纳<br/>支持优先级提权\"]\n  RAG[\"RAG 检索通道\"]\n  Spec[\"专员上下文注入\"]\n  In --> Queue\n  Queue --> SME\n  SME -->|驳回| Rej\n  SME -->|通过| App\n  App --> RAG\n  RAG --> Spec\n  class In entry\n  class Queue storage\n  class SME compute\n  class RAG compute\n  class Spec hot",
+  "generated_at": "2026-06-01T00:00:00+00:00"
+}

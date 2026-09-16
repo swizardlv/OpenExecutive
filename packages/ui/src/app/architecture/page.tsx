@@ -231,14 +231,14 @@ function DiagramLegend() {
 }
 
 export default function ArchitecturePage() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [activeSection, setActiveSection] = useState('overview');
   const [sectionMeta, setSectionMeta] = useState<Record<string, SectionMeta>>({});
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Single cheap listing call — no generation triggered.
   useEffect(() => {
-    fetch('/api/backend/architecture/sections')
+    fetch(`/api/backend/architecture/sections?locale=${encodeURIComponent(locale)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((data: { sections: SectionMeta[] }) => {
         const map: Record<string, SectionMeta> = {};
@@ -246,7 +246,7 @@ export default function ArchitecturePage() {
         setSectionMeta(map);
       })
       .catch(() => {});
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     observerRef.current?.disconnect();

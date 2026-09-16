@@ -50,3 +50,21 @@ def test_get_section_returns_static_content(client: TestClient) -> None:
     assert body["markdown"].strip()
     # The served payload is the static shape — no generation metadata.
     assert "facts_hash" not in body
+
+
+def test_get_section_supports_chinese_locale(client: TestClient) -> None:
+    # Test via query param
+    res = client.get("/architecture/sections/overview?locale=zh")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["section_id"] == "overview"
+    assert "系统全貌" in body["title"]
+    assert "多智能体系统" in body["markdown"]
+
+    # Test via Accept-Language header
+    res_header = client.get("/architecture/sections/overview", headers={"accept-language": "zh-CN,zh;q=0.9"})
+    assert res_header.status_code == 200
+    body_header = res_header.json()
+    assert "系统全貌" in body_header["title"]
+
+

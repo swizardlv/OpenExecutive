@@ -53,6 +53,8 @@ packages/ui/.next/
 packages/ui/out/
 packages/ui/.turbo/
 packages/ui/tsconfig.tsbuildinfo
+packages/ui/AGENTS.md
+packages/ui/CLAUDE.md
 
 # OS
 .DS_Store

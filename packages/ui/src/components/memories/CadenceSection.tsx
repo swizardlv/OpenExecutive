@@ -141,36 +141,57 @@ export default function CadenceSection() {
 // `subject` names who/what it was directed at. Ported from the Briefing rail
 // (now removed) so the Pulse shows the same rich rows. The full summary is
 // always rendered as the body, so no information is lost.
-function activityLine(item: ActivityItem): { verb: string; subject: string } {
+function activityLine(
+  item: ActivityItem,
+  t: (k: string, p?: any, fallback?: string) => string
+): { verb: string; subject: string } {
   switch (item.kind) {
     case "dm_sent":
-      return { verb: "DM'd", subject: item.target ?? "a colleague" };
+      return {
+        verb: t("memories.activity.verb.dm_sent", "DM'd"),
+        subject: item.target ?? t("memories.activity.fallback.colleague", "a colleague"),
+      };
     case "email_sent":
-      return { verb: "emailed", subject: item.target ?? "a colleague" };
+      return {
+        verb: t("memories.activity.verb.email_sent", "emailed"),
+        subject: item.target ?? t("memories.activity.fallback.colleague", "a colleague"),
+      };
     case "nudge_sent":
-      return { verb: "nudged", subject: item.target ?? "a stalled item" };
+      return {
+        verb: t("memories.activity.verb.nudge_sent", "nudged"),
+        subject: item.target ?? t("memories.activity.fallback.stalled", "a stalled item"),
+      };
     case "cadence_sent":
-      return { verb: "ran cadence for", subject: item.department ?? "a department" };
+      return {
+        verb: t("memories.activity.verb.cadence_sent", "ran cadence for"),
+        subject: item.department ?? t("memories.activity.fallback.department", "a department"),
+      };
     case "workflow_resumed":
-      return { verb: "resumed workflow with", subject: item.target ?? "someone" };
+      return {
+        verb: t("memories.activity.verb.workflow_resumed", "resumed workflow with"),
+        subject: item.target ?? t("memories.activity.fallback.someone", "someone"),
+      };
     case "proposal_routed":
       // propose_only path — backend marked the action done without dispatching,
       // so describe the intent ("proposed to X") rather than implying a send.
-      return { verb: "proposed to", subject: item.target ?? "an approver" };
+      return {
+        verb: t("memories.activity.verb.proposal_routed", "proposed to"),
+        subject: item.target ?? t("memories.activity.fallback.approver", "an approver"),
+      };
     case "decision_logged":
-      return { verb: "logged decision:", subject: item.summary };
+      return { verb: t("memories.activity.verb.decision_logged", "logged decision:"), subject: item.summary };
     case "advice_given":
-      return { verb: "advised on", subject: item.summary };
+      return { verb: t("memories.activity.verb.advice_given", "advised on"), subject: item.summary };
     case "workflow_done":
-      return { verb: "completed", subject: item.summary };
+      return { verb: t("memories.activity.verb.workflow_done", "completed"), subject: item.summary };
     case "initiative_started":
-      return { verb: "kicked off initiative:", subject: item.summary };
+      return { verb: t("memories.activity.verb.initiative_started", "kicked off initiative:"), subject: item.summary };
     case "decision_resolved":
-      return { verb: "resolved decision:", subject: item.summary };
+      return { verb: t("memories.activity.verb.decision_resolved", "resolved decision:"), subject: item.summary };
     case "alert_raised":
-      return { verb: "raised alert:", subject: item.summary };
+      return { verb: t("memories.activity.verb.alert_raised", "raised alert:"), subject: item.summary };
     default:
-      return { verb: "acted on", subject: item.summary };
+      return { verb: t("memories.activity.verb.default", "acted on"), subject: item.summary };
   }
 }
 
@@ -253,8 +274,8 @@ function RecentActivity() {
       <div className="max-h-[32rem] overflow-y-auto pr-1">
         <ol className="relative space-y-3 before:absolute before:left-[3px] before:top-1.5 before:bottom-1.5 before:w-px before:bg-line">
           {items.map((it, i) => {
-            const { relative } = formatRunAt(it.at);
-            const { verb, subject } = activityLine(it);
+            const { relative } = formatRunAt(it.at, locale);
+            const { verb, subject } = activityLine(it, t);
             // For summary-style kinds the subject IS the summary, so don't
             // repeat it inline — the body row below carries the text.
             const subjectIsSummary = SUMMARY_KINDS.has(it.kind);
@@ -342,8 +363,8 @@ function RhythmCard({
 }) {
   const { locale, t } = useI18n();
   
-  const meta = metaFor(action);
-  const { absolute, relative } = formatRunAt(action.run_at);
+  const meta = metaFor(action, t);
+  const { absolute, relative } = formatRunAt(action.run_at, locale);
   const isPending = action.status === "pending";
   return (
     <div className="group py-2.5 hover:bg-surface-overlay/30 transition-colors flex items-start justify-between gap-3">
@@ -379,7 +400,7 @@ function RhythmCard({
                 STATUS_PILL[action.status] ?? STATUS_PILL.cancelled
               }`}
             >
-              {action.status}
+              {t(`memories.status.${action.status}`, action.status)}
             </span>
             <span className="text-xs text-fg-subtle" title={absolute}>
               {relative || absolute}
@@ -533,17 +554,17 @@ function FollowUpRow({
 }) {
   const { locale, t } = useI18n();
   
-  const { absolute, relative } = formatRunAt(action.run_at);
+  const { absolute, relative } = formatRunAt(action.run_at, locale);
   const pill = STATUS_PILL[action.status] ?? STATUS_PILL.cancelled;
   return (
     <div className="group py-3 hover:bg-surface-overlay/30 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 text-xs text-fg-muted flex-wrap min-w-0">
           <span className={`px-2 py-0.5 rounded border font-medium capitalize ${pill}`}>
-            {action.status}
+            {t(`memories.status.${action.status}`, action.status)}
           </span>
           <span className="px-2 py-0.5 rounded bg-surface-overlay text-fg font-medium">
-            {action.channel}
+            {t(`memories.channel.${action.channel}`, action.channel)}
           </span>
           <span className="text-fg-subtle">→</span>
           <span className="text-fg-muted font-mono text-[11px] truncate max-w-[12rem]" title={action.channel_ref}>{action.channel_ref}</span>

@@ -1,0 +1,7 @@
+{
+  "section_id": "user_guide",
+  "title": "用户使用指南",
+  "markdown": "`/guide` 页面是面向业务用户与非技术背景团队的**通俗功能使用手册** — 聚焦于“它是什么，如何使用”。它与本技术参考文档清晰区分：系统架构文档深入解释系统的构建方式与技术拓扑；而使用指南则专门解释各项功能能为您的团队带来什么价值。\n\n用户可以通过**系统设置中心的高级工具卡片**进入使用指南。\n\n**与本架构页面完全相同的加载架构**。每个章节均来自预先打包在系统镜像中的静态 JSON 文件（位于 `packages/core/openexecutive/guide/prebuilt/<id>.json`）。后端路由 `api/routes/guide.py` 对外暴露 `GET /guide/sections` 以及 `GET /guide/sections/{id}`，其工作流程与系统架构完全一致。**服务接口绝不在读取时调用大语言模型**。\n\n**共用底层数据加载器**。两个模块共用同一个存储加载类 `PrebuiltDocStore`，分别指向自身专属的 `prebuilt/` 数据目录。拥有严格的路径防穿越机制，并具备对本地化目录（如 `prebuilt_zh/`）的自动识别与优雅回退支持。\n\n**共用前端渲染组件**。Web 前端直接复用 `DynamicSection` 组件，通过 `basePath=\"guide\"` 属性进行区分，实现深度锚点跳转、异步懒加载以及 Markdown 脚本安全消毒的一致体验。指南页面专注于图文排版，不包含 Mermaid 拓扑图。\n\n**内容维护规范**：当增加新功能或对产品进行重大调整时，只需更新或新增 `guide/prebuilt/<id>.json`，即可做到即改即用。",
+  "mermaid": "flowchart LR\n  Settings([\"系统设置中心入口\"]) --> Guide[\"/guide 使用指南页面\"]\n  Guide --> Route[\"api/routes/guide.py\"]\n  Route --> Store{\"PrebuiltDocStore 数据加载器\"}\n  Store --> Files[(\"guide/prebuilt/*.json 业务手册\")]\n  ArchRoute[\"api/routes/architecture.py\"] --> Store\n  Store --> ArchFiles[(\"architecture/prebuilt/*.json 架构文档\")]\n  class Settings entry\n  class Guide entry\n  class Route compute\n  class ArchRoute compute\n  class Store compute\n  class Files storage\n  class ArchFiles storage",
+  "generated_at": "2026-06-06T00:00:00+00:00"
+}

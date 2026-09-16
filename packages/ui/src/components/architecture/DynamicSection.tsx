@@ -49,20 +49,21 @@ interface Props {
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
 export default function DynamicSection({ id, title, sub, basePath = 'architecture' }: Props) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [content, setContent] = useState<SectionContent | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
-  // Last source we fetched, keyed on basePath+id. Dedupes the dev
-  // StrictMode double-invoke while still re-fetching if the source
-  // changes in place (e.g. basePath flips between architecture/guide).
+  // Last source we fetched, keyed on basePath+id+locale. Dedupes the dev
+  // StrictMode double-invoke while still re-fetching if the source or
+  // language changes in place.
   const loadedKeyRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     setStatus('loading');
     setError(null);
     try {
-      const res = await fetch(`/api/backend/${basePath}/sections/${id}`);
+      const url = `/api/backend/${basePath}/sections/${id}?locale=${encodeURIComponent(locale)}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: SectionContent = await res.json();
       setContent(data);
@@ -71,17 +72,17 @@ export default function DynamicSection({ id, title, sub, basePath = 'architectur
       setError(e instanceof Error ? e.message : String(e));
       setStatus('error');
     }
-  }, [id, basePath]);
+  }, [id, basePath, locale]);
 
   // Lazy load on first appearance — every section reads its own static
-  // file. Re-fetches if the source (basePath/id) changes; the key guard
+  // file. Re-fetches if the source (basePath/id/locale) changes; the key guard
   // skips the redundant second call React fires in StrictMode.
   useEffect(() => {
-    const key = `${basePath}/${id}`;
+    const key = `${basePath}/${id}/${locale}`;
     if (loadedKeyRef.current === key) return;
     loadedKeyRef.current = key;
     load();
-  }, [load, basePath, id]);
+  }, [load, basePath, id, locale]);
 
   return (
     <section className="space-y-4">
