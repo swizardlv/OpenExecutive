@@ -1,5 +1,5 @@
 import type { SessionSummary } from "@/lib/api";
-import { translate } from "@/locales";
+import { DEFAULT_LOCALE, translate } from "@/locales";
 
 export type GroupKey = "today" | "yesterday" | "prev7" | "prev30" | "older";
 
@@ -23,7 +23,7 @@ const DAY_MS = 86_400_000;
 export function groupSessionsByDate(
   sessions: SessionSummary[],
   now: Date = new Date(),
-  locale: string = "zh",
+  locale: string = DEFAULT_LOCALE,
 ): SessionGroup[] {
   const startOfToday = new Date(
     now.getFullYear(),

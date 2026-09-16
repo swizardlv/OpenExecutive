@@ -46,12 +46,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       if (saved && isSupported) {
         setLocaleState(saved);
       } else {
-        const navLang = (navigator.language || "").toLowerCase();
-        // Check exact match or prefix
-        const matched = SUPPORTED_LOCALES.find(
-          (l) => navLang === l.code.toLowerCase() || navLang.startsWith(l.code.toLowerCase() + "-")
-        );
-        setLocaleState(matched ? matched.code : DEFAULT_LOCALE);
+        setLocaleState(DEFAULT_LOCALE);
       }
     } catch {
       // Ignore SSR / localStorage exceptions

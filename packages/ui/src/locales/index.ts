@@ -19,29 +19,29 @@ export interface LocaleOption {
  * No UI components need to be modified when adding new languages!
  */
 export const SUPPORTED_LOCALES: LocaleOption[] = [
-  { code: "zh", name: "简体中文", label: "中文" },
   { code: "en", name: "English", label: "EN" },
+  { code: "zh", name: "简体中文", label: "中文" },
 ];
 
 /**
  * Primary default locale. Untranslated keys in any language will automatically
  * fall back to this primary dictionary.
  */
-export const DEFAULT_LOCALE = "zh";
+export const DEFAULT_LOCALE = "en";
 
 export const LOCALES: Record<string, Record<string, string>> = {
-  zh,
   en,
+  zh,
 };
 
 /**
  * Resolve a translation string with fallback to default locale and variable interpolation.
  *
  * Examples:
- * - `translate("zh", "common.save")` -> "保存"
  * - `translate("en", "common.save")` -> "Save"
+ * - `translate("zh", "common.save")` -> "保存"
  * - `translate("en", "briefing.needsYou", { count: 3 })` -> "3 need you"
- * - `translate("ja", "common.save")` -> "保存" (falls back to DEFAULT_LOCALE "zh" if untranslated)
+ * - `translate("ja", "common.save")` -> "Save" (falls back to DEFAULT_LOCALE "en" if untranslated)
  */
 export function translate(
   locale: string,

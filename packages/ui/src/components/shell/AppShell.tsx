@@ -10,7 +10,7 @@ import BrandMark from "@/components/BrandMark";
 import Icon, { IconName } from "@/components/Icon";
 import UserBadge from "@/components/UserBadge";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
-import { translate } from "@/locales";
+import { DEFAULT_LOCALE, translate } from "@/locales";
 import {
   BRIEFING_DESCRIPTION,
   buildPrimaryNav,
@@ -97,7 +97,7 @@ const SEGMENT_LABELS_EN: Record<string, string> = {
   clients: "Client Companies",
 };
 
-function labelFor(segment: string, locale: string = "zh"): string {
+function labelFor(segment: string, locale: string = DEFAULT_LOCALE): string {
   return translate(locale, `segment.${segment}`, undefined, segment);
 }
 

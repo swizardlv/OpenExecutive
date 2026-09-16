@@ -1,4 +1,5 @@
-// English locale dictionary (en)
+// Primary locale dictionary: English (en)
+// Default language for Open Executive
 
 export const en: Record<string, string> = {
   "Briefing.across_your_clients": "Across your clients",

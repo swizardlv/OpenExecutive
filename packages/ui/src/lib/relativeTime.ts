@@ -1,8 +1,10 @@
+import { DEFAULT_LOCALE } from "@/locales";
+
 /**
  * Shared "N units ago" formatter.
  * Uses browser/runtime standard `Intl.RelativeTimeFormat` to support ANY locale dynamically.
  */
-export function formatRelativeTime(iso: string, locale: string = "zh"): string {
+export function formatRelativeTime(iso: string, locale: string = DEFAULT_LOCALE): string {
   if (!iso) return "";
   const ts = new Date(iso).getTime();
   if (!Number.isFinite(ts)) return "";

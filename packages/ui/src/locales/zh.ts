@@ -1,5 +1,5 @@
-// Primary locale dictionary: Chinese (zh)
-// Default language for Open Executive
+// Chinese (zh) locale dictionary
+// 简体中文语言字典
 
 export const zh: Record<string, string> = {
   "Briefing.across_your_clients": "客户概览",
